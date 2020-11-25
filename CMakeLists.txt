@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.17)
+project(gemv C)
+
+set(CMAKE_C_STANDARD 11)
+
+include_directories(include)
+add_compile_options(-mavx -mavx2 -mavx512f -march=native)
+find_package(OpenMP REQUIRED)
+if (OPENMP_FOUND)
+    MESSAGE("openmp found")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif ()
+link_libraries(m)
+add_executable(gemv main.c)
