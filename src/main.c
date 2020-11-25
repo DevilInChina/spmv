@@ -55,156 +55,6 @@ int main(int argc, char ** argv)
     int iter = atoi(argv[3]);
     //printf("#iter is %i \n", iter);
 
-    // find balanced points
-    int *csrSplitter ;
-    //int *csrSplitter_normal = (int *)malloc((nthreads+1) * sizeof(int));
-    parallel_balanced_get_csrSplitter(m,RowPtr,nnzR,nthreads,&csrSplitter);
-
-    int *Apinter = (int *)malloc(nthreads * sizeof(int));
-    memset(Apinter, 0, nthreads *sizeof(int) );
-    //每个线程执行行数
-    for (int tid = 0; tid < nthreads; tid++)
-    {
-        Apinter[tid] = csrSplitter[tid+1] - csrSplitter[tid];
-        //printf("A[%d] is %d\n", tid, Apinter[tid]);
-    }
-
-    int *Bpinter = (int *)malloc(nthreads * sizeof(int));
-    memset(Bpinter, 0, nthreads *sizeof(int) );
-    //每个线程执行非零元数
-    for (int tid = 0; tid < nthreads; tid++)
-    {
-        int num = 0;
-        for (int u = csrSplitter[tid]; u < csrSplitter[tid+1]; u++)
-        {
-            num += RowPtr[ u + 1 ] - RowPtr[u];
-        }
-        Bpinter[tid] = num;
-        //printf("B [%d]is %d\n",tid, Bpinter[tid]);
-    }
-
-    int *Yid = (int *)malloc(sizeof(int) * nthreads);
-    memset (Yid, 0, sizeof(int) * nthreads);
-    //每个线程
-    int flag;
-    for (int tid = 0; tid < nthreads; tid++)
-    {
-        //printf("tid = %i, csrSplitter: %i -> %i\n", tid, csrSplitter[tid], csrSplitter[tid+1]);
-        if (csrSplitter[tid + 1] - csrSplitter[tid] == 0)
-        {
-            Yid[tid] = csrSplitter[tid];
-            flag = 1;
-        }
-        if (csrSplitter[tid + 1] - csrSplitter[tid] != 0 )
-        {
-            Yid[tid] = -1;
-        }
-        if (csrSplitter[tid + 1] - csrSplitter[tid] != 0 && flag ==1)
-        {
-            Yid[tid] = csrSplitter[tid];
-            flag = 0;
-        }
-        //printf("Yid[%d] is %d\n", tid, Yid[tid]);
-    }
-
-    //行平均用在多行上
-    int sto = nthreads > nnzR ? nthreads : nnzR;
-    int *Start1 = (int *)malloc(sizeof(int) * sto);
-    memset (Start1, 0, sizeof(int) * sto);
-    int *End1 = (int *)malloc(sizeof(int) * sto);
-    memset (End1, 0, sizeof(int) * sto);
-    int start1, search1 = 0;
-    for (int tid = 0;tid < nthreads;tid++)
-    {
-        if (Apinter[tid] == 0)
-        {
-            if(search1 == 0)
-            {
-                start1 = tid;
-                search1 = 1;
-            }
-        }
-        if(search1 == 1 && Apinter[tid]!= 0)
-        {
-            int nntz = ceil((double)Apinter[tid] / (double)(tid-start1+1));
-            int mntz = Apinter[tid] - (nntz * (tid-start1));
-            //start and end
-            int n = start1;
-            Start1[n] = csrSplitter[tid];
-            End1[n] = Start1[n] + nntz;
-            //printf("start1a[%d] = %d, end1a[%d] = %d\n",n,Start1[n],n, End1[n]);
-            for (n = start1 + 1; n < tid ; n++)
-            {
-                Start1[n] = End1[n-1];
-                End1[n] = Start1[n] + nntz;
-                //printf("start1b[%d] = %d, end1b[%d] = %d\n",n,Start1[n],n, End1[n]);
-            }
-            if (n = tid)
-            {
-                Start1[n] = End1[n - 1];
-                End1[n] = Start1[n] + mntz;
-                //printf("start1c[%d] = %d, end1c[%d] = %d\n",n,Start1[n],n, End1[n]);
-            }
-            //printf("start1c[%d] = %d, end1c[%d] = %d\n",n,Start1[n],n, End1[n]);
-            for (int j = start1; j <= tid -1; j++)
-            {
-                Apinter[j] = nntz;
-            }
-            Apinter[tid] = mntz;
-            search1 = 0;
-        }
-    }
-    //非零元平均用在一行
-    float *Ypartialsum = (float *)malloc(sizeof(float) * nthreads);
-    memset (Ypartialsum, 0, sizeof(float) * nthreads);
-    float *Ysum = (float *)malloc(sizeof(float) * nthreads);
-    memset (Ysum, 0, sizeof(float) * nthreads);
-    int *Start2 = (int *)malloc(sizeof(int) * sto);
-    memset (Start2, 0, sizeof(int) * sto);
-    int *End2 = (int *)malloc(sizeof(int) * sto);
-    memset (End2, 0, sizeof(int) * sto);
-    int start2, search2 = 0;
-    for (int tid = 0;tid < nthreads;tid++)
-    {
-        if (Bpinter[tid] == 0)
-        {
-            if(search2 == 0)
-            {
-                start2 = tid;
-                search2 = 1;
-            }
-        }
-        if(search2 == 1 && Bpinter[tid]!= 0)
-        {
-            int nntz2 = ceil((double)Bpinter[tid] / (double)(tid-start2+1));
-            int mntz2 = Bpinter[tid] - (nntz2 * (tid-start2));
-            //start and end
-            int n = start2;
-            for (int i = start2; i >= 0; i--)
-            {
-                Start2[n] += Bpinter[i];
-                End2[n] = Start2[n] + nntz2;
-                //printf("starta[%d] = %d, enda[%d] = %d\n",n,Start2[n],n, End2[n]);
-            }
-            //printf("starta[%d] = %d, enda[%d] = %d\n",n,Start2[n],n, End2[n]);
-            for (n = start2 + 1; n < tid ; n++)
-            {
-                Start2[n] = End2[n-1];
-                End2[n] = Start2[n] + nntz2;
-                //printf("startb[%d] = %d, endb[%d] = %d\n",n,Start2[n],n, End2[n]);
-            }
-            //printf("startb[%d] = %d, endb[%d] = %d\n",n,Start2[n],n, End2[n]);
-            if (n = tid)
-            {
-                Start2[n] = End2[n - 1];
-                End2[n] = Start2[n] + mntz2;
-                //printf("startc[%d] = %d, endc[%d] = %d\n",n,Start2[n],n, End2[n]);
-            }
-            //printf("startc[%d] = %d, endc[%d] = %d\n",n,Start2[n],n, End2[n]);
-            search2 = 0;
-        }
-    }
-
 //------------------------------------serial--------------------------------
     struct timeval t1, t2;
     gettimeofday(&t1, NULL);
@@ -252,12 +102,16 @@ int main(int argc, char ** argv)
 //------------------------------------------------------------------------
 
 //-----------------------------------parallel_omp_balanced-------------------------------------
+
+    gemv_Handle_t balanced_handle;
+    parallel_balanced_get_handle(&balanced_handle,m,RowPtr,nnzR,nthreads);
     gettimeofday(&t1, NULL);
     for (currentiter = 0; currentiter < iter; currentiter++)
     {
-        parallel_balanced_gemv(nthreads,csrSplitter,m,RowPtr,ColIdx,Val,X,Y);
+        parallel_balanced_gemv(balanced_handle,m,RowPtr,ColIdx,Val,X,Y);
     }
     gettimeofday(&t2, NULL);
+
     float time_overall_parallel_balanced = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
     float GFlops_parallel_balanced = 2 * nnzR / time_overall_parallel_balanced / pow(10,6);
     int errorcount_parallel_balanced = 0;
@@ -275,12 +129,14 @@ int main(int argc, char ** argv)
 //------------------------------------------------------------------------
 
 //-----------------------------------parallel_omp_balanced_Yid-------------------------------------
+
     gettimeofday(&t1, NULL);
+    gemv_Handle_t balanced2_handle;
+    parallel_balanced_get_handle(&balanced2_handle,m,RowPtr,nnzR,nthreads);
     for (currentiter = 0; currentiter < iter; currentiter++)
     {
-        parallel_balanced2_gemv(nthreads,Yid,Apinter,
-                                Start1,End1,Start2,End2,
-                                csrSplitter,
+        parallel_balanced2_gemv(
+                                balanced2_handle,
                                 m,RowPtr,ColIdx,Val,X,Y
         );
     }
@@ -304,34 +160,7 @@ int main(int argc, char ** argv)
     gettimeofday(&t1, NULL);
     for (currentiter = 0; currentiter < iter; currentiter++)
     {
-#pragma omp parallel for
-        for (int tid = 0; tid < nthreads; tid++)
-        {
-            for (int u = csrSplitter[tid]; u < csrSplitter[tid+1]; u++)
-            {
-                __m256 res = _mm256_setzero_ps();
-                float sum = 0;
-                int dif = RowPtr[u+1] - RowPtr[u];
-                int nloop = dif / 8;
-                int remainder = dif % 8;
-                for (int li = 0; li < nloop; li++)
-                {
-                    int j = RowPtr[u] + li * 8;
-                    __m256 vecv = _mm256_loadu_ps(&Val[j]);
-                    __m256i veci =  _mm256_loadu_si256((__m256i *)(&ColIdx[j]));
-                    __m256 vecx = _mm256_i32gather_ps(X, veci, 4);
-                    res = _mm256_fmadd_ps(vecv, vecx, res);
-                }
-                //Y[u] += _mm256_reduce_add_ps(res);
-                sum += hsum_avx(res);
-
-                for (int j = RowPtr[u] + nloop * 8; j < RowPtr[u + 1]; j++) {
-                    sum += Val[j] * X[ColIdx[j]];
-                }
-                Y[u] = sum;
-            }
-
-        }
+        parallel_balanced_gemv_avx2(balanced_handle,m,RowPtr,ColIdx,Val,X,Y);
     }
     gettimeofday(&t2, NULL);
     float time_overall_parallel_avx2 = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
@@ -604,14 +433,6 @@ int main(int argc, char ** argv)
     free(X);//加一
     free(Y);//加一
     free(Y_golden);//加一
-    free(csrSplitter);
-    free(Apinter);
-    free(Bpinter);
-    free(Yid);
-    free(Start1);
-    free(End1);
-    free(Ypartialsum);
-    free(Ysum);
-    free(Start2);
-    free(End2);
+    gemv_destory_handle(balanced_handle);
+    gemv_destory_handle(balanced2_handle);
 }

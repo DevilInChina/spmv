@@ -15,6 +15,32 @@
 #ifndef GEMV_VAL_TYPE
 #define GEMV_VAL_TYPE float
 #endif
+typedef enum STATUS_GEMV_HANDLE{
+    NONE,
+    BALANCED,
+    BALANCED2
+}STATUS_GEMV_HANDLE;
+typedef struct gemv_Handle gemv_Handle;
+typedef gemv_Handle*  gemv_Handle_t;
+/**
+ * @brief destroy handle, null with doing nothing
+ * @param this_handle
+ * @return
+ */
+void gemv_destory_handle(gemv_Handle_t this_handle);
+
+/**
+ * @brief create a empty handle with initialize
+ * @return
+ */
+gemv_Handle_t gemv_create_handle();
+
+/**
+ * @brief clear handle for the next usage, designed for developers of lib
+ * @param this_handle
+ */
+void gemv_clear_handle(gemv_Handle_t this_handle);
+
 /**
  *
  * @param m
@@ -47,21 +73,35 @@ void parallel_gemv(GEMV_INT_TYPE m,
                  const GEMV_VAL_TYPE *Vector_Val_X,
                  GEMV_VAL_TYPE       *Vector_Val_Y);
 
-
 /**
  *
+ * @param handle
  * @param m
  * @param RowPtr
  * @param nnzR
  * @param nthreads
- * @param csrSplitter
  */
-void parallel_balanced_get_csrSplitter(
+void parallel_balanced_get_handle(
+        gemv_Handle_t* handle,
         GEMV_INT_TYPE m,
         const GEMV_INT_TYPE*RowPtr,
         GEMV_INT_TYPE nnzR,
-        GEMV_INT_TYPE nthreads,
-        GEMV_INT_TYPE**csrSplitter);
+        GEMV_INT_TYPE nthreads);
+
+/**
+ *
+ * @param handle
+ * @param m
+ * @param RowPtr
+ * @param nnzR
+ * @param nthreads
+ */
+void parallel_balanced2_get_handle(
+        gemv_Handle_t* handle,
+        GEMV_INT_TYPE m,
+        const GEMV_INT_TYPE*RowPtr,
+        GEMV_INT_TYPE nnzR,
+        GEMV_INT_TYPE nthreads);
 
 /**
  *
@@ -75,8 +115,7 @@ void parallel_balanced_get_csrSplitter(
  * @param Vector_Val_Y
  */
 void parallel_balanced_gemv(
-                            GEMV_INT_TYPE        nthreads,
-                            const GEMV_INT_TYPE* csrSplitter,
+                            gemv_Handle_t handle,
                             GEMV_INT_TYPE m,
                             const GEMV_INT_TYPE* RowPtr,
                             const GEMV_INT_TYPE* ColIdx,
@@ -87,14 +126,7 @@ void parallel_balanced_gemv(
 
 /**
  *
- * @param nthreads
- * @param Yid
- * @param Apinter
- * @param Start1
- * @param End1
- * @param Start2
- * @param End2
- * @param csrSplitter
+ * @param handle
  * @param m
  * @param RowPtr
  * @param ColIdx
@@ -103,14 +135,26 @@ void parallel_balanced_gemv(
  * @param Vector_Val_Y
  */
 void parallel_balanced2_gemv(
-        GEMV_INT_TYPE        nthreads,
-        const GEMV_INT_TYPE* Yid,
-        const GEMV_INT_TYPE* Apinter,
-        const GEMV_INT_TYPE* Start1,
-        const GEMV_INT_TYPE* End1,
-        const GEMV_INT_TYPE* Start2,
-        const GEMV_INT_TYPE* End2,
-        const GEMV_INT_TYPE* csrSplitter,
+        const gemv_Handle_t handle,
+        GEMV_INT_TYPE m,
+        const GEMV_INT_TYPE* RowPtr,
+        const GEMV_INT_TYPE* ColIdx,
+        const GEMV_VAL_TYPE* Matrix_Val,
+        const GEMV_VAL_TYPE* Vector_Val_X,
+        GEMV_VAL_TYPE*       Vector_Val_Y);
+
+/**
+ *
+ * @param handle
+ * @param m
+ * @param RowPtr
+ * @param ColIdx
+ * @param Matrix_Val
+ * @param Vector_Val_X
+ * @param Vector_Val_Y
+ */
+void parallel_balanced_gemv_avx2(
+        const gemv_Handle_t handle,
         GEMV_INT_TYPE m,
         const GEMV_INT_TYPE* RowPtr,
         const GEMV_INT_TYPE* ColIdx,

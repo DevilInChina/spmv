@@ -1,23 +1,27 @@
 //
 // Created by kouushou on 2020/11/25.
 //
-#include <gemv.h>
+#include "common_gemv.h"
 
 void parallel_balanced2_gemv(
-        GEMV_INT_TYPE        nthreads,
-        const GEMV_INT_TYPE* Yid,
-        const GEMV_INT_TYPE* Apinter,
-        const GEMV_INT_TYPE* Start1,
-        const GEMV_INT_TYPE* End1,
-        const GEMV_INT_TYPE* Start2,
-        const GEMV_INT_TYPE* End2,
-        const GEMV_INT_TYPE* csrSplitter,
+        const gemv_Handle_t handle,
         GEMV_INT_TYPE m,
         const GEMV_INT_TYPE* RowPtr,
         const GEMV_INT_TYPE* ColIdx,
         const GEMV_VAL_TYPE* Matrix_Val,
         const GEMV_VAL_TYPE* Vector_Val_X,
         GEMV_VAL_TYPE*       Vector_Val_Y) {
+    if(handle->status!=BALANCED2) {
+        return;
+    }
+    int nthreads = handle->nthreads;
+    int *Yid = handle->Yid;
+    int *csrSplitter = handle->csrSplitter;
+    int *Apinter = handle->Apinter;
+    int *Start1 = handle->Start1;
+    int *Start2 = handle->Start2;
+    int *End2 = handle->End2;
+    int *End1 = handle->End1;
 
 #pragma omp parallel default(shared)
     for (int tid = 0; tid < nthreads; tid++)
@@ -66,3 +70,5 @@ void parallel_balanced2_gemv(
     free(Ysum);
     free(Ypartialsum);
 }
+
+
