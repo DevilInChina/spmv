@@ -89,7 +89,8 @@ int main(int argc, char ** argv)
     //int *csrSplitter_normal = (int *)malloc((nthreads+1) * sizeof(int));
     int stridennz = ceil((double)nnzR/(double)nthreads);
 
-#pragma omp parallel for
+    for(int i = 0 ; i < 2 ; ++i);
+#pragma omp parallel default(none) shared(nthreads,stridennz,nnzR,RowPtr,csrSplitter,m)
     for (int tid = 0; tid <= nthreads; tid++)
     {
         // compute partition boundaries by partition of size stride
@@ -282,7 +283,8 @@ int main(int argc, char ** argv)
     gettimeofday(&t1, NULL);
     for (currentiter = 0; currentiter < iter; currentiter++)
     {
-#pragma omp parallel for
+
+#pragma omp parallel default(shared)
         for (int i = 0; i < m; i++)
         {
             float sum = 0;
@@ -313,7 +315,7 @@ int main(int argc, char ** argv)
     gettimeofday(&t1, NULL);
     for (currentiter = 0; currentiter < iter; currentiter++)
     {
-#pragma omp parallel for
+#pragma omp parallel default(shared )
         for (int tid = 0; tid < nthreads; tid++)
         {
             for (int u = csrSplitter[tid]; u < csrSplitter[tid+1]; u++)
@@ -348,10 +350,10 @@ int main(int argc, char ** argv)
     gettimeofday(&t1, NULL);
     for (currentiter = 0; currentiter < iter; currentiter++)
     {
-#pragma omp parallel for
+#pragma omp parallel default(shared)
         for (int tid = 0; tid < nthreads; tid++)
             Y[Yid[tid]] = 0;
-#pragma omp parallel for
+#pragma omp parallel default(shared)
         for (int tid = 0; tid < nthreads; tid++)
         {
             if (Yid[tid] == -1)
