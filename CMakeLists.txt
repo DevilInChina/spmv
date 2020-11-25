@@ -13,6 +13,7 @@ if (OPENMP_FOUND)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif ()
 link_libraries(m)
+file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)       #设置可执行文件的输出目录
 
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)           #设置库文件的输出目录
@@ -21,5 +22,9 @@ SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)           #设置库文件的
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin)
-
-add_executable(gemv src/main.c)
+file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/src_gemv GEMVS)
+add_library(mv SHARED ${GEMVS})
+link_directories(${PROJECT_SOURCE_DIR}/lib)
+link_libraries(mv)
+add_executable(gemv ${PROJECT_SOURCE_DIR}/src/main.c ${PROJECT_SOURCE_DIR}/include/gemv.h)

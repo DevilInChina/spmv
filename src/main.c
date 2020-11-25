@@ -1,12 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-#include <sys/time.h>
-#include <omp.h>
-#include <immintrin.h>
-#include "mmio_highlevel.h"
 
+#include "mmio_highlevel.h"
+#include <gemv.h>
 // sum up 8 single-precision numbers
 float hsum_avx(__m256 in256)
 {
@@ -19,29 +13,6 @@ float hsum_avx(__m256 in256)
     return sum;
 }
 
-int binary_search_right_boundary_kernel(const int *row_pointer,
-                                        const int  key_input,
-                                        const int  size)
-{
-    int start = 0;
-    int stop  = size - 1;
-    int median;
-    int key_median;
-
-    while (stop >= start)
-    {
-        median = (stop + start) / 2;
-
-        key_median = row_pointer[median];
-
-        if (key_input >= key_median)
-            start = median + 1;
-        else
-            stop = median - 1;
-    }
-
-    return start;
-}
 
 int main(int argc, char ** argv)
 {
@@ -85,22 +56,9 @@ int main(int argc, char ** argv)
     //printf("#iter is %i \n", iter);
 
     // find balanced points
-    int *csrSplitter = (int *)malloc((nthreads+1) * sizeof(int));
+    int *csrSplitter ;
     //int *csrSplitter_normal = (int *)malloc((nthreads+1) * sizeof(int));
-    int stridennz = ceil((double)nnzR/(double)nthreads);
-
-    for(int i = 0 ; i < 2 ; ++i);
-#pragma omp parallel default(none) shared(nthreads,stridennz,nnzR,RowPtr,csrSplitter,m)
-    for (int tid = 0; tid <= nthreads; tid++)
-    {
-        // compute partition boundaries by partition of size stride
-        int boundary = tid * stridennz;
-        // clamp partition boundaries to [0, nnzR]
-        boundary = boundary > nnzR ? nnzR : boundary;
-        // binary search
-        csrSplitter[tid] = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
-
-    }
+    parallel_balanced_get_csrSplitter(m,RowPtr,nnzR,nthreads,&csrSplitter);
 
     int *Apinter = (int *)malloc(nthreads * sizeof(int));
     memset(Apinter, 0, nthreads *sizeof(int) );
@@ -253,15 +211,7 @@ int main(int argc, char ** argv)
     int currentiter = 0;
     for (currentiter = 0; currentiter < iter; currentiter++)
     {
-        for (int i = 0; i < m; i++)
-        {
-            float sum = 0;
-            for (int j = RowPtr[i]; j < RowPtr[i + 1]; j++)
-            {
-                sum += Val[j] * X[ColIdx[j]];
-            }
-            Y[i] = sum;
-        }
+        serial_gemv(m,RowPtr,ColIdx,Val,X,Y);
     }
     gettimeofday(&t2, NULL);
     float time_overall_serial = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
@@ -283,17 +233,7 @@ int main(int argc, char ** argv)
     gettimeofday(&t1, NULL);
     for (currentiter = 0; currentiter < iter; currentiter++)
     {
-
-#pragma omp parallel default(shared)
-        for (int i = 0; i < m; i++)
-        {
-            float sum = 0;
-            for (int j = RowPtr[i]; j < RowPtr[i + 1]; j++)
-            {
-                sum += Val[j] * X[ColIdx[j]];
-            }
-            Y[i] = sum;
-        }
+        parallel_gemv(m,RowPtr,ColIdx,Val,X,Y);
     }
     gettimeofday(&t2, NULL);
     float time_overall_parallel = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
@@ -315,19 +255,7 @@ int main(int argc, char ** argv)
     gettimeofday(&t1, NULL);
     for (currentiter = 0; currentiter < iter; currentiter++)
     {
-#pragma omp parallel default(shared )
-        for (int tid = 0; tid < nthreads; tid++)
-        {
-            for (int u = csrSplitter[tid]; u < csrSplitter[tid+1]; u++)
-            {
-                float sum = 0;
-                for (int j = RowPtr[u]; j < RowPtr[u + 1]; j++)
-                {
-                    sum += Val[j] * X[ColIdx[j]];
-                }
-                Y[u] = sum;
-            }
-        }
+        parallel_balanced_gemv(nthreads,csrSplitter,m,RowPtr,ColIdx,Val,X,Y);
     }
     gettimeofday(&t2, NULL);
     float time_overall_parallel_balanced = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
@@ -350,48 +278,11 @@ int main(int argc, char ** argv)
     gettimeofday(&t1, NULL);
     for (currentiter = 0; currentiter < iter; currentiter++)
     {
-#pragma omp parallel default(shared)
-        for (int tid = 0; tid < nthreads; tid++)
-            Y[Yid[tid]] = 0;
-#pragma omp parallel default(shared)
-        for (int tid = 0; tid < nthreads; tid++)
-        {
-            if (Yid[tid] == -1)
-            {
-                for (int u = csrSplitter[tid]; u < csrSplitter[tid+1]; u++)
-                {
-                    float sum = 0;
-                    for (int j = RowPtr[u]; j < RowPtr[u + 1]; j++)
-                    {
-                        sum += Val[j] * X[ColIdx[j]];
-                    }
-                    Y[u] = sum;
-                }
-            }
-            if (Yid[tid] != -1 && Apinter[tid] > 1)
-            {
-                for (int u = Start1[tid]; u < End1[tid]; u++)
-                {
-                    float sum = 0;
-                    for (int j = RowPtr[u]; j < RowPtr[u + 1]; j++)
-                    {
-                        sum += Val[j] * X[ColIdx[j]];
-                    }
-                    Y[u] = sum;
-                }
-            }
-            if (Yid[tid] != -1 && Apinter[tid] <= 1)
-            {
-                Ysum[tid] = 0;
-                Ypartialsum[tid] = 0;
-                for (int j = Start2[tid]; j < End2[tid]; j++)
-                {
-                    Ypartialsum[tid] += Val[j] * X[ColIdx[j]];
-                }
-                Ysum[tid] += Ypartialsum[tid];
-                Y[Yid[tid]] += Ysum[tid];
-            }
-        }
+        parallel_balanced2_gemv(nthreads,Yid,Apinter,
+                                Start1,End1,Start2,End2,
+                                csrSplitter,
+                                m,RowPtr,ColIdx,Val,X,Y
+        );
     }
     gettimeofday(&t2, NULL);
     float time_overall_parallel_omp_balanced_Yid = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
