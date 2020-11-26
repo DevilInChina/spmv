@@ -1,7 +1,7 @@
 # gemv
 some ways to calculate Matrix product vector.
 
-# build
+# Build
 
 ```shell
 mkdir build
@@ -10,3 +10,6 @@ cmake ..
 make
 #and then get executable file at ../bin and libs at ../lib
 ```
+
+# Structure
+

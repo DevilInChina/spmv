@@ -4,7 +4,9 @@ project(gemv C)
 set(CMAKE_C_STANDARD 11)
 
 include_directories(include)
+
 add_compile_options(-mavx -mavx2 -mavx512f -march=native)
+
 find_package(OpenMP REQUIRED)
 if (OPENMP_FOUND)
     MESSAGE("openmp found")
@@ -22,9 +24,13 @@ SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)           #设置库文件的
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${PROJECT_SOURCE_DIR}/bin)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin)
+
 file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
+
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/src_gemv GEMVS)
 add_library(mv SHARED ${GEMVS})
-link_directories(${PROJECT_SOURCE_DIR}/lib)
-link_libraries(mv)
-add_executable(gemv ${PROJECT_SOURCE_DIR}/src/main.c ${PROJECT_SOURCE_DIR}/include/gemv.h)
+
+
+add_executable(gemv ${PROJECT_SOURCE_DIR}/src/samples/main.c)
+
+target_link_libraries(gemv mv)

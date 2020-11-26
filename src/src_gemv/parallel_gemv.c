@@ -1,5 +1,5 @@
 
-#include "common_gemv.h"
+#include <gemv.h>
 void parallel_gemv(GEMV_INT_TYPE m,
                    const GEMV_INT_TYPE*RowPtr,
                    const GEMV_INT_TYPE *ColIdx,
