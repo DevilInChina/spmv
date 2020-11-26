@@ -233,3 +233,70 @@ void parallel_balanced2_get_handle(
     (*handle)->End1 = End1;
     (*handle)->End2 = End2;
 }
+
+float hsum_avx(__m256 in256) {
+    float sum;
+
+    __m256 hsum = _mm256_hadd_ps(in256, in256);
+    hsum = _mm256_add_ps(hsum, _mm256_permute2f128_ps(hsum, hsum, 0x1));
+    _mm_store_ss(&sum, _mm_hadd_ps(_mm256_castps256_ps128(hsum), _mm256_castps256_ps128(hsum)));
+
+    return sum;
+}
+float gemv_s_dotProduct(
+        GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const float *Val,const float *X) {
+    float ret = 0;
+    for(int i = 0 ; i < len ; ++i){
+        ret+=Val[i]*X[indx[i]];
+    }
+    return ret;
+}
+
+float gemv_s_dotProduct_avx2(
+        GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const float *Val,const float *X) {
+    float sum = 0;
+    __m256 res = _mm256_setzero_ps();
+    const int DEPTH = 8;
+    int dif = len;
+    int nloop = dif / DEPTH;
+    int remainder = dif % DEPTH;
+    for (int li = 0,j = 0; li < nloop; li++,j+=DEPTH) {
+
+        __m256 vecv = _mm256_loadu_ps(&Val[j]);
+        __m256i veci = _mm256_loadu_si256((__m256i *) (&indx[j]));
+        __m256 vecx = _mm256_i32gather_ps(X, veci, 4);
+        res = _mm256_fmadd_ps(vecv, vecx, res);
+    }
+    //Y[u] += _mm256_reduce_add_ps(res);
+    sum += hsum_avx(res);
+
+    for (int j = nloop * DEPTH; j < len; ++j) {
+        sum += Val[j] * X[indx[j]];
+    }
+    return sum;
+}
+
+
+float gemv_s_dotProduct_avx512(
+        GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const float *Val,const float *X){
+
+    float sum = 0;
+    __m512 res = _mm512_setzero_ps();
+    int dif = len;
+    const int DEPTH=16;
+    int nloop = dif / DEPTH;
+    int remainder = dif % DEPTH;
+    for (int li = 0,j = 0; li < nloop; li++,j+=DEPTH)
+    {
+        __m512 vecv = _mm512_loadu_ps(&Val[j]);
+        __m512i veci =  _mm512_loadu_si512(&indx[j]);
+        __m512 vecx = _mm512_i32gather_ps (veci, X, 4);
+        res = _mm512_fmadd_ps(vecv, vecx, res);
+    }
+    sum += _mm512_reduce_add_ps(res);
+
+    for (int j = nloop * DEPTH; j < len; j++) {
+        sum += Val[j] * X[indx[j]];
+    }
+    return sum;
+}

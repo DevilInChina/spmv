@@ -2,16 +2,6 @@
 #include "mmio_highlevel.h"
 #include <gemv.h>
 // sum up 8 single-precision numbers
-float hsum_avx(__m256 in256)
-{
-    float sum;
-
-    __m256 hsum = _mm256_hadd_ps(in256, in256);
-    hsum = _mm256_add_ps(hsum, _mm256_permute2f128_ps(hsum, hsum, 0x1));
-    _mm_store_ss(&sum, _mm_hadd_ps( _mm256_castps256_ps128(hsum), _mm256_castps256_ps128(hsum) ) );
-
-    return sum;
-}
 
 
 int main(int argc, char ** argv)
@@ -182,32 +172,7 @@ int main(int argc, char ** argv)
     gettimeofday(&t1, NULL);
     for (currentiter = 0; currentiter < iter; currentiter++)
     {
-#pragma omp parallel for
-        for (int tid = 0; tid < nthreads; tid++)
-        {
-            for (int u = csrSplitter[tid]; u < csrSplitter[tid+1]; u++)
-            {
-                float sum = 0;
-                __m512 res = _mm512_setzero_ps();
-                int dif = RowPtr[u+1] - RowPtr[u];
-                int nloop = dif / 16;
-                int remainder = dif % 16;
-                for (int li = 0; li < nloop; li++)
-                {
-                    int j = RowPtr[u] + li * 16;
-                    __m512 vecv = _mm512_loadu_ps(&Val[j]);
-                    __m512i veci =  _mm512_loadu_si512(&ColIdx[j]);
-                    __m512 vecx = _mm512_i32gather_ps (veci, X, 4);
-                    res = _mm512_fmadd_ps(vecv, vecx, res);
-                }
-                sum += _mm512_reduce_add_ps(res);
-
-                for (int j = RowPtr[u] + nloop * 16; j < RowPtr[u + 1]; j++) {
-                    sum += Val[j] * X[ColIdx[j]];
-                }
-                Y[u] = sum;
-            }
-        }
+        parallel_balanced_gemv_avx512(balanced_handle,m,RowPtr,ColIdx,Val,X,Y);
     }
     gettimeofday(&t2, NULL);
     float time_overall_parallel_avx512 = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
@@ -227,90 +192,8 @@ int main(int argc, char ** argv)
 
 //------------------------------------parallel_omp_balanced_avx2_Yid------------------------------------
     gettimeofday(&t1, NULL);
-    for (currentiter = 0; currentiter < iter; currentiter++)
-    {
-#pragma omp parallel for
-        for (int tid = 0; tid < nthreads; tid++)
-            Y[Yid[tid]] = 0;
-#pragma omp parallel for
-        for (int tid = 0; tid < nthreads; tid++)
-        {
-            if (Yid[tid] == -1)
-            {
-                for (int u = csrSplitter[tid]; u < csrSplitter[tid+1]; u++)
-                {
-                    float sum = 0;
-                    __m256 res = _mm256_setzero_ps();
-                    int dif = RowPtr[u+1] - RowPtr[u];
-                    int nloop = dif / 8;
-                    int remainder = dif % 8;
-                    for (int li = 0; li < nloop; li++)
-                    {
-                        int j = RowPtr[u] + li * 8;
-                        __m256 vecv = _mm256_loadu_ps(&Val[j]);
-                        __m256i veci =  _mm256_loadu_si256((__m256i *)(&ColIdx[j]));
-                        __m256 vecx = _mm256_i32gather_ps(X, veci, 4);
-                        res = _mm256_fmadd_ps(vecv, vecx, res);
-                    }
-                    //Y[u] += _mm256_reduce_add_ps(res);
-                    sum += hsum_avx(res);
-
-                    for (int j = RowPtr[u] + nloop * 8; j < RowPtr[u + 1]; j++) {
-                        sum += Val[j] * X[ColIdx[j]];
-                    }
-                    Y[u] = sum;
-                }
-            }
-            if (Yid[tid] != -1 && Apinter[tid] > 1)
-            {
-                for (int u = Start1[tid]; u < End1[tid]; u++)
-                {
-                    float sum = 0;;
-                    __m256 res = _mm256_setzero_ps();
-                    int dif = RowPtr[u+1] - RowPtr[u];
-                    int nloop = dif / 8;
-                    int remainder = dif % 8;
-                    for (int li = 0; li < nloop; li++)
-                    {
-                        int j = RowPtr[u] + li * 8;
-                        __m256 vecv = _mm256_loadu_ps(&Val[j]);
-                        __m256i veci =  _mm256_loadu_si256((__m256i *)(&ColIdx[j]));
-                        __m256 vecx = _mm256_i32gather_ps(X, veci, 4);
-                        res = _mm256_fmadd_ps(vecv, vecx, res);
-                    }
-                    //Y[u] += _mm256_reduce_add_ps(res);
-                    sum += hsum_avx(res);
-
-                    for (int j = RowPtr[u] + nloop * 8; j < RowPtr[u + 1]; j++) {
-                        sum += Val[j] * X[ColIdx[j]];
-                    }
-                    Y[u] = sum;
-                }
-            }
-            if (Yid[tid] != -1 && Apinter[tid] <= 1)
-            {
-                Ysum[tid] = 0;
-                Ypartialsum[tid] = 0;
-                __m256 res = _mm256_setzero_ps();
-                int dif = End2[tid] - Start2[tid];
-                int nloop = dif / 8;
-                int remainder = dif % 8;
-                for (int j = 0; j < nloop; j++)
-                {
-                    __m256 vecv = _mm256_loadu_ps(&Val[j]);
-                    __m256i veci =  _mm256_loadu_si256((__m256i *)(&ColIdx[j]));
-                    __m256 vecx = _mm256_i32gather_ps(X, veci, 4);
-                    res = _mm256_fmadd_ps(vecv, vecx, res);
-                }
-                Ypartialsum[tid] += hsum_avx(res);
-                for (int j = Start2[tid] + nloop * 8; j < End2[tid]; j++)
-                {
-                    Ypartialsum[tid] += Val[j] * X[ColIdx[j]];
-                }
-                Ysum[tid] += Ypartialsum[tid];
-                Y[Yid[tid]] += Ysum[tid];
-            }
-        }
+    for (currentiter = 0; currentiter < iter; currentiter++) {
+        parallel_balanced2_gemv_avx2(balanced2_handle,m,RowPtr,ColIdx,Val,X,Y);
     }
     gettimeofday(&t2, NULL);
     float time_overall_parallel_avx2_Yid = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
@@ -332,87 +215,7 @@ int main(int argc, char ** argv)
     gettimeofday(&t1, NULL);
     for (currentiter = 0; currentiter < iter; currentiter++)
     {
-        for (int tid = 0; tid < nthreads; tid++)
-            Y[Yid[tid]] = 0;
-#pragma omp parallel for
-        for (int tid = 0; tid < nthreads; tid++)
-        {
-            if (Yid[tid] == -1)
-            {
-                for (int u = csrSplitter[tid]; u < csrSplitter[tid+1]; u++)
-                {
-                    float sum = 0;
-                    __m512 res = _mm512_setzero_ps();
-                    int dif = RowPtr[u+1] - RowPtr[u];
-                    int nloop = dif / 16;
-                    int remainder = dif % 16;
-                    for (int li = 0; li < nloop; li++)
-                    {
-                        int j = RowPtr[u] + li * 16;
-                        __m512 vecv = _mm512_loadu_ps(&Val[j]);
-                        __m512i veci =  _mm512_loadu_si512(&ColIdx[j]);
-                        __m512 vecx = _mm512_i32gather_ps (veci, X, 4);
-                        res = _mm512_fmadd_ps(vecv, vecx, res);
-                    }
-                    sum += _mm512_reduce_add_ps(res);
-
-                    for (int j = RowPtr[u] + nloop * 16; j < RowPtr[u + 1]; j++)
-                    {
-                        sum += Val[j] * X[ColIdx[j]];
-                    }
-                    Y[u] = sum;
-                }
-            }
-            if (Yid[tid] != -1 && Apinter[tid] > 1)
-            {
-                for (int u = Start1[tid]; u < End1[tid]; u++)
-                {
-                    float sum = 0;
-                    __m512 res = _mm512_setzero_ps();
-                    int dif = RowPtr[u+1] - RowPtr[u];
-                    int nloop = dif / 16;
-                    int remainder = dif % 16;
-                    for (int li = 0; li < nloop; li++)
-                    {
-                        int j = RowPtr[u] + li * 16;
-                        __m512 vecv = _mm512_loadu_ps(&Val[j]);
-                        __m512i veci =  _mm512_loadu_si512(&ColIdx[j]);
-                        __m512 vecx = _mm512_i32gather_ps (veci, X, 4);
-                        res = _mm512_fmadd_ps(vecv, vecx, res);
-                    }
-                    sum += _mm512_reduce_add_ps(res);
-
-                    for (int j = RowPtr[u] + nloop * 16; j < RowPtr[u + 1]; j++)
-                    {
-                        sum += Val[j] * X[ColIdx[j]];
-                    }
-                    Y[u] = sum;
-                }
-            }
-            if (Yid[tid] != -1 && Apinter[tid] <= 1)
-            {
-                Ysum[tid] = 0;
-                Ypartialsum[tid] = 0;
-                __m512 res = _mm512_setzero_ps();
-                int dif = End2[tid] - Start2[tid];
-                int nloop = dif / 16;
-                int remainder = dif % 16;
-                for (int j = 0; j < nloop; j++)
-                {
-                    __m512 vecv = _mm512_loadu_ps(&Val[j]);
-                    __m512i veci =  _mm512_loadu_si512((__m512i *)(&ColIdx[j]));
-                    __m512 vecx = _mm512_i32gather_ps(veci,X, 4);
-                    res = _mm512_fmadd_ps(vecv, vecx, res);
-                }
-                Ypartialsum[tid] += _mm512_reduce_add_ps(res);
-                for (int j = Start2[tid] + nloop * 16; j < End2[tid]; j++)
-                {
-                    Ypartialsum[tid] += Val[j] * X[ColIdx[j]];
-                }
-                Ysum[tid] += Ypartialsum[tid];
-                Y[Yid[tid]] += Ysum[tid];
-            }
-        }
+        parallel_balanced2_gemv_avx512(balanced2_handle,m,RowPtr,ColIdx,Val,X,Y);
     }
     gettimeofday(&t2, NULL);
     float time_overall_parallel_avx512_Yid = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
