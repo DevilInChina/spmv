@@ -37,7 +37,7 @@ void gemv_destory_handle(gemv_Handle_t this_handle){
 }
 
 gemv_Handle_t gemv_create_handle(){
-    gemv_Handle_t ret;
+    gemv_Handle_t ret = malloc(sizeof(gemv_Handle));
     gemv_Handle_init(ret);
     return ret;
 }
@@ -70,7 +70,7 @@ int binary_search_right_boundary_kernel(const int *row_pointer,
 
     return start;
 }
-
+#include <stdio.h>
 
 void parallel_balanced_get_handle(
         gemv_Handle_t* handle,
@@ -80,9 +80,9 @@ void parallel_balanced_get_handle(
         GEMV_INT_TYPE nthreads) {
     int *csrSplitter = (int *) malloc((nthreads + 1) * sizeof(int));
     //int *csrSplitter_normal = (int *)malloc((nthreads+1) * sizeof(int));
+
     int stridennz = ceil((double) nnzR / (double) nthreads);
 
-    for (int i = 0; i < 2; ++i);
 #pragma omp parallel default(none) shared(nthreads, stridennz, nnzR, RowPtr, csrSplitter, m)
     for (int tid = 0; tid <= nthreads; tid++) {
         // compute partition boundaries by partition of size stride
@@ -96,6 +96,7 @@ void parallel_balanced_get_handle(
     (*handle)->nthreads = nthreads;
     (*handle)->status = BALANCED;
     (*handle)->csrSplitter = csrSplitter;
+
 }
 void parallel_balanced2_get_handle(
         gemv_Handle_t* handle,
