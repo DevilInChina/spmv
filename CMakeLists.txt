@@ -30,6 +30,8 @@ file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/src_gemv GEMVS)
 add_library(mv ${GEMVS})
 
+target_compile_definitions(mv PRIVATE DOT_AVX2 DOT_AVX512)
+
 
 add_executable(gemv ${PROJECT_SOURCE_DIR}/src/samples/main.c)
 
