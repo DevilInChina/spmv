@@ -15,7 +15,9 @@ int main(int argc, char ** argv)
     //freopen("out.txt","w",stdout); //输出重定向，输出数据将保存在out.txt文件中
     char *filename = argv[1];
     printf ("filename = %s\n", filename);
-
+#ifdef AVC
+    printf("ssss\n");
+#endif
     //read matrix
     int m, n, nnzR, isSymmetric;
 

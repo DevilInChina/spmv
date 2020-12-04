@@ -257,6 +257,7 @@ float gemv_s_dotProduct(
 
 float gemv_s_dotProduct_avx2(
         GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const float *Val,const float *X) {
+#ifdef DOT_AVX2
     float sum = 0;
     __m256 res = _mm256_setzero_ps();
     const int DEPTH = 8;
@@ -277,12 +278,15 @@ float gemv_s_dotProduct_avx2(
         sum += Val[j] * X[indx[j]];
     }
     return sum;
+#else
+    return gemv_s_dotProduct(len,indx,Val,X);
+#endif
 }
 
 
 float gemv_s_dotProduct_avx512(
         GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const float *Val,const float *X){
-
+#ifdef DOT_AVX512
     float sum = 0;
     __m512 res = _mm512_setzero_ps();
     int dif = len;
@@ -302,6 +306,9 @@ float gemv_s_dotProduct_avx512(
         sum += Val[j] * X[indx[j]];
     }
     return sum;
+#else
+    return gemv_s_dotProduct(len,indx,Val,X);
+#endif
 }
 
 void parallel_balanced_gemv_Selected(
