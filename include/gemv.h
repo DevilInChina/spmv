@@ -26,6 +26,9 @@ typedef enum STATUS_GEMV_HANDLE{
 }STATUS_GEMV_HANDLE;
 typedef struct gemv_Handle {
     STATUS_GEMV_HANDLE status;
+
+
+    ///------balanced balanced2------///
     GEMV_INT_TYPE nthreads;
     GEMV_INT_TYPE* csrSplitter;
     GEMV_INT_TYPE* Yid;
@@ -35,11 +38,17 @@ typedef struct gemv_Handle {
     GEMV_INT_TYPE* Start2;
     GEMV_INT_TYPE* End2;
     GEMV_INT_TYPE* Bpinter;
+    ///------balanced balanced2------///
+
+
+    ///---------sell C Sigma---------///
+
+    ///---------sell C Sigma---------///
 }gemv_Handle;
 
 typedef gemv_Handle*  gemv_Handle_t;
 
-float hsum_avx(__m256 in256) ;
+float hsum_s_avx(__m256 in256) ;
 
 float gemv_s_dotProduct(
         GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const float *Val,const float *X);
@@ -49,6 +58,16 @@ float gemv_s_dotProduct_avx2(
 
 float gemv_s_dotProduct_avx512(
         GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const float *Val,const float *X);
+
+
+double gemv_d_dotProduct(
+        GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const double *Val,const double *X) ;
+
+double gemv_d_dotProduct_avx2(
+        GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const double *Val,const double *X) ;
+
+double gemv_d_dotProduct_avx512(
+        GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const double *Val,const double *X);
 
 /**
  * @brief destroy handle, null with doing nothing

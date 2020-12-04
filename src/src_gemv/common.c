@@ -5,10 +5,11 @@
 #include <gemv.h>
 #include <math.h>
 #include <string.h>
-
-void gemv_Handle_init(gemv_Handle_t this_handle){
-    this_handle->status = NONE;
-    this_handle->nthreads = 0;
+/**
+ * @brief init parameters used in balanced and balanced2
+ * @param this_handle
+ */
+void init_Balance_Balance2(gemv_Handle_t this_handle){
     this_handle->csrSplitter = NULL;
     this_handle->Yid = NULL;
     this_handle->Apinter = NULL;
@@ -19,7 +20,15 @@ void gemv_Handle_init(gemv_Handle_t this_handle){
     this_handle->Bpinter = NULL;
 }
 
-void gemv_Handle_clear(gemv_Handle_t this_handle) {
+void init_sell_C_Sigma(gemv_Handle_t this_handle){
+
+}
+
+/**
+ * @brief free parameters used in balanced and balanced2
+ * @param this_handle
+ */
+void clear_Balance_Balance2(gemv_Handle_t this_handle){
     free(this_handle->csrSplitter);
     free(this_handle->Yid);
     free(this_handle->Apinter);
@@ -28,6 +37,19 @@ void gemv_Handle_clear(gemv_Handle_t this_handle) {
     free(this_handle->Start2);
     free(this_handle->End2);
     free(this_handle->Bpinter);
+}
+
+void gemv_Handle_init(gemv_Handle_t this_handle){
+    this_handle->status = NONE;
+    this_handle->nthreads = 0;
+
+    init_Balance_Balance2(this_handle);
+
+}
+
+void gemv_Handle_clear(gemv_Handle_t this_handle) {
+    clear_Balance_Balance2(this_handle);
+
     gemv_Handle_init(this_handle);
 }
 
@@ -237,12 +259,22 @@ void parallel_balanced2_get_handle(
     (*handle)->End2 = End2;
 }
 
-float hsum_avx(__m256 in256) {
+float hsum_s_avx(__m256 in256) {
     float sum;
 
     __m256 hsum = _mm256_hadd_ps(in256, in256);
     hsum = _mm256_add_ps(hsum, _mm256_permute2f128_ps(hsum, hsum, 0x1));
     _mm_store_ss(&sum, _mm_hadd_ps(_mm256_castps256_ps128(hsum), _mm256_castps256_ps128(hsum)));
+
+    return sum;
+}
+
+double hsum_d_avx(__m256d in256){
+    double sum;
+
+    __m256d hsum = _mm256_hadd_pd(in256, in256);
+    hsum = _mm256_add_pd(hsum, _mm256_permute2f128_pd(hsum, hsum, 0x1));
+    _mm_store_sd(&sum, _mm_hadd_pd(_mm256_castpd256_pd128(hsum), _mm256_castpd256_pd128(hsum)));
 
     return sum;
 }
@@ -268,11 +300,11 @@ float gemv_s_dotProduct_avx2(
 
         __m256 vecv = _mm256_loadu_ps(&Val[j]);
         __m256i veci = _mm256_loadu_si256((__m256i *) (&indx[j]));
-        __m256 vecx = _mm256_i32gather_ps(X, veci, 4);
+        __m256 vecx = _mm256_i32gather_ps(X, veci, sizeof(X[0]));
         res = _mm256_fmadd_ps(vecv, vecx, res);
     }
     //Y[u] += _mm256_reduce_add_ps(res);
-    sum += hsum_avx(res);
+    sum += hsum_s_avx(res);
 
     for (int j = nloop * DEPTH; j < len; ++j) {
         sum += Val[j] * X[indx[j]];
@@ -297,7 +329,7 @@ float gemv_s_dotProduct_avx512(
     {
         __m512 vecv = _mm512_loadu_ps(&Val[j]);
         __m512i veci =  _mm512_loadu_si512(&indx[j]);
-        __m512 vecx = _mm512_i32gather_ps (veci, X, 4);
+        __m512 vecx = _mm512_i32gather_ps (veci, X, sizeof(X[0]));
         res = _mm512_fmadd_ps(vecv, vecx, res);
     }
     sum += _mm512_reduce_add_ps(res);
@@ -308,6 +340,74 @@ float gemv_s_dotProduct_avx512(
     return sum;
 #else
     return gemv_s_dotProduct(len,indx,Val,X);
+#endif
+}
+
+
+double gemv_d_dotProduct(
+        GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const double *Val,const double *X) {
+    double ret = 0;
+    for(int i = 0 ; i < len ; ++i){
+        ret+=Val[i]*X[indx[i]];
+    }
+    return ret;
+}
+
+double gemv_d_dotProduct_avx2(
+        GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const double *Val,const double *X) {
+#ifdef DOT_AVX2_CAN
+    double sum = 0;
+    __m256d res = _mm256_setzero_pd();
+    const int DEPTH = 4;
+    int dif = len;
+    int nloop = dif / DEPTH;
+    int remainder = dif % DEPTH;
+    long long high[2]={0,0};
+    for (int li = 0,j = 0; li < nloop; li++,j+=DEPTH) {
+
+        __m256d vecv = _mm256_load_pd(&Val[j]);
+        __m256i veci = _mm256_loadu_si256((__m256i *) (&indx[j]));
+        __m128i vec128i ;//= _mm256_castsi256_si128(veci);
+        __m256d vecx = _mm256_i32gather_pd(X, vec128i, sizeof(X[0]));
+        res = _mm256_fmadd_pd(vecv, vecx, res);
+    }
+    //Y[u] += _mm256_reduce_add_ps(res);
+    sum += hsum_d_avx(res);
+
+    for (int j = nloop * DEPTH; j < len; ++j) {
+        sum += Val[j] * X[indx[j]];
+    }
+    return sum;
+#else
+    return gemv_d_dotProduct(len,indx,Val,X);
+#endif
+}
+
+
+double gemv_d_dotProduct_avx512(
+        GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const double *Val,const double *X){
+#ifdef DOT_AVX512_CAN
+    double sum = 0;
+    __m512d res = _mm512_setzero_pd();
+    int dif = len;
+    const int DEPTH=8;
+    int nloop = dif / DEPTH;
+    int remainder = dif % DEPTH;
+    for (int li = 0,j = 0; li < nloop; li++,j+=DEPTH)
+    {
+        __m512d vecv = _mm512_loadu_pd(&Val[j]);
+        __m256i veci =  _mm256_loadu_si256((__m256i *) (&indx[j]));
+        __m512d vecx = _mm512_i32gather_pd (veci, X, sizeof(X[0]));
+        res = _mm512_fmadd_pd(vecv, vecx, res);
+    }
+    sum += _mm512_reduce_add_pd(res);
+
+    for (int j = nloop * DEPTH; j < len; j++) {
+        sum += Val[j] * X[indx[j]];
+    }
+    return sum;
+#else
+    return gemv_d_dotProduct(len,indx,Val,X);
 #endif
 }
 

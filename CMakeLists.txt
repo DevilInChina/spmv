@@ -36,3 +36,7 @@ target_compile_definitions(mv PRIVATE DOT_AVX2_CAN DOT_AVX512_CAN)
 add_executable(gemv ${PROJECT_SOURCE_DIR}/src/samples/main.c)
 
 target_link_libraries(gemv mv)
+
+add_executable(spmv ${PROJECT_SOURCE_DIR}/src/samples/spmv.c)
+
+target_link_libraries(spmv mv)

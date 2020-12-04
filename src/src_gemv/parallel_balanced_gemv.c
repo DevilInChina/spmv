@@ -12,7 +12,9 @@ void parallel_balanced_gemv(
                             const GEMV_VAL_TYPE* Matrix_Val,
                             const GEMV_VAL_TYPE* Vector_Val_X,
                             GEMV_VAL_TYPE*       Vector_Val_Y) {
-    parallel_balanced_gemv_Selected(handle,m,RowPtr,ColIdx,Matrix_Val,Vector_Val_X,Vector_Val_Y,DOT_NONE);
+    parallel_balanced_gemv_Selected
+    (handle,m,RowPtr,ColIdx,Matrix_Val,
+     Vector_Val_X,Vector_Val_Y,DOT_NONE);
 }
 
 void parallel_balanced_gemv_avx2(
@@ -23,7 +25,9 @@ void parallel_balanced_gemv_avx2(
         const GEMV_VAL_TYPE* Matrix_Val,
         const GEMV_VAL_TYPE* Vector_Val_X,
         GEMV_VAL_TYPE*       Vector_Val_Y) {
-    parallel_balanced_gemv_Selected(handle,m,RowPtr,ColIdx,Matrix_Val,Vector_Val_X,Vector_Val_Y,DOT_AVX2);
+    parallel_balanced_gemv_Selected
+    (handle,m,RowPtr,ColIdx,Matrix_Val,
+     Vector_Val_X,Vector_Val_Y,DOT_AVX2);
 }
 
 
@@ -35,5 +39,7 @@ void parallel_balanced_gemv_avx512(
         const GEMV_VAL_TYPE* Matrix_Val,
         const GEMV_VAL_TYPE* Vector_Val_X,
         GEMV_VAL_TYPE*       Vector_Val_Y) {
-    parallel_balanced_gemv_Selected(handle,m,RowPtr,ColIdx,Matrix_Val,Vector_Val_X,Vector_Val_Y,DOT_AVX512);
+    parallel_balanced_gemv_Selected
+    (handle,m,RowPtr,ColIdx,Matrix_Val,
+     Vector_Val_X,Vector_Val_Y,DOT_AVX512);
 }
