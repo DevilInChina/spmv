@@ -257,7 +257,7 @@ float gemv_s_dotProduct(
 
 float gemv_s_dotProduct_avx2(
         GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const float *Val,const float *X) {
-#ifdef DOT_AVX2
+#ifdef DOT_AVX2_CAN
     float sum = 0;
     __m256 res = _mm256_setzero_ps();
     const int DEPTH = 8;
@@ -286,7 +286,7 @@ float gemv_s_dotProduct_avx2(
 
 float gemv_s_dotProduct_avx512(
         GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const float *Val,const float *X){
-#ifdef DOT_AVX512
+#ifdef DOT_AVX512_CAN
     float sum = 0;
     __m512 res = _mm512_setzero_ps();
     int dif = len;
