@@ -8,7 +8,7 @@
 #endif
 
 #ifndef GEMV_VAL_TYPE
-#define GEMV_VAL_TYPE float
+#define GEMV_VAL_TYPE double
 #endif
 
 
@@ -42,7 +42,8 @@ typedef struct gemv_Handle {
 
 
     ///---------sell C Sigma---------///
-
+    GEMV_INT_TYPE Blos,S,C;
+    GEMV_INT_TYPE *Cmax;
     ///---------sell C Sigma---------///
 }gemv_Handle;
 
@@ -291,7 +292,7 @@ void parallel_balanced2_gemv_avx512(
         GEMV_VAL_TYPE*       Vector_Val_Y);
 
 
-float (*inner__gemv_GetDotProduct(size_t types,DOT_PRODUCT_WAY way))
+GEMV_VAL_TYPE (*inner__gemv_GetDotProduct(size_t types,DOT_PRODUCT_WAY way))
         (GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx,
          const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X);
 #endif

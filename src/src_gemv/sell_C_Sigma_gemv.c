@@ -1,13 +1,36 @@
 //
 // Created by kouushou on 2020/12/4.
 //
-void sell_C_Sigma_get_handle(){
+#include <gemv.h>
+#include <math.h>
+#include <string.h>
+void sell_C_Sigma_get_handle(gemv_Handle_t handle,
+                             GEMV_INT_TYPE S,GEMV_INT_TYPE C,
+                             GEMV_INT_TYPE m,
+                             const GEMV_INT_TYPE*RowPtr,
+                             GEMV_INT_TYPE nnzR,
+                             GEMV_INT_TYPE nthreads){
+    handle->S = S;
+    handle->C = C;
+    handle->Blos = floor((float)m / (float)S);
 
 }
-void sell_C_Sigma_gemv(){
+void sell_C_Sigma_gemv(const gemv_Handle_t handle,
+                       GEMV_INT_TYPE m,
+                       const GEMV_INT_TYPE* RowPtr,
+                       const GEMV_INT_TYPE* ColIdx,
+                       const GEMV_VAL_TYPE* Matrix_Val,
+                       const GEMV_VAL_TYPE* Vector_Val_X,
+                       GEMV_VAL_TYPE*       Vector_Val_Y){
 /*
+    int BloS = handle->Blos;
+    int S = handle->S;
+    int C = handle->C;
+    int *Cmax = handle->Cmax;
+    float *Y_first = (float *)malloc(sizeof(float) * (BloS * S));
     memset (Y_first, 0, sizeof(float) * (BloS * S));
-    memset (Y, 0, sizeof(float) * m);
+    memset (Y_first, 0, sizeof(float) * (BloS * S));
+    int redBloS = m - BloS * S;
     int loca = 0;
     for(int k = 0;k < S/C*BloS;k++)
     {
@@ -27,7 +50,7 @@ void sell_C_Sigma_gemv(){
     }
     for(int i = 0;i < BloS * S;++i)
     {
-        Y[RowSort[i]] = Y_first[i];
+        Vector_Val_Y[RowSort[i]] = Y_first[i];
     }
     if(redBloS != 0)
     {
@@ -35,8 +58,8 @@ void sell_C_Sigma_gemv(){
         {
             float sum = 0;
             sum += Valred[i] * X[Colred[i]];
-            Y[Rowred[i]] += sum;
+            Vector_Val_Y[Rowred[i]] += sum;
         }
     }
-    */
+*/
 }

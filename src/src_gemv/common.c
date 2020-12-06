@@ -92,7 +92,6 @@ int binary_search_right_boundary_kernel(const int *row_pointer,
 
     return start;
 }
-#include <stdio.h>
 
 void parallel_balanced_get_handle(
         gemv_Handle_t* handle,
@@ -344,7 +343,7 @@ float gemv_s_dotProduct_avx512(
 #endif
 }
 
-
+#include <stdio.h>
 double gemv_d_dotProduct(
         GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const double *Val,const double *X) {
     double ret = 0;
@@ -368,7 +367,7 @@ double gemv_d_dotProduct_avx2(
 
         __m256d vecv = _mm256_load_pd(&Val[j]);
         __m256i veci = _mm256_loadu_si256((__m256i *) (&indx[j]));
-        __m128i vec128i ;//= _mm256_castsi256_si128(veci);
+        __m128i vec128i = _mm256_castsi256_si128(veci);
         __m256d vecx = _mm256_i32gather_pd(X, vec128i, sizeof(X[0]));
         res = _mm256_fmadd_pd(vecv, vecx, res);
     }
@@ -413,7 +412,7 @@ double gemv_d_dotProduct_avx512(
 }
 
 
-float (*inner__gemv_GetDotProduct(size_t types,DOT_PRODUCT_WAY way))
+GEMV_VAL_TYPE (*inner__gemv_GetDotProduct(size_t types,DOT_PRODUCT_WAY way))
         (GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx,
          const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X){
     switch (way) {
@@ -443,7 +442,7 @@ void parallel_balanced_gemv_Selected(
     if(handle->status!=BALANCED) {
         return;
     }
-    float (*dot_product)(GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx, const float *Val, const float *X)=
+    GEMV_VAL_TYPE (*dot_product)(GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx, const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X)=
             inner__gemv_GetDotProduct(sizeof(GEMV_VAL_TYPE),way);
 
     const int *csrSplitter = handle->csrSplitter;
@@ -485,7 +484,7 @@ void parallel_balanced2_gemv_Selected(
     int *End2 = handle->End2;
     int *End1 = handle->End1;
 
-    float (*dot_product)(GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx, const float *Val, const float *X)=
+    GEMV_VAL_TYPE (*dot_product)(GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx, const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X)=
     inner__gemv_GetDotProduct(sizeof(GEMV_VAL_TYPE),way);
 
     {

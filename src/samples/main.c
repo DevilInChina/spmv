@@ -24,20 +24,20 @@ int main(int argc, char ** argv)
     mmio_info(&m, &n, &nnzR, &isSymmetric, filename);
     int *RowPtr = (int *)malloc((m+1) * sizeof(int));
     int *ColIdx = (int *)malloc(nnzR * sizeof(int));
-    float *Val    = (float *)malloc(nnzR * sizeof(float));
+    GEMV_VAL_TYPE *Val    = (GEMV_VAL_TYPE *)malloc(nnzR * sizeof(GEMV_VAL_TYPE));
     mmio_data(RowPtr, ColIdx, Val, filename);
     for (int i = 0; i < nnzR; i++)
         Val[i] = 1;
     printf("The order of the rating matrix R is %i by %i, #nonzeros = %i\n",m, n, nnzR);
 
     //create X, Y,Y_golden
-    float *X = (float *)malloc(sizeof(float) * (n+1));
-    float *Y = (float *)malloc(sizeof(float) * (m+1));
-    float *Y_golden = (float *)malloc(sizeof(float) * (m+1));
+    GEMV_VAL_TYPE *X = (GEMV_VAL_TYPE *)malloc(sizeof(GEMV_VAL_TYPE) * (n+1));
+    GEMV_VAL_TYPE *Y = (GEMV_VAL_TYPE *)malloc(sizeof(GEMV_VAL_TYPE) * (m+1));
+    GEMV_VAL_TYPE *Y_golden = (GEMV_VAL_TYPE *)malloc(sizeof(GEMV_VAL_TYPE) * (m+1));
 
-    memset (X, 0, sizeof(float) * (n+1));
-    memset (Y, 0, sizeof(float) * (m+1));
-    memset (Y_golden, 0, sizeof(float) * (m+1));
+    memset (X, 0, sizeof(GEMV_VAL_TYPE) * (n+1));
+    memset (Y, 0, sizeof(GEMV_VAL_TYPE) * (m+1));
+    memset (Y_golden, 0, sizeof(GEMV_VAL_TYPE) * (m+1));
 
     for (int i = 0; i < n; i++)
         X[i] = 1;
@@ -62,8 +62,8 @@ int main(int argc, char ** argv)
         serial_gemv(m,RowPtr,ColIdx,Val,X,Y);
     }
     gettimeofday(&t2, NULL);
-    float time_overall_serial = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
-    float GFlops_serial = 2 * nnzR / time_overall_serial / pow(10,6);
+    GEMV_VAL_TYPE time_overall_serial = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
+    GEMV_VAL_TYPE GFlops_serial = 2 * nnzR / time_overall_serial / pow(10,6);
     int errorcount_serial = 0;
     for (int i = 0; i < m; i++)
         if (Y[i] != Y_golden[i])
@@ -84,8 +84,8 @@ int main(int argc, char ** argv)
         parallel_gemv(m,RowPtr,ColIdx,Val,X,Y);
     }
     gettimeofday(&t2, NULL);
-    float time_overall_parallel = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
-    float GFlops_parallel = 2 * nnzR / time_overall_parallel / pow(10,6);
+    GEMV_VAL_TYPE time_overall_parallel = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
+    GEMV_VAL_TYPE GFlops_parallel = 2 * nnzR / time_overall_parallel / pow(10,6);
     int errorcount_parallel = 0;
     for (int i = 0; i < m; i++)
         if (Y[i] != Y_golden[i])
@@ -112,8 +112,8 @@ int main(int argc, char ** argv)
     }
     gettimeofday(&t2, NULL);
 
-    float time_overall_parallel_balanced = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
-    float GFlops_parallel_balanced = 2 * nnzR / time_overall_parallel_balanced / pow(10,6);
+    GEMV_VAL_TYPE time_overall_parallel_balanced = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
+    GEMV_VAL_TYPE GFlops_parallel_balanced = 2 * nnzR / time_overall_parallel_balanced / pow(10,6);
     int errorcount_parallel_balanced = 0;
     for (int i = 0; i < m; i++)
         if (Y[i] != Y_golden[i])
@@ -141,8 +141,8 @@ int main(int argc, char ** argv)
         );
     }
     gettimeofday(&t2, NULL);
-    float time_overall_parallel_omp_balanced_Yid = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
-    float GFlops_parallel_omp_balanced_Yid = 2 * nnzR / time_overall_parallel_omp_balanced_Yid / pow(10,6);
+    GEMV_VAL_TYPE time_overall_parallel_omp_balanced_Yid = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
+    GEMV_VAL_TYPE GFlops_parallel_omp_balanced_Yid = 2 * nnzR / time_overall_parallel_omp_balanced_Yid / pow(10,6);
     int errorcount_parallel_omp_balanced_Yid = 0;
     for (int i = 0; i < m; i++)
         if (Y[i] != Y_golden[i])
@@ -163,8 +163,8 @@ int main(int argc, char ** argv)
         parallel_balanced_gemv_avx2(balanced_handle,m,RowPtr,ColIdx,Val,X,Y);
     }
     gettimeofday(&t2, NULL);
-    float time_overall_parallel_avx2 = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
-    float GFlops_parallel_avx2 = 2 * nnzR / time_overall_parallel_avx2 / pow(10,6);
+    GEMV_VAL_TYPE time_overall_parallel_avx2 = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
+    GEMV_VAL_TYPE GFlops_parallel_avx2 = 2 * nnzR / time_overall_parallel_avx2 / pow(10,6);
     int errorcount_parallel_avx2 = 0;
     for (int i = 0; i < m; i++)
         if (Y[i] != Y_golden[i])
@@ -185,8 +185,8 @@ int main(int argc, char ** argv)
         parallel_balanced_gemv_avx512(balanced_handle,m,RowPtr,ColIdx,Val,X,Y);
     }
     gettimeofday(&t2, NULL);
-    float time_overall_parallel_avx512 = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
-    float GFlops_parallel_avx512 = 2 * nnzR / time_overall_parallel_avx512 / pow(10,6);
+    GEMV_VAL_TYPE time_overall_parallel_avx512 = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
+    GEMV_VAL_TYPE GFlops_parallel_avx512 = 2 * nnzR / time_overall_parallel_avx512 / pow(10,6);
     int errorcount_parallel_avx512 = 0;
     for (int i = 0; i < m; i++)
         if (Y[i] != Y_golden[i])
@@ -206,8 +206,8 @@ int main(int argc, char ** argv)
         parallel_balanced2_gemv_avx2(balanced2_handle,m,RowPtr,ColIdx,Val,X,Y);
     }
     gettimeofday(&t2, NULL);
-    float time_overall_parallel_avx2_Yid = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
-    float GFlops_parallel_avx2_Yid = 2 * nnzR / time_overall_parallel_avx2_Yid / pow(10,6);
+    GEMV_VAL_TYPE time_overall_parallel_avx2_Yid = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
+    GEMV_VAL_TYPE GFlops_parallel_avx2_Yid = 2 * nnzR / time_overall_parallel_avx2_Yid / pow(10,6);
     int errorcount_parallel_avx2_Yid = 0;
     for (int i = 0; i < m; i++)
         if (Y[i] != Y_golden[i])
@@ -228,8 +228,8 @@ int main(int argc, char ** argv)
         parallel_balanced2_gemv_avx512(balanced2_handle,m,RowPtr,ColIdx,Val,X,Y);
     }
     gettimeofday(&t2, NULL);
-    float time_overall_parallel_avx512_Yid = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
-    float GFlops_parallel_avx512_Yid = 2 * nnzR / time_overall_parallel_avx512_Yid / pow(10,6);
+    GEMV_VAL_TYPE time_overall_parallel_avx512_Yid = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
+    GEMV_VAL_TYPE GFlops_parallel_avx512_Yid = 2 * nnzR / time_overall_parallel_avx512_Yid / pow(10,6);
     int errorcount_parallel_avx512_Yid = 0;
     for (int i = 0; i < m; i++)
         if (Y[i] != Y_golden[i])
