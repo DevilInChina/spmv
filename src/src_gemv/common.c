@@ -472,7 +472,7 @@ void parallel_balanced2_gemv_Selected(
         GEMV_VAL_TYPE*       Vector_Val_Y,
         DOT_PRODUCT_WAY way
 ) {
-    if(handle->status!=BALANCED2) {
+    if (handle->status != BALANCED2) {
         return;
     }
     int nthreads = handle->nthreads;
@@ -484,42 +484,43 @@ void parallel_balanced2_gemv_Selected(
     int *End2 = handle->End2;
     int *End1 = handle->End1;
 
-    GEMV_VAL_TYPE (*dot_product)(GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx, const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X)=
-    inner__gemv_GetDotProduct(sizeof(GEMV_VAL_TYPE),way);
+    GEMV_VAL_TYPE
+    (*dot_product)(GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx, const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X) =
+    inner__gemv_GetDotProduct(sizeof(GEMV_VAL_TYPE), way);
 
-    {
-#pragma omp parallel default(shared)
-        for (int tid = 0; tid < nthreads; tid++)
-            Vector_Val_Y[Yid[tid]] = 0;
-        int *Ysum = malloc(sizeof(int) * nthreads);
-        int *Ypartialsum = malloc(sizeof(int) * nthreads);
-#pragma omp parallel default(shared)
-        for (int tid = 0; tid < nthreads; tid++) {
-            if (Yid[tid] == -1) {
-                for (int u = csrSplitter[tid]; u < csrSplitter[tid + 1]; u++) {
-                    Vector_Val_Y[u] =
-                            dot_product(RowPtr[u+1]-RowPtr[u],
-                                        ColIdx+RowPtr[u],
-                                        Matrix_Val+RowPtr[u],Vector_Val_X);
-                }
-            }
-            if (Yid[tid] != -1 && Apinter[tid] > 1) {
-                for (int u = Start1[tid]; u < End1[tid]; u++) {
-                    Vector_Val_Y[u] =
-                            dot_product(RowPtr[u+1]-RowPtr[u],
-                                        ColIdx+RowPtr[u],
-                                        Matrix_Val+RowPtr[u],Vector_Val_X);
-                }
-            }
-            if (Yid[tid] != -1 && Apinter[tid] <= 1) {
-                Ysum[tid] = 0;
-                Ypartialsum[tid] = dot_product(End2[tid]-Start2[tid],
-                                               ColIdx+Start2[tid],Matrix_Val+Start2[tid],Vector_Val_X);
-                Ysum[tid] += Ypartialsum[tid];
-                Vector_Val_Y[Yid[tid]] += Ysum[tid];
+    for (int tid = 0; tid < nthreads; tid++) {
+        if(Yid[tid]!=-1)
+        Vector_Val_Y[Yid[tid]] = 0;
+    }
+
+    int *Ysum = malloc(sizeof(int) * nthreads);
+    int *Ypartialsum = malloc(sizeof(int) * nthreads);
+#pragma omp parallel for
+    for (int tid = 0; tid < nthreads; tid++) {
+        if (Yid[tid] == -1) {
+            for (int u = csrSplitter[tid]; u < csrSplitter[tid + 1]; u++) {
+                Vector_Val_Y[u] =
+                        dot_product(RowPtr[u + 1] - RowPtr[u],
+                                    ColIdx + RowPtr[u],
+                                    Matrix_Val + RowPtr[u], Vector_Val_X);
             }
         }
-        free(Ysum);
-        free(Ypartialsum);
+        if (Yid[tid] != -1 && Apinter[tid] > 1) {
+            for (int u = Start1[tid]; u < End1[tid]; u++) {
+                Vector_Val_Y[u] =
+                        dot_product(RowPtr[u + 1] - RowPtr[u],
+                                    ColIdx + RowPtr[u],
+                                    Matrix_Val + RowPtr[u], Vector_Val_X);
+            }
+        }
+        if (Yid[tid] != -1 && Apinter[tid] <= 1) {
+            Ysum[tid] = 0;
+            Ypartialsum[tid] = dot_product(End2[tid] - Start2[tid],
+                                           ColIdx + Start2[tid], Matrix_Val + Start2[tid], Vector_Val_X);
+            Ysum[tid] += Ypartialsum[tid];
+            Vector_Val_Y[Yid[tid]] += Ysum[tid];
+        }
     }
+    free(Ysum);
+    free(Ypartialsum);
 }
