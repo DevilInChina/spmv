@@ -258,7 +258,7 @@ void parallel_balanced2_get_handle(
     (*handle)->End1 = End1;
     (*handle)->End2 = End2;
 }
-
+#ifdef DOT_AVX2_CAN
 float hsum_s_avx(__m256 in256) {
     float sum;
 
@@ -271,13 +271,14 @@ float hsum_s_avx(__m256 in256) {
 
 double hsum_d_avx(__m256d in256){
     double sum;
-
     __m256d hsum = _mm256_hadd_pd(in256, in256);
     hsum = _mm256_add_pd(hsum, _mm256_permute2f128_pd(hsum, hsum, 0x1));
     _mm_store_sd(&sum, _mm_hadd_pd(_mm256_castpd256_pd128(hsum), _mm256_castpd256_pd128(hsum)));
 
     return sum;
 }
+#endif
+
 float gemv_s_dotProduct(
         GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const float *Val,const float *X) {
     float ret = 0;
@@ -411,6 +412,24 @@ double gemv_d_dotProduct_avx512(
 #endif
 }
 
+
+float (*inner__gemv_GetDotProduct(size_t types,DOT_PRODUCT_WAY way))
+        (GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx,
+         const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X){
+    switch (way) {
+        case DOT_AVX2:{
+            return types==sizeof(float )?gemv_s_dotProduct_avx2:gemv_d_dotProduct_avx2;
+        }
+        case DOT_AVX512:{
+            return types==sizeof(float )?gemv_s_dotProduct_avx512:gemv_d_dotProduct_avx512;
+        }
+        case DOT_NONE:
+        default:{
+            return types==sizeof(float )?gemv_s_dotProduct:gemv_d_dotProduct;
+        }
+    }
+}
+
 void parallel_balanced_gemv_Selected(
         const gemv_Handle_t handle,
         GEMV_INT_TYPE m,
@@ -424,21 +443,8 @@ void parallel_balanced_gemv_Selected(
     if(handle->status!=BALANCED) {
         return;
     }
-    float (*dot_product)(GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx, const float *Val, const float *X);
-    switch (way) {
-        case DOT_AVX2: {
-            dot_product = gemv_s_dotProduct_avx2;
-        }
-            break;
-        case DOT_AVX512: {
-            dot_product = gemv_s_dotProduct_avx512;
-        }
-            break;
-        default: {
-            dot_product = gemv_s_dotProduct;
-        }
-            break;
-    }
+    float (*dot_product)(GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx, const float *Val, const float *X)=
+            inner__gemv_GetDotProduct(sizeof(GEMV_VAL_TYPE),way);
 
     const int *csrSplitter = handle->csrSplitter;
     const int nthreads = handle->nthreads;
@@ -453,6 +459,7 @@ void parallel_balanced_gemv_Selected(
         }
     }
 }
+
 
 
 
@@ -477,21 +484,10 @@ void parallel_balanced2_gemv_Selected(
     int *Start2 = handle->Start2;
     int *End2 = handle->End2;
     int *End1 = handle->End1;
-    float (*dot_product)(GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx, const float *Val, const float *X);
-    switch (way) {
-        case DOT_AVX2: {
-            dot_product = gemv_s_dotProduct_avx2;
-        }
-            break;
-        case DOT_AVX512: {
-            dot_product = gemv_s_dotProduct_avx512;
-        }
-            break;
-        default: {
-            dot_product = gemv_s_dotProduct;
-        }
-            break;
-    }
+
+    float (*dot_product)(GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx, const float *Val, const float *X)=
+    inner__gemv_GetDotProduct(sizeof(GEMV_VAL_TYPE),way);
+
     {
 #pragma omp parallel default(shared)
         for (int tid = 0; tid < nthreads; tid++)

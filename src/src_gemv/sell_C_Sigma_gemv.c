@@ -1,7 +1,9 @@
 //
 // Created by kouushou on 2020/12/4.
 //
+void sell_C_Sigma_get_handle(){
 
+}
 void sell_C_Sigma_gemv(){
 /*
     memset (Y_first, 0, sizeof(float) * (BloS * S));

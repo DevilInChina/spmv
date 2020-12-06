@@ -48,7 +48,6 @@ typedef struct gemv_Handle {
 
 typedef gemv_Handle*  gemv_Handle_t;
 
-float hsum_s_avx(__m256 in256) ;
 
 float gemv_s_dotProduct(
         GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const float *Val,const float *X);
@@ -291,4 +290,8 @@ void parallel_balanced2_gemv_avx512(
         const GEMV_VAL_TYPE* Vector_Val_X,
         GEMV_VAL_TYPE*       Vector_Val_Y);
 
+
+float (*inner__gemv_GetDotProduct(size_t types,DOT_PRODUCT_WAY way))
+        (GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx,
+         const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X);
 #endif
