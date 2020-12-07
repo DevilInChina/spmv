@@ -33,13 +33,13 @@ file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/src_gemv GEMVS)
 add_library(mv ${GEMVS})
 
-#target_compile_definitions(mv PRIVATE DOT_AVX2_CAN DOT_AVX512_CAN)
+target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
 
 
 add_executable(gemv ${PROJECT_SOURCE_DIR}/src/samples/main.c)
 
 target_link_libraries(gemv mv)
 
-#add_executable(spmv ${PROJECT_SOURCE_DIR}/src/samples/spmv.c)
+add_executable(line ${PROJECT_SOURCE_DIR}/src/samples/test_lineProduct.c)
 
-#target_link_libraries(spmv mv)
+target_link_libraries(line mv)

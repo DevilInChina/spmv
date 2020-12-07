@@ -38,7 +38,9 @@ void clear_Balance_Balance2(gemv_Handle_t this_handle){
     free(this_handle->End2);
     free(this_handle->Bpinter);
 }
+void clear_Sell_C_Sigma(gemv_Handle_t this_handle){
 
+}
 void gemv_Handle_init(gemv_Handle_t this_handle){
     this_handle->status = NONE;
     this_handle->nthreads = 0;
@@ -276,7 +278,10 @@ double hsum_d_avx(__m256d in256){
 
     return sum;
 }
+
 #endif
+
+
 
 float gemv_s_dotProduct(
         GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const float *Val,const float *X) {
@@ -343,7 +348,6 @@ float gemv_s_dotProduct_avx512(
 #endif
 }
 
-#include <stdio.h>
 double gemv_d_dotProduct(
         GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const double *Val,const double *X) {
     double ret = 0;

@@ -8,7 +8,7 @@
 #include <math.h>
 #include <sys/time.h>
 #include <omp.h>
-#include <immintrin.h>
+#include <gemv.h>
 #include "mmio_highlevel.h"
 
 int main(int argc, char ** argv)
@@ -29,19 +29,21 @@ int main(int argc, char ** argv)
     mmio_info(&m, &n, &nnzR, &isSymmetric, filename);
     int *RowPtr = (int *)malloc((m+1) * sizeof(int));
     int *ColIdx = (int *)malloc(nnzR * sizeof(int));
-    float *Val  = (float *)malloc(nnzR * sizeof(float));
+    GEMV_VAL_TYPE *Val  = (GEMV_VAL_TYPE *)malloc(nnzR * sizeof(GEMV_VAL_TYPE));
     mmio_data(RowPtr, ColIdx, Val, filename);
+    sell_C_Sigma_get_handle(NULL,2,4,m,RowPtr,ColIdx,Val,nnzR,nthreads);
+  //  return 0;
     for (int i = 0; i < nnzR; i++)
         Val[i] = 1;
     printf("The order of the rating matrix R is %i by %i, #nonzeros = %i\n",m, n, nnzR);
-    float *X = (float *)malloc(sizeof(float) * n);
-    float *Y = (float *)malloc(sizeof(float) * m);
-    memset (X, 0, sizeof(float) * n);
-    memset (Y, 0, sizeof(float) * m);
+    GEMV_VAL_TYPE *X = (GEMV_VAL_TYPE *)malloc(sizeof(GEMV_VAL_TYPE) * n);
+    GEMV_VAL_TYPE *Y = (GEMV_VAL_TYPE *)malloc(sizeof(GEMV_VAL_TYPE) * m);
+    memset (X, 0, sizeof(GEMV_VAL_TYPE) * n);
+    memset (Y, 0, sizeof(GEMV_VAL_TYPE) * m);
     for (int i = 0; i < n; i++)
         X[i] = 1;
-    float *Y_golden = (float *)malloc(sizeof(float) * m);
-    memset (Y_golden, 0, sizeof(float) * m);
+    GEMV_VAL_TYPE *Y_golden = (GEMV_VAL_TYPE *)malloc(sizeof(GEMV_VAL_TYPE) * m);
+    memset (Y_golden, 0, sizeof(GEMV_VAL_TYPE) * m);
 
     for (int i = 0; i < m; i++)
         for(int j = RowPtr[i]; j < RowPtr[i+1]; j++)
@@ -49,16 +51,16 @@ int main(int argc, char ** argv)
 
     int S = atoi(argv[4]);//S=4
     int C = atoi(argv[5]);//C=2
-    int BloS = floor((float)m / (float)S);//排序的块分成的个数
+    int BloS = floor((GEMV_VAL_TYPE)m / (GEMV_VAL_TYPE)S);//排序的块分成的个数
     printf("BloS=%d\n",BloS);
     int redBloS = m - BloS * S;
     printf("reBloS=%d\n",redBloS);
 
     int nnzred = RowPtr[m] - RowPtr[BloS * S];//剩余非零元个数
-    float *Valred = (float *)malloc(nnzred * sizeof(float));
+    GEMV_VAL_TYPE *Valred = (GEMV_VAL_TYPE *)malloc(nnzred * sizeof(GEMV_VAL_TYPE));
     int *Colred = (int *)malloc(nnzred * sizeof(int));
     int *Rowred = (int *) malloc(sizeof(int) * nnzred);
-    memset (Valred, 0, sizeof(float) * nnzred);
+    memset (Valred, 0, sizeof(GEMV_VAL_TYPE) * nnzred);
     memset (Colred, 0, sizeof(int) * nnzred);
     memset (Rowred, 0, sizeof(int) * nnzred);
     int b = 0;
@@ -129,10 +131,10 @@ int main(int argc, char ** argv)
         }*/
     }
 
-    float **ValBlo = (float **)malloc(sizeof(float *) * (BloS*S));
+    GEMV_VAL_TYPE **ValBlo = (GEMV_VAL_TYPE **)malloc(sizeof(GEMV_VAL_TYPE *) * (BloS*S));
     for (int i = 0; i < (BloS*S); ++i)
     {
-        ValBlo[i] = (float *)malloc(sizeof(float) * max);
+        ValBlo[i] = (GEMV_VAL_TYPE *)malloc(sizeof(GEMV_VAL_TYPE) * max);
     }
     int **ColBlo = (int **)malloc(sizeof(int *) * (BloS*S));
     for (int i = 0; i < (BloS*S); ++i)
@@ -140,7 +142,7 @@ int main(int argc, char ** argv)
         ColBlo[i] = (int *)malloc(sizeof(int) * max);
     }
     int *Cmax = (int *) malloc(sizeof(int) * (S/C*BloS));
-    memset (Cmax, 0, sizeof(float) * (S/C*BloS));
+    memset (Cmax, 0, sizeof(GEMV_VAL_TYPE) * (S/C*BloS));
 
     //存放入二维数组val.col
     for(int k = 0;k < S/C*BloS;k++)
@@ -175,9 +177,9 @@ int main(int argc, char ** argv)
     }
     //printf("%d\n",ATsum);
 
-    float *ValAT = (float *)malloc(ATsum * sizeof(float));
+    GEMV_VAL_TYPE *ValAT = (GEMV_VAL_TYPE *)malloc(ATsum * sizeof(GEMV_VAL_TYPE));
     int *ColAT = (int *)malloc(ATsum * sizeof(int));
-    memset (ValAT, 0, sizeof(float) * ATsum);
+    memset (ValAT, 0, sizeof(GEMV_VAL_TYPE) * ATsum);
     memset (ColAT, 0, sizeof(int) * ATsum);
     int q = 0;
 
@@ -206,15 +208,15 @@ int main(int argc, char ** argv)
 
 //------------------------------------serial------------------------------------
     struct timeval t1, t2;
-    float *Y_first = (float *)malloc(sizeof(float) * (BloS * S));
-    memset (Y_first, 0, sizeof(float) * (BloS * S));
+    GEMV_VAL_TYPE *Y_first = (GEMV_VAL_TYPE *)malloc(sizeof(GEMV_VAL_TYPE) * (BloS * S));
+    memset (Y_first, 0, sizeof(GEMV_VAL_TYPE) * (BloS * S));
     gettimeofday(&t1, NULL);
     int currentiter = 0;
     for (currentiter = 0; currentiter < iter; currentiter++)
     {
 
-        memset (Y_first, 0, sizeof(float) * (BloS * S));
-        memset (Y, 0, sizeof(float) * m);
+        memset (Y_first, 0, sizeof(GEMV_VAL_TYPE) * (BloS * S));
+        memset (Y, 0, sizeof(GEMV_VAL_TYPE) * m);
         int loca = 0;
         for(int k = 0;k < S/C*BloS;k++)
         {
@@ -224,7 +226,7 @@ int main(int argc, char ** argv)
             }
             for(int i = 0;i < C;i++)
             {
-                float sum = 0;
+                GEMV_VAL_TYPE sum = 0;
                 for(int p = 0;p < Cmax[k];p++)
                 {
                     sum += ValAT[C*loca+p*C+i] * X[ColAT[C*loca+p*C+i]];
@@ -240,15 +242,15 @@ int main(int argc, char ** argv)
         {
             for (int i = 0; i < nnzred; i++)
             {
-                float sum = 0;
+                GEMV_VAL_TYPE sum = 0;
                 sum += Valred[i] * X[Colred[i]];
                 Y[Rowred[i]] += sum;
             }
         }
     }
     gettimeofday(&t2, NULL);
-    float time = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
-    float GFlops = 2 * nnzR / time / pow(10,6);
+    GEMV_VAL_TYPE time = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
+    GEMV_VAL_TYPE GFlops = 2 * nnzR / time / pow(10,6);
     int errorcount = 0;
     for (int i = 0; i < m; i++)
         if (Y[i] != Y_golden[i])

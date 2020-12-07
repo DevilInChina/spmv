@@ -1,53 +1,8 @@
-#ifndef __GEMV_H_
-#define __GEMV_H_
+#ifndef GEMV_GEMV_H_
+#define GEMV_GEMV_H_
 #include <omp.h>
+#include "lineProduct.h"
 #include <immintrin.h>
-
-#ifndef GEMV_INT_TYPE
-#define GEMV_INT_TYPE int
-#endif
-
-#ifndef GEMV_VAL_TYPE
-#define GEMV_VAL_TYPE double
-#endif
-
-
-typedef enum DOT_PRODUCT_WAY{
-    DOT_NONE,
-    DOT_AVX2,
-    DOT_AVX512
-}DOT_PRODUCT_WAY;
-
-
-typedef enum STATUS_GEMV_HANDLE{
-    NONE,
-    BALANCED,
-    BALANCED2
-}STATUS_GEMV_HANDLE;
-typedef struct gemv_Handle {
-    STATUS_GEMV_HANDLE status;
-
-
-    ///------balanced balanced2------///
-    GEMV_INT_TYPE nthreads;
-    GEMV_INT_TYPE* csrSplitter;
-    GEMV_INT_TYPE* Yid;
-    GEMV_INT_TYPE* Apinter;
-    GEMV_INT_TYPE* Start1;
-    GEMV_INT_TYPE* End1;
-    GEMV_INT_TYPE* Start2;
-    GEMV_INT_TYPE* End2;
-    GEMV_INT_TYPE* Bpinter;
-    ///------balanced balanced2------///
-
-
-    ///---------sell C Sigma---------///
-    GEMV_INT_TYPE Blos,S,C;
-    GEMV_INT_TYPE *Cmax;
-    ///---------sell C Sigma---------///
-}gemv_Handle;
-
-typedef gemv_Handle*  gemv_Handle_t;
 
 
 float gemv_s_dotProduct(
@@ -295,4 +250,14 @@ void parallel_balanced2_gemv_avx512(
 GEMV_VAL_TYPE (*inner__gemv_GetDotProduct(size_t types,DOT_PRODUCT_WAY way))
         (GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx,
          const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X);
+
+
+void sell_C_Sigma_get_handle(gemv_Handle_t handle,
+                             GEMV_INT_TYPE Times,GEMV_INT_TYPE C,
+                             GEMV_INT_TYPE m,
+                             const GEMV_INT_TYPE*RowPtr,
+                             const GEMV_INT_TYPE*ColIdx,
+                             const GEMV_VAL_TYPE*Matrix_Val,
+                             GEMV_INT_TYPE nnzR,
+                             GEMV_INT_TYPE nthreads);
 #endif
