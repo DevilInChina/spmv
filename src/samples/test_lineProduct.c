@@ -47,11 +47,11 @@ void Test_d_LineProduct(const char*funcName,void (* LineProducts)
 
     int lenC = len;
     //len<<=1;
-    double *X = malloc(sizeof(double )*len);
-    int *indx = malloc(sizeof(int )*len);
-    double *Val = malloc(sizeof(double )*len);
-    double *Y_golden = malloc(sizeof(double )*len);
-    double *Y = malloc(sizeof(double )*len);
+    double *X = aligned_alloc(1024,sizeof(double )*len);
+    int *indx = aligned_alloc(1024,sizeof(int )*len);
+    double *Val = aligned_alloc(1024,sizeof(double )*len);
+    double *Y_golden = aligned_alloc(1024,sizeof(double )*len);
+    double *Y = aligned_alloc(1024,sizeof(double )*len);
     for(int i = 0 ; i < lenC ; ++i){
         indx[i] = lenC-1-i;
         X[i] = i+1;

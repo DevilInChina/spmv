@@ -78,7 +78,7 @@ void sell_C_Sigma_gemv(const gemv_Handle_t handle,
 
 
     {
-#pragma omp parallel shedule(runtime)
+#pragma omp parallel for
         for (int i = handle->banner; i < m; ++i) {
             Vector_Val_Y[i] =
                     dot_product(RowPtr[i + 1] - RowPtr[i],
