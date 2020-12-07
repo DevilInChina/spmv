@@ -21,7 +21,7 @@ int cmp(const void* A,const void* B){
     }
 }
 
-void sell_C_Sigma_get_handle(gemv_Handle_t handle,
+void sell_C_Sigma_get_handle(gemv_Handle_t* handle,
                              GEMV_INT_TYPE Times,GEMV_INT_TYPE C,
                              GEMV_INT_TYPE m,
                              const GEMV_INT_TYPE*RowPtr,
@@ -34,6 +34,13 @@ void sell_C_Sigma_get_handle(gemv_Handle_t handle,
     int total_len = Sigma*len;
     Row_Block_t *rowBlock_ts = NULL;
     Row_Block_t rowBlocks = NULL;
+    *handle = gemv_create_handle();
+
+    (*handle)->nthreads = nthreads;
+    (*handle)->status = STATUS_BALANCED;
+    (*handle)->Sigma = Sigma;
+    (*handle)->C = C;
+    (*handle)->banner = total_len;
     if (total_len > 0) {
         rowBlock_ts = (Row_Block_t *) malloc(sizeof(Row_Block_t) * total_len);
         rowBlocks = (Row_Block_t)malloc(sizeof(struct Row_Block)*total_len);
@@ -47,10 +54,12 @@ void sell_C_Sigma_get_handle(gemv_Handle_t handle,
         //qsort(rowBlock_ts, m, sizeof(Row_Block_t), cmp);
         for(int i = 0 ,I_of_Sigma = 0; i < len ; ++i,I_of_Sigma+=Sigma){
             qsort(rowBlock_ts+I_of_Sigma, Sigma, sizeof(Row_Block_t), cmp);
+
         }
 
+        for(int CBlock = 0 ; CBlock < len ; CBlock+=C){
 
-
+        }
     }
 }
 void sell_C_Sigma_gemv(const gemv_Handle_t handle,
@@ -60,5 +69,21 @@ void sell_C_Sigma_gemv(const gemv_Handle_t handle,
                        const GEMV_VAL_TYPE* Matrix_Val,
                        const GEMV_VAL_TYPE* Vector_Val_X,
                        GEMV_VAL_TYPE*       Vector_Val_Y){
+    if(handle->status != STATUS_SELL_C_SIGMA){
+        return;
+    }
+    GEMV_VAL_TYPE (*dot_product)(GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx, const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X)=
+    inner__gemv_GetDotProduct(sizeof(GEMV_VAL_TYPE),DOT_AVX512);
 
+
+
+    {
+#pragma omp parallel shedule(runtime)
+        for (int i = handle->banner; i < m; ++i) {
+            Vector_Val_Y[i] =
+                    dot_product(RowPtr[i + 1] - RowPtr[i],
+                                ColIdx + RowPtr[i], Matrix_Val + RowPtr[i],
+                                Vector_Val_X);
+        }
+    }
 }

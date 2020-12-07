@@ -252,7 +252,7 @@ GEMV_VAL_TYPE (*inner__gemv_GetDotProduct(size_t types,DOT_PRODUCT_WAY way))
          const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X);
 
 
-void sell_C_Sigma_get_handle(gemv_Handle_t handle,
+void sell_C_Sigma_get_handle(gemv_Handle_t* handle,
                              GEMV_INT_TYPE Times,GEMV_INT_TYPE C,
                              GEMV_INT_TYPE m,
                              const GEMV_INT_TYPE*RowPtr,

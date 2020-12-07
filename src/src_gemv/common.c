@@ -21,7 +21,13 @@ void init_Balance_Balance2(gemv_Handle_t this_handle){
 }
 
 void init_sell_C_Sigma(gemv_Handle_t this_handle){
+    this_handle->Sigma = 0;
+    this_handle->C = 0;
+    this_handle->banner = 0;
 
+    this_handle->ValCSC = NULL;
+    this_handle->ROWCSC = NULL;
+    this_handle->COLCSC = NULL;
 }
 
 /**
@@ -42,7 +48,7 @@ void clear_Sell_C_Sigma(gemv_Handle_t this_handle){
 
 }
 void gemv_Handle_init(gemv_Handle_t this_handle){
-    this_handle->status = NONE;
+    this_handle->status = STATUS_NONE;
     this_handle->nthreads = 0;
 
     init_Balance_Balance2(this_handle);
@@ -117,7 +123,7 @@ void parallel_balanced_get_handle(
     }
     *handle = gemv_create_handle();
     (*handle)->nthreads = nthreads;
-    (*handle)->status = BALANCED;
+    (*handle)->status = STATUS_BALANCED;
     (*handle)->csrSplitter = csrSplitter;
 
 }
@@ -128,7 +134,7 @@ void parallel_balanced2_get_handle(
         GEMV_INT_TYPE nnzR,
         GEMV_INT_TYPE nthreads) {
     parallel_balanced_get_handle(handle, m, RowPtr, nnzR, nthreads);
-    (*handle)->status = BALANCED2;
+    (*handle)->status = STATUS_BALANCED2;
     int *csrSplitter = (*handle)->csrSplitter;
 
     int *Apinter = (int *) malloc(nthreads * sizeof(int));
@@ -443,7 +449,7 @@ void parallel_balanced_gemv_Selected(
         GEMV_VAL_TYPE*       Vector_Val_Y,
         DOT_PRODUCT_WAY way
 ) {
-    if(handle->status!=BALANCED) {
+    if(handle->status != STATUS_BALANCED) {
         return;
     }
     GEMV_VAL_TYPE (*dot_product)(GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx, const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X)=
@@ -476,7 +482,7 @@ void parallel_balanced2_gemv_Selected(
         GEMV_VAL_TYPE*       Vector_Val_Y,
         DOT_PRODUCT_WAY way
 ) {
-    if (handle->status != BALANCED2) {
+    if (handle->status != STATUS_BALANCED2) {
         return;
     }
     int nthreads = handle->nthreads;

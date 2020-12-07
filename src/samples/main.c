@@ -25,15 +25,15 @@ void testForFunctions(const char *functionName,
     int currentiter = 0;
     gemv_Handle_t handle;
     switch (FUNC_WAY) {
-        case NONE: {
+        case STATUS_NONE: {
             handle = NULL;
         }
             break;
-        case BALANCED: {
+        case STATUS_BALANCED: {
             parallel_balanced_get_handle(&handle, m, RowPtr, nnzR, nthreads);
         }
             break;
-        case BALANCED2: {
+        case STATUS_BALANCED2: {
             parallel_balanced2_get_handle(&handle, m, RowPtr, nnzR, nthreads);
         }
             break;
@@ -47,7 +47,7 @@ void testForFunctions(const char *functionName,
     for (currentiter = 0; currentiter < iter; currentiter++) {
         if (handle == NULL) {
             parallel_gemv(m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
-        } else if (FUNC_WAY == BALANCED2) {
+        } else if (FUNC_WAY == STATUS_BALANCED2) {
             parallel_balanced2_gemv_Selected(handle,
                                              m, RowPtr, ColIdx, Matrix_Val,
                                              Vector_Val_X, Vector_Val_Y, PRODUCT_WAY);
@@ -141,7 +141,7 @@ int main(int argc, char ** argv) {
 
 //-----------------------------------parallel_omp-------------------------------------
     testForFunctions("parallel_omp", iter, nthreads, Y_golden, m, RowPtr, ColIdx, Val, X, Y,
-                     DOT_NONE, NONE);
+                     DOT_NONE, STATUS_NONE);
 
 //-----------------------------------parallel_omp_balanced/balanced_Yid_avx2/avx_512-------------------------------------
 
@@ -153,7 +153,7 @@ int main(int argc, char ** argv) {
                       "parallel_omp_balanced_Yid_avx512",
     };
     DOT_PRODUCT_WAY way[3] = {DOT_NONE, DOT_AVX2, DOT_AVX512};
-    STATUS_GEMV_HANDLE Function[2] = {BALANCED, BALANCED2};
+    STATUS_GEMV_HANDLE Function[2] = {STATUS_BALANCED, STATUS_BALANCED2};
     for (int i = 0; i < 6; ++i) {
         testForFunctions(header[i], iter, nthreads, Y_golden, m, RowPtr, ColIdx, Val, X, Y,
                          way[i % 3], Function[i / 3]);
