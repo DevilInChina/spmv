@@ -36,10 +36,16 @@ void gemv_s_lineProduct_4_avx2(const float*Val,const GEMV_INT_TYPE* indx, const 
 
 void gemv_s_lineProduct_8_avx2(const float*Val,const GEMV_INT_TYPE* indx, const float *Vector_X,float *Vector_Y){
 #ifdef DOT_AVX2_CAN
+
     __m256 vecv = _mm256_loadu_ps(&Val[0]);
+
     __m256i veci = _mm256_loadu_si256((__m256i *) (&indx[0]));
     __m256 vecx = _mm256_i32gather_ps(Vector_X, veci, sizeof(Vector_X[0]));
-    _mm256_store_ps(Vector_Y,vecx);
+
+    __m256 vecY = _mm256_mul_ps(vecv,vecx);
+
+    _mm256_store_ps(Vector_Y,vecY);
+
 #else
     gemv_s_lineProduct_8(Val,indx,Vector_X,Vector_Y);
 #endif
@@ -64,9 +70,13 @@ void gemv_s_lineProduct_8_avx512(LINE_S_PRODUCT_PARAMETERS_IN) {
 void gemv_s_lineProduct_16_avx512(LINE_S_PRODUCT_PARAMETERS_IN){
 #ifdef DOT_AVX512_CAN
     __m512 vecv = _mm512_loadu_ps(&Val[0]);
+
     __m512i veci =  _mm512_loadu_si512(&indx[0]);
     __m512 vecx = _mm512_i32gather_ps (veci, Vector_X, sizeof(Vector_X[0]));
-    _mm512_store_ps(Vector_Y,vecx);
+
+    __m512 vecY = _mm512_mul_ps(vecv,vecx);
+
+    _mm512_store_ps(Vector_Y,vecY);
 #else
     for(int i = 0 ; i < 2 ; ++i){
         gemv_s_lineProduct_8_avx2(LINE_PRODUCT_PARAMETERS_CALL(i*8));
@@ -102,12 +112,15 @@ void gemv_d_lineProduct_16(const double*Val,const GEMV_INT_TYPE* indx, const dou
 void gemv_d_lineProduct_4_avx2(const double*Val,const GEMV_INT_TYPE* indx, const double *Vector_X,double *Vector_Y){
 #ifdef DOT_AVX2_CAN
     __m256d vecv = _mm256_load_pd(&Val[0]);
+
     __m256i veci = _mm256_loadu_si256((__m256i *) (&indx[0]));
     __m128i vec128i = _mm256_castsi256_si128(veci);
     __m256d vecx = _mm256_i32gather_pd(Vector_X, vec128i, sizeof(Vector_X[0]));
-    memcpy(Vector_Y,&vecx,sizeof(double )*4);
 
-    *((__m256d*)Vector_Y) = vecx;
+    __m256d vecY = _mm256_mul_pd(vecv,vecx);
+
+    _mm256_store_pd(Vector_Y,vecY);
+
 #else
     gemv_d_lineProduct_4(Val,indx,Vector_X,Vector_Y);
 #endif
@@ -140,9 +153,14 @@ void gemv_d_lineProduct_4_avx512(const double*Val,const GEMV_INT_TYPE* indx, con
 void gemv_d_lineProduct_8_avx512(const double*Val,const GEMV_INT_TYPE* indx, const double *Vector_X,double *Vector_Y) {
 #ifdef DOT_AVX512_CAN
     __m512d vecv = _mm512_loadu_pd(&Val[0]);
+
     __m256i veci = _mm256_loadu_si256((__m256i *) (&indx[0]));
     __m512d vecx = _mm512_i32gather_pd (veci, Vector_X, sizeof(Vector_X[0]));
-    _mm512_store_pd(Vector_Y, vecx);
+
+    __m512d vecY = _mm512_mul_pd(vecv,vecx);
+
+    _mm512_store_pd(Vector_Y, vecY);
+
 #else
     gemv_d_lineProduct_8(Val,indx,Vector_X,Vector_Y);
 #endif
@@ -154,8 +172,6 @@ void gemv_d_lineProduct_16_avx512(LINE_D_PRODUCT_PARAMETERS_IN){
     }
 }
 
-#ifndef LINE_S_PRODUCTS
-#define LINE_S_PRODUCTS
 void (* const Line_s_Products[9])
         (const float*Val,const GEMV_INT_TYPE* indx,
          const float *Vector_X,float *Vector_Y)={
@@ -169,9 +185,7 @@ void (* const Line_s_Products[9])
                 gemv_s_lineProduct_16_avx2,
                 gemv_s_lineProduct_16_avx512,
         };
-#endif
-#ifndef LINE_D_PRODUCTS
-#define LINE_D_PRODUCTS
+
 void (* const Line_d_Products[9])
         (const double*Val,const GEMV_INT_TYPE* indx,
          const double *Vector_X,double *Vector_Y)={
@@ -185,4 +199,25 @@ void (* const Line_d_Products[9])
                 gemv_d_lineProduct_16_avx2,
                 gemv_d_lineProduct_16_avx512,
         };
-#endif
+const char*Line_s_Products_name[9]={
+        "gemv_s_lineProduct_4",
+        "gemv_s_lineProduct_4_avx2",
+        "gemv_s_lineProduct_4_avx512",
+        "gemv_s_lineProduct_8",
+        "gemv_s_lineProduct_8_avx2",
+        "gemv_s_lineProduct_8_avx512",
+        "gemv_s_lineProduct_16",
+        "gemv_s_lineProduct_16_avx2",
+        "gemv_s_lineProduct_16_avx512"
+};
+const char*Line_d_Products_name[9]={
+        "gemv_d_lineProduct_4",
+        "gemv_d_lineProduct_4_avx2",
+        "gemv_d_lineProduct_4_avx512",
+        "gemv_d_lineProduct_8",
+        "gemv_d_lineProduct_8_avx2",
+        "gemv_d_lineProduct_8_avx512",
+        "gemv_d_lineProduct_16",
+        "gemv_d_lineProduct_16_avx2",
+        "gemv_d_lineProduct_16_avx512",
+};

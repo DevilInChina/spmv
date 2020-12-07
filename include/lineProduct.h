@@ -51,4 +51,7 @@ extern
 void (* const Line_d_Products[9])
         (const double*Val,const GEMV_INT_TYPE* indx,
          const double *Vector_X,double *Vector_Y);
+
+extern const char*Line_s_Products_name[9];
+extern const char*Line_d_Products_name[9];
 #endif //GEMV_LINEPRODUCT_H

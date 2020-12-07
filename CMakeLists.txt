@@ -31,7 +31,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin)
 file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/src_gemv GEMVS)
-add_library(mv ${GEMVS})
+
+add_library(mv SHARED ${GEMVS})
 
 target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
 

@@ -1,4 +1,3 @@
-
 #include "mmio_highlevel.h"
 
 #include <stdio.h>
@@ -19,28 +18,30 @@ void testForFunctions(const char *functionName,
                       GEMV_VAL_TYPE*Vector_Val_Y,
                       DOT_PRODUCT_WAY PRODUCT_WAY,
                       STATUS_GEMV_HANDLE FUNC_WAY
-){
+) {
     int nnzR = RowPtr[m] - RowPtr[0];
     struct timeval t1, t2;
     gettimeofday(&t1, NULL);
     int currentiter = 0;
     gemv_Handle_t handle;
     switch (FUNC_WAY) {
-        case NONE:{
+        case NONE: {
             handle = NULL;
-        }break;
-        case BALANCED:{
-            parallel_balanced_get_handle(&handle,m,RowPtr,nnzR,nthreads);
-        }break;
-        case BALANCED2:{
-            parallel_balanced2_get_handle(&handle,m,RowPtr,nnzR,nthreads);
-        }break;
-        default:{
+        }
+            break;
+        case BALANCED: {
+            parallel_balanced_get_handle(&handle, m, RowPtr, nnzR, nthreads);
+        }
+            break;
+        case BALANCED2: {
+            parallel_balanced2_get_handle(&handle, m, RowPtr, nnzR, nthreads);
+        }
+            break;
+        default: {
             printf("error\n");
             break;
         }
     }
-
 
 
     for (currentiter = 0; currentiter < iter; currentiter++) {
@@ -58,7 +59,7 @@ void testForFunctions(const char *functionName,
     }
     gettimeofday(&t2, NULL);
     GEMV_VAL_TYPE time_overall_serial = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / iter;
-    GEMV_VAL_TYPE GFlops_serial = 2 * nnzR / time_overall_serial / pow(10,6);
+    GEMV_VAL_TYPE GFlops_serial = 2 * nnzR / time_overall_serial / pow(10, 6);
     int errorcount_serial = 0;
     for (int i = 0; i < m; i++)
         if (Vector_Val_Y[i] != Y_golden[i])
@@ -66,10 +67,10 @@ void testForFunctions(const char *functionName,
 
     //printf("-=-=-=-=-=-=-=-=-=-=-=-=-=-=serial-=-=-=-=-=-=-=-=-=-=-=-=-=-\n");
     //printf("time_overall_serial = %f\n", time_overall_serial);
-    printf("ErrorCount_%s = %i\n",functionName, errorcount_serial);
-    printf("GFlops_%s = %f\n",functionName, GFlops_serial);
-    if(handle)
-    gemv_destory_handle(handle);
+    printf("ErrorCount_%s = %i\n", functionName, errorcount_serial);
+    printf("GFlops_%s = %f\n", functionName, GFlops_serial);
+    if (handle)
+        gemv_destory_handle(handle);
 }
 
 int main(int argc, char ** argv) {

@@ -5,34 +5,35 @@
 #include <gemv.h>
 #include <stdio.h>
 
-void TestLineProduct(void (* LineProducts)
-        (const GEMV_VAL_TYPE*Val,const GEMV_INT_TYPE* indx,
-         const GEMV_VAL_TYPE *Vector_X,GEMV_VAL_TYPE *Vector_Y),int len,int iter){
-
-    double *X = malloc(sizeof(double )*len);
+void Test_s_LineProduct(const char*funcName,void (* LineProducts)
+        (const float*Val,const GEMV_INT_TYPE* indx,
+         const float *Vector_X,float *Vector_Y),int len,int iter){
+    int lenC = len;
+    //len<<=1;
+    float *X = malloc(sizeof(float )*len);
     int *indx = malloc(sizeof(int )*len);
-    double *Val = malloc(sizeof(double )*len);
-    double *Y_golden = malloc(sizeof(double )*len);
-    double *Y = malloc(sizeof(double )*len);
-    for(int i = 0 ; i < len ; ++i){
-        indx[i] = len-1-i;
-        X[i] = 0.1*i+0.1;
-        Val[i]=0.1*i+0.1;
+    float *Val = malloc(sizeof(float )*len);
+    float *Y_golden = malloc(sizeof(float )*len);
+    float *Y = malloc(sizeof(float )*len);
+    for(int i = 0 ; i < lenC ; ++i){
+        indx[i] = lenC-1-i;
+        X[i] = i+1;
+        Val[i]=i+1;
     }
-    for(int i = 0 ; i < len ; ++i){
+    for(int i = 0 ; i < lenC ; ++i){
         Y_golden[i] = Val[i]*X[indx[i]];
     }
     for(int i = 0 ; i < iter ; ++i){
         LineProducts(Val,indx,X,Y);
     }
     int cnt = 0;
-    for(int i = 0 ; i < len ; ++i){
+    for(int i = 0 ; i < lenC ; ++i){
         if(Y[i]!=Y_golden[i]){
             ++cnt;
             printf("%f %f\n",Y[i],Y_golden[i]);
         }
     }
-    printf("%d\n",cnt);
+    printf("%s_errcnt=  %d in %d\n",funcName,cnt,lenC);
     free(Y_golden);
     free(Val);
     free(Y);
@@ -40,7 +41,46 @@ void TestLineProduct(void (* LineProducts)
     free(X);
 
 }
+void Test_d_LineProduct(const char*funcName,void (* LineProducts)
+        (const double*Val,const GEMV_INT_TYPE* indx,
+         const double *Vector_X,double *Vector_Y),int len,int iter){
 
+    int lenC = len;
+    //len<<=1;
+    double *X = malloc(sizeof(double )*len);
+    int *indx = malloc(sizeof(int )*len);
+    double *Val = malloc(sizeof(double )*len);
+    double *Y_golden = malloc(sizeof(double )*len);
+    double *Y = malloc(sizeof(double )*len);
+    for(int i = 0 ; i < lenC ; ++i){
+        indx[i] = lenC-1-i;
+        X[i] = i+1;
+        Val[i]=i+1;
+    }
+    for(int i = 0 ; i < lenC ; ++i){
+        Y_golden[i] = Val[i]*X[indx[i]];
+    }
+    for(int i = 0 ; i < iter ; ++i){
+        LineProducts(Val,indx,X,Y);
+    }
+    int cnt = 0;
+    for(int i = 0 ; i < lenC ; ++i){
+        if(Y[i]!=Y_golden[i]){
+            ++cnt;
+            printf("%f %f\n",Y[i],Y_golden[i]);
+        }
+    }
+    printf("%s_errcnt=  %d in %d\n",funcName,cnt,lenC);
+    free(Y_golden);
+    free(Val);
+    free(Y);
+    free(indx);
+    free(X);
+
+}
 int main(){
-    TestLineProduct(gemv_d_lineProduct_4_avx2,4,10);
+    for(int i = 0 ; i < 9 ; ++i){
+        Test_d_LineProduct(Line_d_Products_name[i],Line_d_Products[i],4<<(i/3),1 );
+        Test_s_LineProduct(Line_s_Products_name[i],Line_s_Products[i],4<<(i/3),1 );
+    }
 }
