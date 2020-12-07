@@ -25,9 +25,7 @@ void init_sell_C_Sigma(gemv_Handle_t this_handle){
     this_handle->C = 0;
     this_handle->banner = 0;
 
-    this_handle->ValCSC = NULL;
-    this_handle->ROWCSC = NULL;
-    this_handle->COLCSC = NULL;
+    this_handle->C_Blocks = NULL;
 }
 
 /**
@@ -44,19 +42,34 @@ void clear_Balance_Balance2(gemv_Handle_t this_handle){
     free(this_handle->End2);
     free(this_handle->Bpinter);
 }
-void clear_Sell_C_Sigma(gemv_Handle_t this_handle){
 
+void C_Block_destory(C_Block_t this_block){
+    free(this_block->RowIndex);
+    free(this_block->ColIndex);
+    free(this_block->ValT);
+    free(this_block->Y);
 }
+
+void clear_Sell_C_Sigma(gemv_Handle_t this_handle) {
+    int siz = this_handle->banner / (this_handle->C ? this_handle->C : 1);
+    for (int i = 0; i < siz; ++i) {
+        C_Block_destory(this_handle->C_Blocks + i);
+    }
+    free(this_handle->C_Blocks);
+}
+
 void gemv_Handle_init(gemv_Handle_t this_handle){
     this_handle->status = STATUS_NONE;
     this_handle->nthreads = 0;
 
     init_Balance_Balance2(this_handle);
+    init_sell_C_Sigma(this_handle);
 
 }
 
 void gemv_Handle_clear(gemv_Handle_t this_handle) {
     clear_Balance_Balance2(this_handle);
+    clear_Sell_C_Sigma(this_handle);
 
     gemv_Handle_init(this_handle);
 }

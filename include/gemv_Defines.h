@@ -27,6 +27,24 @@ typedef enum STATUS_GEMV_HANDLE{
     STATUS_BALANCED2,
     STATUS_SELL_C_SIGMA
 }STATUS_GEMV_HANDLE;
+
+typedef struct Row_Block {
+    const GEMV_INT_TYPE   *indxBegin;
+    const GEMV_VAL_TYPE   *valBegin;
+    GEMV_INT_TYPE   length;
+    GEMV_INT_TYPE   rowNumber;
+}Row_Block,*Row_Block_t;
+
+typedef struct C_Block{
+    GEMV_INT_TYPE *ColIndex;
+    GEMV_INT_TYPE ld;
+    GEMV_INT_TYPE *RowIndex;
+    GEMV_INT_TYPE C;
+    GEMV_VAL_TYPE *ValT;
+    GEMV_VAL_TYPE *Y;
+}C_Block,*C_Block_t;
+
+
 typedef struct gemv_Handle {
     STATUS_GEMV_HANDLE status;
 
@@ -47,9 +65,7 @@ typedef struct gemv_Handle {
     ///---------sell C Sigma---------///
     GEMV_INT_TYPE Sigma,C;
     GEMV_INT_TYPE banner;
-    GEMV_VAL_TYPE** ValCSC;
-    GEMV_INT_TYPE** COLCSC;
-    GEMV_INT_TYPE** ROWCSC;
+    C_Block_t C_Blocks;
     ///---------sell C Sigma---------///
 }gemv_Handle;
 
