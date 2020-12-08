@@ -2,28 +2,10 @@
 #define GEMV_GEMV_H_
 #include <omp.h>
 #include "lineProduct.h"
+#include "dotProduct.h"
 #include <immintrin.h>
 
 #define ALIGENED_SIZE 32
-
-float gemv_s_dotProduct(
-        GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const float *Val,const float *X);
-
-float gemv_s_dotProduct_avx2(
-        GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const float *Val,const float *X);
-
-float gemv_s_dotProduct_avx512(
-        GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const float *Val,const float *X);
-
-
-double gemv_d_dotProduct(
-        GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const double *Val,const double *X) ;
-
-double gemv_d_dotProduct_avx2(
-        GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const double *Val,const double *X) ;
-
-double gemv_d_dotProduct_avx512(
-        GEMV_INT_TYPE len,const GEMV_INT_TYPE* indx,const double *Val,const double *X);
 
 /**
  * @brief destroy handle, null with doing nothing
@@ -45,39 +27,6 @@ gemv_Handle_t gemv_create_handle();
 void gemv_clear_handle(gemv_Handle_t this_handle);
 
 /**
- * @introduce Simple calculate matrix storage by csr product vector X, result store in Y
- * @author
- * @param m
- * @param RowPtr
- * @param ColIdx
- * @param Matrix_Val
- * @param Vector_Val_X
- * @param Vector_Val_Y
- */
-void serial_gemv(GEMV_INT_TYPE m,
-                 const GEMV_INT_TYPE*RowPtr,
-                 const GEMV_INT_TYPE *ColIdx,
-                 const GEMV_VAL_TYPE*Matrix_Val,
-                 const GEMV_VAL_TYPE*Vector_Val_X,
-                 GEMV_VAL_TYPE*Vector_Val_Y);
-
-/**
- *
- * @param m
- * @param RowPtr
- * @param ColIdx
- * @param Matrix_Val
- * @param Vector_Val_X
- * @param Vector_Val_Y
- */
-void parallel_gemv(GEMV_INT_TYPE m,
-                 const GEMV_INT_TYPE *RowPtr,
-                 const GEMV_INT_TYPE *ColIdx,
-                 const GEMV_VAL_TYPE *Matrix_Val,
-                 const GEMV_VAL_TYPE *Vector_Val_X,
-                 GEMV_VAL_TYPE       *Vector_Val_Y);
-
-/**
  *
  * @param handle
  * @param m
@@ -87,10 +36,10 @@ void parallel_gemv(GEMV_INT_TYPE m,
  */
 void parallel_balanced_get_handle(
         gemv_Handle_t* handle,
-        GEMV_INT_TYPE m,
-        const GEMV_INT_TYPE*RowPtr,
-        GEMV_INT_TYPE nnzR,
-        GEMV_INT_TYPE nthreads);
+        BASIC_INT_TYPE m,
+        const BASIC_INT_TYPE*RowPtr,
+        BASIC_INT_TYPE nnzR,
+        BASIC_INT_TYPE nthreads);
 
 /**
  *
@@ -102,204 +51,151 @@ void parallel_balanced_get_handle(
  */
 void parallel_balanced2_get_handle(
         gemv_Handle_t* handle,
-        GEMV_INT_TYPE m,
-        const GEMV_INT_TYPE*RowPtr,
-        GEMV_INT_TYPE nnzR,
-        GEMV_INT_TYPE nthreads);
+        BASIC_INT_TYPE m,
+        const BASIC_INT_TYPE*RowPtr,
+        BASIC_INT_TYPE nnzR,
+        BASIC_INT_TYPE nthreads);
 
+void sell_C_Sigma_get_handle_Selected(gemv_Handle_t* handle,
+                                      BASIC_INT_TYPE Times, BASIC_INT_TYPE C,
+                                      BASIC_INT_TYPE m,
+                                      const BASIC_INT_TYPE*RowPtr,
+                                      const BASIC_INT_TYPE*ColIdx,
+                                      const void*Matrix_Val,
+                                      BASIC_INT_TYPE nthreads,
+                                      BASIC_SIZE_TYPE size
+) ;
 
-void parallel_balanced_gemv_Selected(
-        const gemv_Handle_t handle,
-        GEMV_INT_TYPE m,
-        const GEMV_INT_TYPE* RowPtr,
-        const GEMV_INT_TYPE* ColIdx,
-        const GEMV_VAL_TYPE* Matrix_Val,
-        const GEMV_VAL_TYPE* Vector_Val_X,
-        GEMV_VAL_TYPE*       Vector_Val_Y,
-        VECTORIZED_WAY way
-);
-
-void parallel_balanced2_gemv_Selected(
-        const gemv_Handle_t handle,
-        GEMV_INT_TYPE m,
-        const GEMV_INT_TYPE* RowPtr,
-        const GEMV_INT_TYPE* ColIdx,
-        const GEMV_VAL_TYPE* Matrix_Val,
-        const GEMV_VAL_TYPE* Vector_Val_X,
-        GEMV_VAL_TYPE*       Vector_Val_Y,
-        VECTORIZED_WAY way
+void sell_C_Sigma_get_handle_s(gemv_Handle_t* handle,
+                               BASIC_INT_TYPE Times, BASIC_INT_TYPE C,
+                               BASIC_INT_TYPE m,
+                               const BASIC_INT_TYPE*RowPtr,
+                               const BASIC_INT_TYPE*ColIdx,
+                               const float *Matrix_Val,
+                               BASIC_INT_TYPE nthreads
 );
 
 
-/**
- *
- * @param handle
- * @param m
- * @param RowPtr
- * @param ColIdx
- * @param Matrix_Val
- * @param Vector_Val_X
- * @param Vector_Val_Y
- */
-void parallel_balanced_gemv(
-                            gemv_Handle_t handle,
-                            GEMV_INT_TYPE m,
-                            const GEMV_INT_TYPE* RowPtr,
-                            const GEMV_INT_TYPE* ColIdx,
-                            const GEMV_VAL_TYPE* Matrix_Val,
-                            const GEMV_VAL_TYPE* Vector_Val_X,
-                            GEMV_VAL_TYPE*Vector_Val_Y);
+void sell_C_Sigma_get_handle_d(gemv_Handle_t* handle,
+                               BASIC_INT_TYPE Times, BASIC_INT_TYPE C,
+                               BASIC_INT_TYPE m,
+                               const BASIC_INT_TYPE*RowPtr,
+                               const BASIC_INT_TYPE*ColIdx,
+                               const double *Matrix_Val,
+                               BASIC_INT_TYPE nthreads
+);
 
-/**
- *
- * @param handle
- * @param m
- * @param RowPtr
- * @param ColIdx
- * @param Matrix_Val
- * @param Vector_Val_X
- * @param Vector_Val_Y
- */
-void parallel_balanced_gemv_avx2(
+
+void spmv_serial_Selected(BASIC_INT_TYPE m,
+                          const BASIC_INT_TYPE*RowPtr,
+                          const BASIC_INT_TYPE *ColIdx,
+                          const void *Matrix_Val,
+                          const void*Vector_Val_X,
+                          void *Vector_Val_Y,
+                          BASIC_SIZE_TYPE size,
+                          VECTORIZED_WAY vectorizedWay);
+
+void spmv_parallel_Selected(BASIC_INT_TYPE m,
+                            const BASIC_INT_TYPE*RowPtr,
+                            const BASIC_INT_TYPE *ColIdx,
+                            const void *Matrix_Val,
+                            const void*Vector_Val_X,
+                            void *Vector_Val_Y,
+                            BASIC_SIZE_TYPE size,
+                            VECTORIZED_WAY vectorizedWay
+);
+
+
+void spmv_parallel_balanced_Selected(
         const gemv_Handle_t handle,
-        GEMV_INT_TYPE m,
-        const GEMV_INT_TYPE* RowPtr,
-        const GEMV_INT_TYPE* ColIdx,
-        const GEMV_VAL_TYPE* Matrix_Val,
-        const GEMV_VAL_TYPE* Vector_Val_X,
-        GEMV_VAL_TYPE*       Vector_Val_Y);
+        BASIC_INT_TYPE m,
+        const BASIC_INT_TYPE* RowPtr,
+        const BASIC_INT_TYPE* ColIdx,
+        const void* Matrix_Val,
+        const void* Vector_Val_X,
+        void*       Vector_Val_Y,
+        BASIC_SIZE_TYPE size,
+        VECTORIZED_WAY way
+        );
 
-
-/**
- *
- * @param handle
- * @param m
- * @param RowPtr
- * @param ColIdx
- * @param Matrix_Val
- * @param Vector_Val_X
- * @param Vector_Val_Y
- */
-void parallel_balanced_gemv_avx512(
+void spmv_parallel_balanced2_Selected(
         const gemv_Handle_t handle,
-        GEMV_INT_TYPE m,
-        const GEMV_INT_TYPE* RowPtr,
-        const GEMV_INT_TYPE* ColIdx,
-        const GEMV_VAL_TYPE* Matrix_Val,
-        const GEMV_VAL_TYPE* Vector_Val_X,
-        GEMV_VAL_TYPE*       Vector_Val_Y);
+        BASIC_INT_TYPE m,
+        const BASIC_INT_TYPE* RowPtr,
+        const BASIC_INT_TYPE* ColIdx,
+        const void* Matrix_Val,
+        const void* Vector_Val_X,
+        void*       Vector_Val_Y,
+        BASIC_SIZE_TYPE size,
+        VECTORIZED_WAY way
+);
 
 
-/**
- *
- * @param handle
- * @param m
- * @param RowPtr
- * @param ColIdx
- * @param Matrix_Val
- * @param Vector_Val_X
- * @param Vector_Val_Y
- */
-void parallel_balanced2_gemv(
-        const gemv_Handle_t handle,
-        GEMV_INT_TYPE m,
-        const GEMV_INT_TYPE* RowPtr,
-        const GEMV_INT_TYPE* ColIdx,
-        const GEMV_VAL_TYPE* Matrix_Val,
-        const GEMV_VAL_TYPE* Vector_Val_X,
-        GEMV_VAL_TYPE*       Vector_Val_Y);
+void spmv_sell_C_Sigma_Selected(const gemv_Handle_t handle,
+                                BASIC_INT_TYPE m,
+                                const BASIC_INT_TYPE* RowPtr,
+                                const BASIC_INT_TYPE* ColIdx,
+                                const void* Matrix_Val,
+                                const void* Vector_Val_X,
+                                void*       Vector_Val_Y,
+                                BASIC_SIZE_TYPE size,
+                                VECTORIZED_WAY way
+);
 
-/**
- *
- * @param handle
- * @param m
- * @param RowPtr
- * @param ColIdx
- * @param Matrix_Val
- * @param Vector_Val_X
- * @param Vector_Val_Y
- */
-void parallel_balanced2_gemv_avx2(
-        const gemv_Handle_t handle,
-        GEMV_INT_TYPE m,
-        const GEMV_INT_TYPE* RowPtr,
-        const GEMV_INT_TYPE* ColIdx,
-        const GEMV_VAL_TYPE* Matrix_Val,
-        const GEMV_VAL_TYPE* Vector_Val_X,
-        GEMV_VAL_TYPE*       Vector_Val_Y);
+typedef void(*spmv_no_handle_s_function)(BASIC_INT_TYPE m,
+                                         const BASIC_INT_TYPE*RowPtr,
+                                         const BASIC_INT_TYPE *ColIdx,
+                                         const float *Matrix_Val,
+                                         const float *Vector_Val_X,
+                                         float *Vector_Val_Y);
 
-/**
- *
- * @param handle
- * @param m
- * @param RowPtr
- * @param ColIdx
- * @param Matrix_Val
- * @param Vector_Val_X
- * @param Vector_Val_Y
- */
-void parallel_balanced2_gemv_avx512(
-        const gemv_Handle_t handle,
-        GEMV_INT_TYPE m,
-        const GEMV_INT_TYPE* RowPtr,
-        const GEMV_INT_TYPE* ColIdx,
-        const GEMV_VAL_TYPE* Matrix_Val,
-        const GEMV_VAL_TYPE* Vector_Val_X,
-        GEMV_VAL_TYPE*       Vector_Val_Y);
+typedef void(*spmv_no_handle_d_function)(BASIC_INT_TYPE m,
+                                         const BASIC_INT_TYPE*RowPtr,
+                                         const BASIC_INT_TYPE *ColIdx,
+                                         const double *Matrix_Val,
+                                         const double *Vector_Val_X,
+                                         double *Vector_Val_Y);
 
 
-GEMV_VAL_TYPE (*inner__gemv_GetDotProduct(size_t types, VECTORIZED_WAY way))
-        (GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx,
-         const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X);
+typedef void(*spmv_handle_s_function)(const gemv_Handle_t handle,
+                                      BASIC_INT_TYPE m,
+                                      const BASIC_INT_TYPE*RowPtr,
+                                      const BASIC_INT_TYPE *ColIdx,
+                                      const float *Matrix_Val,
+                                      const float *Vector_Val_X,
+                                      float *Vector_Val_Y);
+
+typedef void(*spmv_handle_d_function)(const gemv_Handle_t handle,
+                                      BASIC_INT_TYPE m,
+                                      const BASIC_INT_TYPE*RowPtr,
+                                      const BASIC_INT_TYPE *ColIdx,
+                                      const double *Matrix_Val,
+                                      const double *Vector_Val_X,
+                                      double *Vector_Val_Y);
 
 
-void sell_C_Sigma_get_handle(gemv_Handle_t* handle,
-                             GEMV_INT_TYPE Times,GEMV_INT_TYPE C,
-                             GEMV_INT_TYPE m,
-                             const GEMV_INT_TYPE*RowPtr,
-                             const GEMV_INT_TYPE*ColIdx,
-                             const GEMV_VAL_TYPE*Matrix_Val,
-                             GEMV_INT_TYPE nthreads);
-;
-void sell_C_Sigma_gemv_Selected(const gemv_Handle_t handle,
-                                GEMV_INT_TYPE m,
-                                const GEMV_INT_TYPE* RowPtr,
-                                const GEMV_INT_TYPE* ColIdx,
-                                const GEMV_VAL_TYPE* Matrix_Val,
-                                const GEMV_VAL_TYPE* Vector_Val_X,
-                                GEMV_VAL_TYPE*       Vector_Val_Y,
-                                VECTORIZED_WAY way);
+typedef void(*spmv_handle_function)(const gemv_Handle_t handle,
+                                      BASIC_INT_TYPE m,
+                                      const BASIC_INT_TYPE*RowPtr,
+                                      const BASIC_INT_TYPE *ColIdx,
+                                      const void *Matrix_Val,
+                                      const void *Vector_Val_X,
+                                      void *Vector_Val_Y,
+                                      BASIC_SIZE_TYPE size,
+                                      VECTORIZED_WAY vectorizedWay
+                                      );
+extern const spmv_handle_function spmvs[];
 
-void sell_C_Sigma_gemv(const gemv_Handle_t handle,
-                       GEMV_INT_TYPE m,
-                       const GEMV_INT_TYPE* RowPtr,
-                       const GEMV_INT_TYPE* ColIdx,
-                       const GEMV_VAL_TYPE* Matrix_Val,
-                       const GEMV_VAL_TYPE* Vector_Val_X,
-                       GEMV_VAL_TYPE*       Vector_Val_Y);
+FUNC_DECLARES(FUNC_NO_HANDLE_DECLARES,serial);
 
-void sell_C_Sigma_gemv_avx2(const gemv_Handle_t handle,
-                       GEMV_INT_TYPE m,
-                       const GEMV_INT_TYPE* RowPtr,
-                       const GEMV_INT_TYPE* ColIdx,
-                       const GEMV_VAL_TYPE* Matrix_Val,
-                       const GEMV_VAL_TYPE* Vector_Val_X,
-                       GEMV_VAL_TYPE*       Vector_Val_Y);
+FUNC_DECLARES(FUNC_NO_HANDLE_DECLARES,parallel);
 
-void sell_C_Sigma_gemv_avx512(const gemv_Handle_t handle,
-                       GEMV_INT_TYPE m,
-                       const GEMV_INT_TYPE* RowPtr,
-                       const GEMV_INT_TYPE* ColIdx,
-                       const GEMV_VAL_TYPE* Matrix_Val,
-                       const GEMV_VAL_TYPE* Vector_Val_X,
-                       GEMV_VAL_TYPE*       Vector_Val_Y);
+FUNC_DECLARES(FUNC_HANDLE_DECLARES,sell_C_Sigma);
 
-extern void (* const gemv[9])
-        (const gemv_Handle_t handle,
-         GEMV_INT_TYPE m,
-         const GEMV_INT_TYPE* RowPtr,
-         const GEMV_INT_TYPE* ColIdx,
-         const GEMV_VAL_TYPE* Matrix_Val,
-         const GEMV_VAL_TYPE* Vector_Val_X,
-         GEMV_VAL_TYPE*       Vector_Val_Y);
+FUNC_DECLARES(FUNC_HANDLE_DECLARES,parallel_balanced);
+
+FUNC_DECLARES(FUNC_HANDLE_DECLARES,parallel_balanced2);
+
+
+
 #endif

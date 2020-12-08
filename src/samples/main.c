@@ -9,13 +9,13 @@
 // sum up 8 single-precision numbers
 void testForFunctions(const char *functionName,
                       int iter, int nthreads,
-                      const GEMV_VAL_TYPE *Y_golden,
-                      GEMV_INT_TYPE m,
-                      const GEMV_INT_TYPE*RowPtr,
-                      const GEMV_INT_TYPE *ColIdx,
-                      const GEMV_VAL_TYPE*Matrix_Val,
-                      const GEMV_VAL_TYPE*Vector_Val_X,
-                      GEMV_VAL_TYPE*Vector_Val_Y,
+                      const BASIC_VAL_TYPE *Y_golden,
+                      BASIC_INT_TYPE m,
+                      const BASIC_INT_TYPE*RowPtr,
+                      const BASIC_INT_TYPE *ColIdx,
+                      const BASIC_VAL_TYPE*Matrix_Val,
+                      const BASIC_VAL_TYPE*Vector_Val_X,
+                      BASIC_VAL_TYPE*Vector_Val_Y,
                       VECTORIZED_WAY PRODUCT_WAY,
                       STATUS_GEMV_HANDLE FUNC_WAY
 ) {
@@ -35,9 +35,10 @@ void testForFunctions(const char *functionName,
             break;
         case STATUS_BALANCED2: {
             parallel_balanced2_get_handle(&handle, m, RowPtr, nnzR, nthreads);
-        }
+        }break;
         case STATUS_SELL_C_SIGMA:{
-            sell_C_Sigma_get_handle(&handle,4,16,m,RowPtr,ColIdx,Matrix_Val,nnzR);
+            sell_C_Sigma_get_handle_Selected(&handle,4,16,m,RowPtr,
+                                             ColIdx,Matrix_Val,nnzR,sizeof(BASIC_VAL_TYPE));
         }break;
         default: {
             printf("error\n");
@@ -48,14 +49,15 @@ void testForFunctions(const char *functionName,
 
     for (currentiter = 0; currentiter < iter; currentiter++) {
         if (handle == NULL) {
-            parallel_gemv(m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
+            spmv_parallel_Selected(m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y,
+                                   sizeof(BASIC_VAL_TYPE),PRODUCT_WAY);
         } else {
-            gemv[FUNC_WAY*3-3+PRODUCT_WAY](handle,m,RowPtr,ColIdx,Matrix_Val,Vector_Val_X,Vector_Val_Y);
+            spmvs[FUNC_WAY](handle,m,RowPtr,ColIdx,Matrix_Val,Vector_Val_X,Vector_Val_Y,sizeof(BASIC_VAL_TYPE),PRODUCT_WAY);
         }
     }
     gettimeofday(&t2, NULL);
-    GEMV_VAL_TYPE time_overall_serial = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / iter;
-    GEMV_VAL_TYPE GFlops_serial = 2 * nnzR / time_overall_serial / pow(10, 6);
+    BASIC_VAL_TYPE time_overall_serial = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / iter;
+    BASIC_VAL_TYPE GFlops_serial = 2 * nnzR / time_overall_serial / pow(10, 6);
     int errorcount_serial = 0;
     for (int i = 0; i < m; i++)
         if (Vector_Val_Y[i] != Y_golden[i])
@@ -82,20 +84,20 @@ int main(int argc, char ** argv) {
     mmio_info(&m, &n, &nnzR, &isSymmetric, filename);
     int *RowPtr = (int *) aligned_alloc(ALIGENED_SIZE,(m + 1) * sizeof(int));
     int *ColIdx = (int *) aligned_alloc(ALIGENED_SIZE,nnzR * sizeof(int));
-    GEMV_VAL_TYPE *Val = (GEMV_VAL_TYPE *) aligned_alloc(ALIGENED_SIZE,nnzR * sizeof(GEMV_VAL_TYPE));
+    BASIC_VAL_TYPE *Val = (BASIC_VAL_TYPE *) aligned_alloc(ALIGENED_SIZE, nnzR * sizeof(BASIC_VAL_TYPE));
     mmio_data(RowPtr, ColIdx, Val, filename);
     for (int i = 0; i < nnzR; i++)
         Val[i] = 1;
     printf("The order of the rating matrix R is %i by %i, #nonzeros = %i\n", m, n, nnzR);
 
     //create X, Y,Y_golden
-    GEMV_VAL_TYPE *X = (GEMV_VAL_TYPE *) aligned_alloc(ALIGENED_SIZE,sizeof(GEMV_VAL_TYPE) * (n));
-    GEMV_VAL_TYPE *Y = (GEMV_VAL_TYPE *) aligned_alloc(ALIGENED_SIZE,sizeof(GEMV_VAL_TYPE) * (m));
-    GEMV_VAL_TYPE *Y_golden = (GEMV_VAL_TYPE *) malloc(sizeof(GEMV_VAL_TYPE) * (m));
+    BASIC_VAL_TYPE *X = (BASIC_VAL_TYPE *) aligned_alloc(ALIGENED_SIZE, sizeof(BASIC_VAL_TYPE) * (n));
+    BASIC_VAL_TYPE *Y = (BASIC_VAL_TYPE *) aligned_alloc(ALIGENED_SIZE, sizeof(BASIC_VAL_TYPE) * (m));
+    BASIC_VAL_TYPE *Y_golden = (BASIC_VAL_TYPE *) malloc(sizeof(BASIC_VAL_TYPE) * (m));
 
-    memset(X, 0, sizeof(GEMV_VAL_TYPE) * (n));
-    memset(Y, 0, sizeof(GEMV_VAL_TYPE) * (m));
-    memset(Y_golden, 0, sizeof(GEMV_VAL_TYPE) * (m));
+    memset(X, 0, sizeof(BASIC_VAL_TYPE) * (n));
+    memset(Y, 0, sizeof(BASIC_VAL_TYPE) * (m));
+    memset(Y_golden, 0, sizeof(BASIC_VAL_TYPE) * (m));
 
     for (int i = 0; i < n; i++)
         X[i] = 1;
@@ -116,12 +118,12 @@ int main(int argc, char ** argv) {
     gettimeofday(&t1, NULL);
     int currentiter = 0;
     for (currentiter = 0; currentiter < iter; currentiter++) {
-        serial_gemv(m, RowPtr, ColIdx, Val, X, Y);
+        spmv_parallel_Selected(m, RowPtr, ColIdx, Val, X, Y,sizeof(BASIC_VAL_TYPE),VECTOR_NONE);
     }
     gettimeofday(&t2, NULL);
-    GEMV_VAL_TYPE time_overall_serial =
+    BASIC_VAL_TYPE time_overall_serial =
             ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
-    GEMV_VAL_TYPE GFlops_serial = 2 * nnzR / time_overall_serial / pow(10, 6);
+    BASIC_VAL_TYPE GFlops_serial = 2 * nnzR / time_overall_serial / pow(10, 6);
     int errorcount_serial = 0;
     for (int i = 0; i < m; i++)
         if (Y[i] != Y_golden[i])
@@ -135,29 +137,21 @@ int main(int argc, char ** argv) {
     //free(Y);//加一
 //------------------------------------------------------------------------
 
+
 //-----------------------------------parallel_omp-------------------------------------
     testForFunctions("parallel_omp", iter, nthreads, Y_golden, m, RowPtr, ColIdx, Val, X, Y,
-                     DOT_NONE, STATUS_NONE);
+                     VECTOR_NONE, STATUS_NONE);
 
 //-----------------------------------parallel_omp_balanced/balanced_Yid_avx2/avx_512-------------------------------------
 
-    char *header[] = {"parallel_omp_balanced",
-                      "parallel_omp_balanced_avx2",
-                      "parallel_omp_balanced_avx512",
-                      "parallel_omp_balanced_Yid",
-                      "parallel_omp_balanced_Yid_avx2",
-                      "parallel_omp_balanced_Yid_avx512",
-                      "sell_C_Sigma",
-                      "sell_C_Sigma_avx2",
-                      "sell_C_Sigma_avx512",
 
-    };
-    VECTORIZED_WAY way[3] = {DOT_NONE, DOT_AVX2, DOT_AVX512};
+    VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
     STATUS_GEMV_HANDLE Function[3] = {STATUS_BALANCED, STATUS_BALANCED2,STATUS_SELL_C_SIGMA};
     for (int i = 0; i < 9; ++i) {
-        testForFunctions(header[i], iter, nthreads, Y_golden, m, RowPtr, ColIdx, Val, X, Y,
+        testForFunctions(gemv_name[i], iter, nthreads, Y_golden, m, RowPtr, ColIdx, Val, X, Y,
                          way[i % 3], Function[i / 3]);
     }
+
     //free(X);
     free(Y);
     free(Y_golden);

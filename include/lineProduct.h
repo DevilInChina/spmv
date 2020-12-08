@@ -6,32 +6,36 @@
 #define GEMV_LINEPRODUCT_H
 #include "gemv_Defines.h"
 
-extern
-void (* const Line_s_Products[9])
-        (const float*Val,const GEMV_INT_TYPE* indx,
-         const float *Vector_X,float *Vector_Y);
 
-extern
-void (* const Line_d_Products[9])
-        (const double*Val,const GEMV_INT_TYPE* indx,
-         const double *Vector_X,double *Vector_Y);
+void basic_d_lineProduct(BASIC_INT_TYPE length, const double*Val, const BASIC_INT_TYPE* indx,
+                         const double *Vector_X, double *Vector_Y, VECTORIZED_WAY vectorizedWay);
 
-extern const char*Line_s_Products_name[9];
-extern const char*Line_d_Products_name[9];
+void basic_s_lineProduct(BASIC_INT_TYPE length, const float *Val, const BASIC_INT_TYPE* indx,
+                         const float *Vector_X, float *Vector_Y, VECTORIZED_WAY dotProductWay);
 
-void gemv_d_lineProduct(GEMV_INT_TYPE length, const double*Val, const GEMV_INT_TYPE* indx,
-                        const double *Vector_X, double *Vector_Y, VECTORIZED_WAY vectorizedWay);
+void basic_d_lineProduct_set_zero(BASIC_INT_TYPE length, const double*Val, const BASIC_INT_TYPE* indx,
+                                  const double *Vector_X, double *Vector_Y, VECTORIZED_WAY dotProductWay);
 
-void gemv_s_lineProduct(GEMV_INT_TYPE length, const float *Val, const GEMV_INT_TYPE* indx,
-                        const float *Vector_X, float *Vector_Y, VECTORIZED_WAY dotProductWay);
+void basic_s_lineProduct_set_zero(BASIC_INT_TYPE length, const float *Val, const BASIC_INT_TYPE* indx,
+                                  const float *Vector_X, float *Vector_Y, VECTORIZED_WAY dotProductWay);
 
-void gemv_d_lineProduct_set_zero(GEMV_INT_TYPE length, const double*Val, const GEMV_INT_TYPE* indx,
-                                 const double *Vector_X, double *Vector_Y, VECTORIZED_WAY dotProductWay);
+void basic_s_gather(BASIC_INT_TYPE length, const void *Val, const BASIC_INT_TYPE*indx, void *Vector_Y, VECTORIZED_WAY vec);
 
-void gemv_s_lineProduct_set_zero(GEMV_INT_TYPE length, const float *Val, const GEMV_INT_TYPE* indx,
-                                 const float *Vector_X, float *Vector_Y, VECTORIZED_WAY dotProductWay);
+void basic_d_gather(BASIC_INT_TYPE length, const void *Val, const BASIC_INT_TYPE*indx, void *Vector_Y, VECTORIZED_WAY vec);
 
-void gemv_s_gather(GEMV_INT_TYPE length,const float *Val,const GEMV_INT_TYPE*indx,float *Vector_Y);
+typedef void (*gather_function)(BASIC_INT_TYPE length, const void *Val, const BASIC_INT_TYPE*indx,
+                                void *Vector_Y, VECTORIZED_WAY vec);
 
-void gemv_d_gather(GEMV_INT_TYPE length,const double *Val,const GEMV_INT_TYPE*indx,double *Vector_Y);
+typedef void (*line_d_product_function)(BASIC_INT_TYPE length, const double*Val, const BASIC_INT_TYPE* indx,
+                                        const double *Vector_X, double *Vector_Y);
+
+typedef void (*line_s_product_function)(BASIC_INT_TYPE length, const float *Val, const BASIC_INT_TYPE* indx,
+                                        const float *Vector_X, float *Vector_Y);
+
+typedef void (*line_product_function)(BASIC_INT_TYPE length, const void *Val, const BASIC_INT_TYPE* indx,
+                                      const void *Vector_X, void *Vector_Y, VECTORIZED_WAY vec);
+
+line_product_function inner_basic_GetLineProduct(BASIC_SIZE_TYPE types);
+
+gather_function inner_basic_GetGather(BASIC_SIZE_TYPE types);
 #endif //GEMV_LINEPRODUCT_H

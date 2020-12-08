@@ -8,7 +8,7 @@
 #define ALIEN 32
 
 void Test_s_LineProduct(const char*funcName,void (* LineProducts)
-        (const float*Val,const GEMV_INT_TYPE* indx,
+        (const float*Val,const BASIC_INT_TYPE* indx,
          const float *Vector_X,float *Vector_Y),int len,int iter){
     int lenC = len;
     //len<<=1;
@@ -45,7 +45,7 @@ void Test_s_LineProduct(const char*funcName,void (* LineProducts)
 
 }
 void Test_d_LineProduct(const char*funcName,void (* LineProducts)
-        (const double*Val,const GEMV_INT_TYPE* indx,
+        (const double*Val,const BASIC_INT_TYPE* indx,
          const double *Vector_X,double *Vector_Y),int len,int iter){
 
     int lenC = len;
