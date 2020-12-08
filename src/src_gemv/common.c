@@ -435,7 +435,7 @@ double gemv_d_dotProduct_avx512(
 }
 
 
-GEMV_VAL_TYPE (*inner__gemv_GetDotProduct(size_t types,DOT_PRODUCT_WAY way))
+GEMV_VAL_TYPE (*inner__gemv_GetDotProduct(size_t types, VECTORIZED_WAY way))
         (GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx,
          const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X){
     switch (way) {
@@ -460,7 +460,7 @@ void parallel_balanced_gemv_Selected(
         const GEMV_VAL_TYPE* Matrix_Val,
         const GEMV_VAL_TYPE* Vector_Val_X,
         GEMV_VAL_TYPE*       Vector_Val_Y,
-        DOT_PRODUCT_WAY way
+        VECTORIZED_WAY way
 ) {
     if(handle->status != STATUS_BALANCED) {
         return;
@@ -493,7 +493,7 @@ void parallel_balanced2_gemv_Selected(
         const GEMV_VAL_TYPE* Matrix_Val,
         const GEMV_VAL_TYPE* Vector_Val_X,
         GEMV_VAL_TYPE*       Vector_Val_Y,
-        DOT_PRODUCT_WAY way
+        VECTORIZED_WAY way
 ) {
     if (handle->status != STATUS_BALANCED2) {
         return;
@@ -547,3 +547,76 @@ void parallel_balanced2_gemv_Selected(
     free(Ysum);
     free(Ypartialsum);
 }
+
+
+
+void sell_C_Sigma_gemv_Selected(const gemv_Handle_t handle,
+                                GEMV_INT_TYPE m,
+                                const GEMV_INT_TYPE* RowPtr,
+                                const GEMV_INT_TYPE* ColIdx,
+                                const GEMV_VAL_TYPE* Matrix_Val,
+                                const GEMV_VAL_TYPE* Vector_Val_X,
+                                GEMV_VAL_TYPE*       Vector_Val_Y,
+                                VECTORIZED_WAY way
+){
+    if(handle->status != STATUS_SELL_C_SIGMA){
+        return;
+    }
+    GEMV_VAL_TYPE (*dot_product)(GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx, const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X)=
+    inner__gemv_GetDotProduct(sizeof(GEMV_VAL_TYPE),way);
+    if(handle->banner>0) {
+        int C = handle->C;
+        int Sigma = handle->Sigma;
+        C_Block_t cBlocks = handle->C_Blocks;
+        int length = m / Sigma;
+        int C_times = Sigma / C;
+        memset(Vector_Val_Y, 0, sizeof(GEMV_VAL_TYPE) * m);
+
+#pragma omp parallel for
+        for (int i = 0; i < length; ++i) {/// sigma
+            int SigmaBlock = i * C_times;
+
+            for (int j = 0; j < C_times; ++j) {
+                memset(cBlocks[j + SigmaBlock].Y, 0, sizeof(GEMV_VAL_TYPE) * cBlocks[j + SigmaBlock].C);
+                for (int k = 0, C_Pack = 0; k < cBlocks[j + SigmaBlock].ld; ++k, C_Pack += C) {
+                    gemv_d_lineProduct(C, cBlocks[j + SigmaBlock].ValT + C_Pack,
+                                       cBlocks[j + SigmaBlock].ColIndex + C_Pack,
+                                       Vector_Val_X, cBlocks[j + SigmaBlock].Y, way);
+                }
+                gemv_d_gather(cBlocks[j + SigmaBlock].C,
+                              cBlocks[j + SigmaBlock].Y,
+                              cBlocks[j + SigmaBlock].RowIndex, Vector_Val_Y);
+            }
+        }
+    }
+
+    {
+#pragma omp parallel for
+        for (int i = handle->banner; i < m; ++i) {
+            Vector_Val_Y[i] =
+                    dot_product(RowPtr[i + 1] - RowPtr[i],
+                                ColIdx + RowPtr[i], Matrix_Val + RowPtr[i],
+                                Vector_Val_X);
+        }
+    }
+}
+
+void (* const gemv[9])
+        (const gemv_Handle_t handle,
+         GEMV_INT_TYPE m,
+         const GEMV_INT_TYPE* RowPtr,
+         const GEMV_INT_TYPE* ColIdx,
+         const GEMV_VAL_TYPE* Matrix_Val,
+         const GEMV_VAL_TYPE* Vector_Val_X,
+         GEMV_VAL_TYPE*       Vector_Val_Y)={
+                parallel_balanced_gemv,
+                parallel_balanced_gemv_avx2,
+                parallel_balanced_gemv_avx512,
+                parallel_balanced2_gemv,
+                parallel_balanced2_gemv_avx2,
+                parallel_balanced2_gemv_avx512,
+                sell_C_Sigma_gemv,
+                sell_C_Sigma_gemv_avx2,
+                sell_C_Sigma_gemv_avx512,
+        };
+

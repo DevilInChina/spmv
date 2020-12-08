@@ -14,11 +14,11 @@
 #endif
 
 
-typedef enum DOT_PRODUCT_WAY{
+typedef enum VECTORIZED_WAY{
     DOT_NONE,
     DOT_AVX2,
     DOT_AVX512
-}DOT_PRODUCT_WAY;
+}VECTORIZED_WAY;
 
 
 typedef enum STATUS_GEMV_HANDLE{

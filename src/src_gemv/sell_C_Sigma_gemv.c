@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #define MAX(a,b) ((a)>(b)?(a):(b))
-#define ALIGENED_SIZE 32
 
 void C_Block_init(C_Block_t this_block,int C,const GEMV_INT_TYPE *RowPtr,Row_Block_t *rowBlock) {
     int maxs = 0;
@@ -61,11 +60,10 @@ void sell_C_Sigma_get_handle(gemv_Handle_t* handle,
                              const GEMV_INT_TYPE*RowPtr,
                              const GEMV_INT_TYPE*ColIdx,
                              const GEMV_VAL_TYPE*Matrix_Val,
-                             GEMV_INT_TYPE nnzR,
                              GEMV_INT_TYPE nthreads) {
     GEMV_INT_TYPE Sigma = C * Times;
     int len = m / Sigma;
-    int total_len = Sigma*len;
+    int banner = Sigma * len;
     Row_Block_t *rowBlock_ts = NULL;
     Row_Block_t rowBlocks = NULL;
     *handle = gemv_create_handle();
@@ -74,12 +72,12 @@ void sell_C_Sigma_get_handle(gemv_Handle_t* handle,
     (*handle)->status = STATUS_BALANCED;
     (*handle)->Sigma = Sigma;
     (*handle)->C = C;
-    (*handle)->banner = total_len;
+    (*handle)->banner = banner;
 
-    if (total_len > 0) {
-        rowBlock_ts = (Row_Block_t *) malloc(sizeof(Row_Block_t) * total_len);
-        rowBlocks = (Row_Block_t) malloc(sizeof(struct Row_Block) * total_len);
-        for (int i = 0; i < total_len; ++i) {
+    if (banner > 0) {
+        rowBlock_ts = (Row_Block_t *) malloc(sizeof(Row_Block_t) * banner);
+        rowBlocks = (Row_Block_t) malloc(sizeof(struct Row_Block) * banner);
+        for (int i = 0; i < banner; ++i) {
             rowBlocks[i].length = RowPtr[i + 1] - RowPtr[i];
             rowBlocks[i].indxBegin = ColIdx + RowPtr[i];
             rowBlocks[i].valBegin = Matrix_Val + RowPtr[i];
@@ -100,6 +98,8 @@ void sell_C_Sigma_get_handle(gemv_Handle_t* handle,
         }
         free(rowBlock_ts);
         free(rowBlocks);
+    }else{
+        (*handle)->banner = 0;
     }
 
 }
@@ -107,49 +107,34 @@ void sell_C_Sigma_get_handle(gemv_Handle_t* handle,
 
 
 void sell_C_Sigma_gemv(const gemv_Handle_t handle,
+                                GEMV_INT_TYPE m,
+                                const GEMV_INT_TYPE* RowPtr,
+                                const GEMV_INT_TYPE* ColIdx,
+                                const GEMV_VAL_TYPE* Matrix_Val,
+                                const GEMV_VAL_TYPE* Vector_Val_X,
+                                GEMV_VAL_TYPE*       Vector_Val_Y
+){
+    sell_C_Sigma_gemv_Selected(handle,m,RowPtr,ColIdx,Matrix_Val,Vector_Val_X,Vector_Val_Y,DOT_NONE);
+}
+
+void sell_C_Sigma_gemv_avx2(const gemv_Handle_t handle,
                        GEMV_INT_TYPE m,
                        const GEMV_INT_TYPE* RowPtr,
                        const GEMV_INT_TYPE* ColIdx,
                        const GEMV_VAL_TYPE* Matrix_Val,
                        const GEMV_VAL_TYPE* Vector_Val_X,
-                       GEMV_VAL_TYPE*       Vector_Val_Y){
-    if(handle->status != STATUS_SELL_C_SIGMA){
-        return;
-    }
-    GEMV_VAL_TYPE (*dot_product)(GEMV_INT_TYPE len, const GEMV_INT_TYPE *indx, const GEMV_VAL_TYPE *Val, const GEMV_VAL_TYPE *X)=
-    inner__gemv_GetDotProduct(sizeof(GEMV_VAL_TYPE),DOT_AVX512);
+                       GEMV_VAL_TYPE*       Vector_Val_Y
+){
+    sell_C_Sigma_gemv_Selected(handle,m,RowPtr,ColIdx,Matrix_Val,Vector_Val_X,Vector_Val_Y,DOT_AVX2);
+}
 
-    int C = handle->C;
-    int Sigma = handle->Sigma;
-    C_Block_t cBlocks = handle->C_Blocks;
-    int length = m/Sigma;
-    int C_times = Sigma/C;
-    GEMV_VAL_TYPE * Y_temp = (GEMV_VAL_TYPE*)aligned_alloc(ALIGENED_SIZE,sizeof(GEMV_VAL_TYPE)*C*length);
-    memset(Y_temp,0,sizeof(GEMV_VAL_TYPE)*C*length);
-    {
-#pragma omp parallel for
-        for (int i = 0; i < length; ++i) {/// sigma
-            int SigmaBlock = i*C_times;
-
-            for(int j = 0 ; j < C_times ; ++j){
-                memset(cBlocks->Y,0,sizeof(GEMV_VAL_TYPE)*cBlocks[j+SigmaBlock].ld);
-                for(int k = 0,C_Pack = 0 ; k < cBlocks[j+SigmaBlock].ld ; ++k,C_Pack+=C){
-                    gemv_d_lineProduct(C,cBlocks->ValT+C_Pack,
-                                       cBlocks->ColIndex+C_Pack,
-                                       Vector_Val_X,cBlocks->Y,DOT_AVX512);
-                }
-
-            }
-        }
-    }
-    free(Y_temp);
-    {
-#pragma omp parallel for
-        for (int i = handle->banner; i < m; ++i) {
-            Vector_Val_Y[i] =
-                    dot_product(RowPtr[i + 1] - RowPtr[i],
-                                ColIdx + RowPtr[i], Matrix_Val + RowPtr[i],
-                                Vector_Val_X);
-        }
-    }
+void sell_C_Sigma_gemv_avx512(const gemv_Handle_t handle,
+                       GEMV_INT_TYPE m,
+                       const GEMV_INT_TYPE* RowPtr,
+                       const GEMV_INT_TYPE* ColIdx,
+                       const GEMV_VAL_TYPE* Matrix_Val,
+                       const GEMV_VAL_TYPE* Vector_Val_X,
+                       GEMV_VAL_TYPE*       Vector_Val_Y
+){
+    sell_C_Sigma_gemv_Selected(handle,m,RowPtr,ColIdx,Matrix_Val,Vector_Val_X,Vector_Val_Y,DOT_AVX512);
 }

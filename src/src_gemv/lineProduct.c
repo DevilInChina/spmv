@@ -253,8 +253,8 @@ int pow_ksm(unsigned int a,unsigned int  b) {
     return odd;
 }
 
-void gemv_d_lineProduct(GEMV_INT_TYPE length,const double*Val,const GEMV_INT_TYPE* indx,
-                        const double *Vector_X,double *Vector_Y,DOT_PRODUCT_WAY dotProductWay){
+void gemv_d_lineProduct(GEMV_INT_TYPE length, const double*Val, const GEMV_INT_TYPE* indx,
+                        const double *Vector_X, double *Vector_Y, VECTORIZED_WAY vectorizedWay){
     int Level = 2;
     if(Level>2)Level = 2;
     if(Level<0)Level = 0;
@@ -265,7 +265,7 @@ void gemv_d_lineProduct(GEMV_INT_TYPE length,const double*Val,const GEMV_INT_TYP
     int i = 0;
 
     while (Pack>=4) {
-        int functionChoose = Level*3+dotProductWay;
+        int functionChoose = Level*3 + vectorizedWay;
         for (; i+Pack < length; i += Pack) {
             Line_d_Products[functionChoose](Val+i,indx+i,Vector_X,Vector_Y+i);
         }
@@ -277,8 +277,8 @@ void gemv_d_lineProduct(GEMV_INT_TYPE length,const double*Val,const GEMV_INT_TYP
     }
 }
 
-void gemv_s_lineProduct(GEMV_INT_TYPE length,const float *Val,const GEMV_INT_TYPE* indx,
-                        const float *Vector_X,float *Vector_Y,DOT_PRODUCT_WAY dotProductWay){
+void gemv_s_lineProduct(GEMV_INT_TYPE length, const float *Val, const GEMV_INT_TYPE* indx,
+                        const float *Vector_X, float *Vector_Y, VECTORIZED_WAY dotProductWay){
     int Level = 2;
 
     if(Level>2)Level = 2;
@@ -302,14 +302,26 @@ void gemv_s_lineProduct(GEMV_INT_TYPE length,const float *Val,const GEMV_INT_TYP
     }
 }
 
-void gemv_d_lineProduct_set_zero(GEMV_INT_TYPE length,const double*Val,const GEMV_INT_TYPE* indx,
-                        const double *Vector_X,double *Vector_Y,DOT_PRODUCT_WAY dotProductWay){
+void gemv_d_lineProduct_set_zero(GEMV_INT_TYPE length, const double*Val, const GEMV_INT_TYPE* indx,
+                                 const double *Vector_X, double *Vector_Y, VECTORIZED_WAY dotProductWay){
     memset(Vector_Y,0,sizeof(double )*length);
     gemv_d_lineProduct(length,Val,indx,Vector_X,Vector_Y,dotProductWay);
 }
 
-void gemv_s_lineProduct_set_zero(GEMV_INT_TYPE length,const float *Val,const GEMV_INT_TYPE* indx,
-                        const float *Vector_X,float *Vector_Y,DOT_PRODUCT_WAY dotProductWay){
+void gemv_s_lineProduct_set_zero(GEMV_INT_TYPE length, const float *Val, const GEMV_INT_TYPE* indx,
+                                 const float *Vector_X, float *Vector_Y, VECTORIZED_WAY dotProductWay){
     memset(Vector_Y,0,sizeof(float )*length);
     gemv_s_lineProduct(length,Val,indx,Vector_X,Vector_Y,dotProductWay);
+}
+
+void gemv_s_gather(GEMV_INT_TYPE length,const float *Val,const GEMV_INT_TYPE*indx,float *Vector_Y){
+    for(int i = 0 ; i < length ; ++i){
+        Vector_Y[indx[i]] = Val[i];
+    }
+}
+
+void gemv_d_gather(GEMV_INT_TYPE length,const double *Val,const GEMV_INT_TYPE*indx,double *Vector_Y){
+    for(int i = 0 ; i < length ; ++i){
+        Vector_Y[indx[i]] = Val[i];
+    }
 }

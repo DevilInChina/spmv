@@ -8,7 +8,7 @@
 #include <gemv.h>
 // sum up 8 single-precision numbers
 void testForFunctions(const char *functionName,
-                      int iter,int nthreads,
+                      int iter, int nthreads,
                       const GEMV_VAL_TYPE *Y_golden,
                       GEMV_INT_TYPE m,
                       const GEMV_INT_TYPE*RowPtr,
@@ -16,7 +16,7 @@ void testForFunctions(const char *functionName,
                       const GEMV_VAL_TYPE*Matrix_Val,
                       const GEMV_VAL_TYPE*Vector_Val_X,
                       GEMV_VAL_TYPE*Vector_Val_Y,
-                      DOT_PRODUCT_WAY PRODUCT_WAY,
+                      VECTORIZED_WAY PRODUCT_WAY,
                       STATUS_GEMV_HANDLE FUNC_WAY
 ) {
     int nnzR = RowPtr[m] - RowPtr[0];
@@ -36,7 +36,9 @@ void testForFunctions(const char *functionName,
         case STATUS_BALANCED2: {
             parallel_balanced2_get_handle(&handle, m, RowPtr, nnzR, nthreads);
         }
-            break;
+        case STATUS_SELL_C_SIGMA:{
+            sell_C_Sigma_get_handle(&handle,4,16,m,RowPtr,ColIdx,Matrix_Val,nnzR);
+        }break;
         default: {
             printf("error\n");
             break;
@@ -47,14 +49,8 @@ void testForFunctions(const char *functionName,
     for (currentiter = 0; currentiter < iter; currentiter++) {
         if (handle == NULL) {
             parallel_gemv(m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
-        } else if (FUNC_WAY == STATUS_BALANCED2) {
-            parallel_balanced2_gemv_Selected(handle,
-                                             m, RowPtr, ColIdx, Matrix_Val,
-                                             Vector_Val_X, Vector_Val_Y, PRODUCT_WAY);
         } else {
-            parallel_balanced_gemv_Selected(handle,
-                                            m, RowPtr, ColIdx, Matrix_Val,
-                                            Vector_Val_X, Vector_Val_Y, PRODUCT_WAY);
+            gemv[FUNC_WAY*3-3+PRODUCT_WAY](handle,m,RowPtr,ColIdx,Matrix_Val,Vector_Val_X,Vector_Val_Y);
         }
     }
     gettimeofday(&t2, NULL);
@@ -84,17 +80,17 @@ int main(int argc, char ** argv) {
     int m, n, nnzR, isSymmetric;
 
     mmio_info(&m, &n, &nnzR, &isSymmetric, filename);
-    int *RowPtr = (int *) malloc((m + 1) * sizeof(int));
-    int *ColIdx = (int *) malloc(nnzR * sizeof(int));
-    GEMV_VAL_TYPE *Val = (GEMV_VAL_TYPE *) malloc(nnzR * sizeof(GEMV_VAL_TYPE));
+    int *RowPtr = (int *) aligned_alloc(ALIGENED_SIZE,(m + 1) * sizeof(int));
+    int *ColIdx = (int *) aligned_alloc(ALIGENED_SIZE,nnzR * sizeof(int));
+    GEMV_VAL_TYPE *Val = (GEMV_VAL_TYPE *) aligned_alloc(ALIGENED_SIZE,nnzR * sizeof(GEMV_VAL_TYPE));
     mmio_data(RowPtr, ColIdx, Val, filename);
     for (int i = 0; i < nnzR; i++)
         Val[i] = 1;
     printf("The order of the rating matrix R is %i by %i, #nonzeros = %i\n", m, n, nnzR);
 
     //create X, Y,Y_golden
-    GEMV_VAL_TYPE *X = (GEMV_VAL_TYPE *) malloc(sizeof(GEMV_VAL_TYPE) * (n));
-    GEMV_VAL_TYPE *Y = (GEMV_VAL_TYPE *) malloc(sizeof(GEMV_VAL_TYPE) * (m));
+    GEMV_VAL_TYPE *X = (GEMV_VAL_TYPE *) aligned_alloc(ALIGENED_SIZE,sizeof(GEMV_VAL_TYPE) * (n));
+    GEMV_VAL_TYPE *Y = (GEMV_VAL_TYPE *) aligned_alloc(ALIGENED_SIZE,sizeof(GEMV_VAL_TYPE) * (m));
     GEMV_VAL_TYPE *Y_golden = (GEMV_VAL_TYPE *) malloc(sizeof(GEMV_VAL_TYPE) * (m));
 
     memset(X, 0, sizeof(GEMV_VAL_TYPE) * (n));
@@ -151,10 +147,14 @@ int main(int argc, char ** argv) {
                       "parallel_omp_balanced_Yid",
                       "parallel_omp_balanced_Yid_avx2",
                       "parallel_omp_balanced_Yid_avx512",
+                      "sell_C_Sigma",
+                      "sell_C_Sigma_avx2",
+                      "sell_C_Sigma_avx512",
+
     };
-    DOT_PRODUCT_WAY way[3] = {DOT_NONE, DOT_AVX2, DOT_AVX512};
-    STATUS_GEMV_HANDLE Function[2] = {STATUS_BALANCED, STATUS_BALANCED2};
-    for (int i = 0; i < 6; ++i) {
+    VECTORIZED_WAY way[3] = {DOT_NONE, DOT_AVX2, DOT_AVX512};
+    STATUS_GEMV_HANDLE Function[3] = {STATUS_BALANCED, STATUS_BALANCED2,STATUS_SELL_C_SIGMA};
+    for (int i = 0; i < 9; ++i) {
         testForFunctions(header[i], iter, nthreads, Y_golden, m, RowPtr, ColIdx, Val, X, Y,
                          way[i % 3], Function[i / 3]);
     }
