@@ -30,7 +30,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin)
 
 file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
-aux_source_directory(${PROJECT_SOURCE_DIR}/src/src_gemv GEMVS)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/src_spmv GEMVS)
 
 add_library(mv SHARED ${GEMVS})
 
