@@ -30,14 +30,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${PROJECT_SOURCE_DIR}/bin)
 
 file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
-aux_source_directory(${PROJECT_SOURCE_DIR}/src/src_spmv GEMVS)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/src_spmv SPMVS)
 
-add_library(mv SHARED ${GEMVS})
+add_library(mv SHARED ${SPMVS})
 
 #target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
 
 
-add_executable(gemv ${PROJECT_SOURCE_DIR}/src/samples/main.c)
+add_executable(gemv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
 
 target_link_libraries(gemv mv)
 
