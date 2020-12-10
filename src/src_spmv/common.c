@@ -2,7 +2,7 @@
 // Created by kouushou on 2020/11/25.
 //
 
-#include <gemv.h>
+#include <inner_spmv.h>
 #include <math.h>
 #include <string.h>
 /**
@@ -92,21 +92,274 @@ void gemv_clear_handle(gemv_Handle_t this_handle){
 
 
 
-const char*gemv_name[]={
-        "parallel_balanced_gemv",
-        "parallel_balanced_gemv_avx2",
-        "parallel_balanced_gemv_avx512",
-        "parallel_balanced2_gemv",
-        "parallel_balanced2_gemv_avx2",
-        "parallel_balanced2_gemv_avx512",
-        "sell_C_Sigma_gemv",
-        "sell_C_Sigma_gemv_avx2",
-        "sell_C_Sigma_gemv_avx512",
-};
 
-const spmv_handle_function spmvs[]={
-        NULL,
+
+void handle_init_common_parameters(gemv_Handle_t this_handle,
+                                   BASIC_SIZE_TYPE nthreads,
+                                   STATUS_GEMV_HANDLE function,
+                                   BASIC_SIZE_TYPE size,
+                                   VECTORIZED_WAY vectorizedWay){
+    this_handle->nthreads = nthreads;
+    this_handle->vectorizedWay = vectorizedWay;
+    this_handle->data_size = size;
+    this_handle->status = function;
+}
+
+const spmv_function spmv_functions[] = {
+        spmv_serial_Selected,
+        spmv_parallel_Selected,
         spmv_parallel_balanced_Selected,
         spmv_parallel_balanced2_Selected,
-        spmv_sell_C_Sigma_Selected,
+        spmv_sell_C_Sigma_Selected
+};
+
+int binary_search_right_boundary_kernel(const int *row_pointer,
+                                        const int  key_input,
+                                        const int  size)
+{
+    int start = 0;
+    int stop  = size - 1;
+    int median;
+    int key_median;
+
+    while (stop >= start)
+    {
+        median = (stop + start) / 2;
+
+        key_median = row_pointer[median];
+
+        if (key_input >= key_median)
+            start = median + 1;
+        else
+            stop = median - 1;
+    }
+
+    return start;
+}
+
+void parallel_balanced_get_handle(
+        gemv_Handle_t handle,
+        BASIC_INT_TYPE m,
+        const BASIC_INT_TYPE*RowPtr,
+        BASIC_INT_TYPE nnzR
+) {
+    BASIC_SIZE_TYPE nthreads = handle->nthreads;
+    int *csrSplitter = (int *) malloc((nthreads + 1) * sizeof(int));
+    //int *csrSplitter_normal = (int *)malloc((nthreads+1) * sizeof(int));
+
+    int stridennz = (nnzR+nthreads-1)/nthreads;
+
+#pragma omp parallel default(none) shared(nthreads, stridennz, nnzR, RowPtr, csrSplitter, m)
+    for (int tid = 0; tid <= nthreads; tid++) {
+        // compute partition boundaries by partition of size stride
+        int boundary = tid * stridennz;
+        // clamp partition boundaries to [0, nnzR]
+        boundary = boundary > nnzR ? nnzR : boundary;
+        // binary search
+        csrSplitter[tid] = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
+    }
+    (handle)->csrSplitter = csrSplitter;
+
+}
+
+void parallel_balanced2_get_handle(
+        gemv_Handle_t handle,
+        BASIC_INT_TYPE m,
+        const BASIC_INT_TYPE*RowPtr,
+        BASIC_INT_TYPE nnzR
+) {
+
+    parallel_balanced_get_handle(handle, m, RowPtr, nnzR);
+    int *csrSplitter = (handle)->csrSplitter;
+    BASIC_SIZE_TYPE nthreads = handle->nthreads;
+    int *Apinter = (int *) malloc(nthreads * sizeof(int));
+    memset(Apinter, 0, nthreads * sizeof(int));
+    //每个线程执行行数
+    for (int tid = 0; tid < nthreads; tid++) {
+        Apinter[tid] = csrSplitter[tid + 1] - csrSplitter[tid];
+        //printf("A[%d] is %d\n", tid, Apinter[tid]);
+    }
+
+    int *Bpinter = (int *) malloc(nthreads * sizeof(int));
+    memset(Bpinter, 0, nthreads * sizeof(int));
+    //每个线程执行非零元数
+    for (int tid = 0; tid < nthreads; tid++) {
+        int num = 0;
+        for (int u = csrSplitter[tid]; u < csrSplitter[tid + 1]; u++) {
+            num += RowPtr[u + 1] - RowPtr[u];
+        }
+        Bpinter[tid] = num;
+        //printf("B [%d]is %d\n",tid, Bpinter[tid]);
+    }
+
+    int *Yid = (int *) malloc(sizeof(int) * nthreads);
+    memset(Yid, 0, sizeof(int) * nthreads);
+    //每个线程
+    int flag;
+    for (int tid = 0; tid < nthreads; tid++) {
+        //printf("tid = %i, csrSplitter: %i -> %i\n", tid, csrSplitter[tid], csrSplitter[tid+1]);
+        if (csrSplitter[tid + 1] - csrSplitter[tid] == 0) {
+            Yid[tid] = csrSplitter[tid];
+            flag = 1;
+        }
+        if (csrSplitter[tid + 1] - csrSplitter[tid] != 0) {
+            Yid[tid] = -1;
+        }
+        if (csrSplitter[tid + 1] - csrSplitter[tid] != 0 && flag == 1) {
+            Yid[tid] = csrSplitter[tid];
+            flag = 0;
+        }
+        //printf("Yid[%d] is %d\n", tid, Yid[tid]);
+    }
+
+    //行平均用在多行上
+    BASIC_SIZE_TYPE sto = nthreads > nnzR ? nthreads : nnzR;
+    int *Start1 = (int *) malloc(sizeof(int) * sto);
+    memset(Start1, 0, sizeof(int) * sto);
+    int *End1 = (int *) malloc(sizeof(int) * sto);
+    memset(End1, 0, sizeof(int) * sto);
+    int start1, search1 = 0;
+    for (int tid = 0; tid < nthreads; tid++) {
+        if (Apinter[tid] == 0) {
+            if (search1 == 0) {
+                start1 = tid;
+                search1 = 1;
+            }
+        }
+        if (search1 == 1 && Apinter[tid] != 0) {
+            int nntz = ceil((double) Apinter[tid] / (double) (tid - start1 + 1));
+            int mntz = Apinter[tid] - (nntz * (tid - start1));
+            //start and end
+            int n = start1;
+            Start1[n] = csrSplitter[tid];
+            End1[n] = Start1[n] + nntz;
+            //printf("start1a[%d] = %d, end1a[%d] = %d\n",n,Start1[n],n, End1[n]);
+            for (n = start1 + 1; n < tid; n++) {
+                Start1[n] = End1[n - 1];
+                End1[n] = Start1[n] + nntz;
+                //printf("start1b[%d] = %d, end1b[%d] = %d\n",n,Start1[n],n, End1[n]);
+            }
+            if (n == tid) {
+                Start1[n] = End1[n - 1];
+                End1[n] = Start1[n] + mntz;
+                //printf("start1c[%d] = %d, end1c[%d] = %d\n",n,Start1[n],n, End1[n]);
+            }
+            //printf("start1c[%d] = %d, end1c[%d] = %d\n",n,Start1[n],n, End1[n]);
+            for (int j = start1; j <= tid - 1; j++) {
+                Apinter[j] = nntz;
+            }
+            Apinter[tid] = mntz;
+            search1 = 0;
+        }
+    }
+
+    int *Start2 = (int *) malloc(sizeof(int) * sto);
+    memset(Start2, 0, sizeof(int) * sto);
+    int *End2 = (int *) malloc(sizeof(int) * sto);
+    memset(End2, 0, sizeof(int) * sto);
+    int start2, search2 = 0;
+    for (int tid = 0; tid < nthreads; tid++) {
+        if (Bpinter[tid] == 0) {
+            if (search2 == 0) {
+                start2 = tid;
+                search2 = 1;
+            }
+        }
+        if (search2 == 1 && Bpinter[tid] != 0) {
+            int nntz2 = ceil((double) Bpinter[tid] / (double) (tid - start2 + 1));
+            int mntz2 = Bpinter[tid] - (nntz2 * (tid - start2));
+            //start and end
+            int n = start2;
+            for (int i = start2; i >= 0; i--) {
+                Start2[n] += Bpinter[i];
+                End2[n] = Start2[n] + nntz2;
+                //printf("starta[%d] = %d, enda[%d] = %d\n",n,Start2[n],n, End2[n]);
+            }
+            //printf("starta[%d] = %d, enda[%d] = %d\n",n,Start2[n],n, End2[n]);
+            for (n = start2 + 1; n < tid; n++) {
+                Start2[n] = End2[n - 1];
+                End2[n] = Start2[n] + nntz2;
+                //printf("startb[%d] = %d, endb[%d] = %d\n",n,Start2[n],n, End2[n]);
+            }
+            //printf("startb[%d] = %d, endb[%d] = %d\n",n,Start2[n],n, End2[n]);
+            if (n == tid) {
+                Start2[n] = End2[n - 1];
+                End2[n] = Start2[n] + mntz2;
+                //printf("startc[%d] = %d, endc[%d] = %d\n",n,Start2[n],n, End2[n]);
+            }
+            //printf("startc[%d] = %d, endc[%d] = %d\n",n,Start2[n],n, End2[n]);
+            search2 = 0;
+        }
+    }
+    (handle)->Bpinter = Bpinter;
+    (handle)->Apinter = Apinter;
+    (handle)->Yid = Yid;
+    (handle)->Start1 = Start1;
+    (handle)->Start2 = Start2;
+    (handle)->Yid = Yid;
+    (handle)->End1 = End1;
+    (handle)->End2 = End2;
+}
+
+
+
+void spmv_create_handle_all_in_one(gemv_Handle_t *Handle,
+                                   BASIC_INT_TYPE m,
+                                   const BASIC_INT_TYPE*RowPtr,
+                                   const BASIC_INT_TYPE *ColIdx,
+                                   const void *Matrix_Val,
+                                   BASIC_SIZE_TYPE nthreads,
+                                   STATUS_GEMV_HANDLE Function,
+                                   BASIC_SIZE_TYPE size,
+                                   VECTORIZED_WAY vectorizedWay
+){
+    *Handle = gemv_create_handle();
+    if(Function<STATUS_NONE || Function>=STATUS_TOTAL_SIZE)Function = STATUS_NONE;
+
+    handle_init_common_parameters(*Handle,nthreads,Function,size,vectorizedWay);
+
+    switch (Function) {
+        case STATUS_BALANCED:{
+            parallel_balanced_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
+        }break;
+        case STATUS_BALANCED2:{
+            parallel_balanced2_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
+        }break;
+        case STATUS_SELL_C_SIGMA:{
+            sell_C_Sigma_get_handle_Selected(*Handle,4,32,m,RowPtr,ColIdx,Matrix_Val);
+        }
+        default:{
+
+            return;
+        }
+    }
+}
+
+void spmv(const gemv_Handle_t handle,
+          BASIC_INT_TYPE m,
+          const BASIC_INT_TYPE* RowPtr,
+          const BASIC_INT_TYPE* ColIdx,
+          const void* Matrix_Val,
+          const void* Vector_Val_X,
+          void*       Vector_Val_Y){
+    if(handle==NULL)return;
+    spmv_functions[handle->status](handle,m,RowPtr,ColIdx,Matrix_Val,Vector_Val_X,Vector_Val_Y);
+}
+
+#define STR(args1,args2) #args1 #args2
+
+#define VEC_STRING(NAME)\
+STR(NAME,_VECTOR_NONE),\
+STR(NAME,_VECTOR_AVX2),\
+STR(NAME,_VECTOR_AVX512)
+
+#define ALL_FUNC_SRTING \
+VEC_STRING(STATUS_NONE),\
+VEC_STRING(STATUS_PARALLEL),\
+VEC_STRING(STATUS_BALANCED),\
+VEC_STRING(STATUS_BALANCED2),\
+VEC_STRING(STATUS_SELL_C_SIGMA)
+
+const char * funcNames[]= {
+    ALL_FUNC_SRTING
 };

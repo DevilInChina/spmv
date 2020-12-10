@@ -1,11 +1,10 @@
 //
 // Created by kouushou on 2020/12/4.
 //
-#include <gemv.h>
+#include "inner_spmv.h"
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 #define MAX(a,b) ((a)>(b)?(a):(b))
 
 void gemv_C_Block_init(C_Block_t this_block, int C,
@@ -68,27 +67,23 @@ int cmp(const void* A,const void* B){
 
 
 
-void sell_C_Sigma_get_handle_Selected(gemv_Handle_t* handle,
+void sell_C_Sigma_get_handle_Selected(gemv_Handle_t handle,
                                       BASIC_INT_TYPE Times, BASIC_INT_TYPE C,
                                       BASIC_INT_TYPE m,
                                       const BASIC_INT_TYPE*RowPtr,
                                       const BASIC_INT_TYPE*ColIdx,
-                                      const void*Matrix_Val,
-                                      BASIC_INT_TYPE nthreads,
-                                      BASIC_SIZE_TYPE size
+                                      const void*Matrix_Val
                              ) {
     BASIC_INT_TYPE Sigma = C * Times;
     int len = m / Sigma;
     int banner = Sigma * len;
     Row_Block_t *rowBlock_ts = NULL;
     Row_Block_t rowBlocks = NULL;
-    *handle = gemv_create_handle();
 
-    (*handle)->nthreads = nthreads;
-    (*handle)->status = STATUS_SELL_C_SIGMA;
-    (*handle)->Sigma = Sigma;
-    (*handle)->C = C;
-    (*handle)->banner = banner;
+    (handle)->Sigma = Sigma;
+    (handle)->C = C;
+    (handle)->banner = banner;
+    BASIC_SIZE_TYPE size = handle->data_size;
 
     if (banner > 0) {
         rowBlock_ts = (Row_Block_t *) malloc(sizeof(Row_Block_t) * banner);
@@ -105,41 +100,18 @@ void sell_C_Sigma_get_handle_Selected(gemv_Handle_t* handle,
             qsort(rowBlock_ts + I_of_Sigma, Sigma, sizeof(Row_Block_t), cmp);
         }
 
-        int siz = (*handle)->banner / C;
-        (*handle)->C_Blocks = (C_Block_t) malloc(sizeof(C_Block) * siz);
+        int siz = (handle)->banner / C;
+        (handle)->C_Blocks = (C_Block_t) malloc(sizeof(C_Block) * siz);
 
-        for (int CBlock = 0; CBlock < (*handle)->banner; CBlock += C) {
-            gemv_C_Block_init((*handle)->C_Blocks + CBlock / C, C, RowPtr,
+        for (int CBlock = 0; CBlock < (handle)->banner; CBlock += C) {
+            gemv_C_Block_init((handle)->C_Blocks + CBlock / C, C, RowPtr,
                               rowBlock_ts + CBlock,size);
         }
         free(rowBlock_ts);
         free(rowBlocks);
     }else{
-        (*handle)->banner = 0;
+        (handle)->banner = 0;
     }
-
-}
-void sell_C_Sigma_get_handle_s(gemv_Handle_t* handle,
-                               BASIC_INT_TYPE Times, BASIC_INT_TYPE C,
-                               BASIC_INT_TYPE m,
-                               const BASIC_INT_TYPE*RowPtr,
-                               const BASIC_INT_TYPE*ColIdx,
-                               const float *Matrix_Val,
-                               BASIC_INT_TYPE nthreads
-){
-    sell_C_Sigma_get_handle_Selected(handle,Times,C,m,RowPtr,ColIdx,Matrix_Val,nthreads,sizeof(float ));
-}
-
-
-void sell_C_Sigma_get_handle_d(gemv_Handle_t* handle,
-                               BASIC_INT_TYPE Times, BASIC_INT_TYPE C,
-                               BASIC_INT_TYPE m,
-                               const BASIC_INT_TYPE*RowPtr,
-                               const BASIC_INT_TYPE*ColIdx,
-                               const double *Matrix_Val,
-                               BASIC_INT_TYPE nthreads
-){
-    sell_C_Sigma_get_handle_Selected(handle,Times,C,m,RowPtr,ColIdx,Matrix_Val,nthreads,sizeof(double ));
 }
 
 void spmv_sell_C_Sigma_Selected(const gemv_Handle_t handle,
@@ -148,13 +120,13 @@ void spmv_sell_C_Sigma_Selected(const gemv_Handle_t handle,
                                 const BASIC_INT_TYPE* ColIdx,
                                 const void* Matrix_Val,
                                 const void* Vector_Val_X,
-                                void*       Vector_Val_Y,
-                                BASIC_SIZE_TYPE size,
-                                VECTORIZED_WAY way
+                                void*       Vector_Val_Y
 ){
     if(handle->status != STATUS_SELL_C_SIGMA){
         return;
     }
+    BASIC_SIZE_TYPE size = handle->data_size;
+    VECTORIZED_WAY way = handle->vectorizedWay;
 
     dot_product_function
     dot_product = inner_basic_GetDotProduct(size);
@@ -201,7 +173,5 @@ void spmv_sell_C_Sigma_Selected(const gemv_Handle_t handle,
     }
 }
 
-
-FUNC_DECLARES(FUNC_HANDLE_DEFINES,sell_C_Sigma);
 
 

@@ -762,7 +762,8 @@ int itsol_solver_bicgstab(ITS_SMat *Amat, ITS_PC *lu, double *rhs, double *x, IT
     n = Amat->n;
     gemv_Handle_t balanced_handle;
     int nthreads=8;//线程数
-    parallel_balanced_get_handle(&balanced_handle,n,CS->RowPtr,Amat->CS->RowPtr[n],nthreads);
+    spmv_create_handle_all_in_one(&balanced_handle,n,CS->RowPtr,CS->ColIdx,CS->Val,nthreads,
+                                  STATUS_BALANCED2,sizeof(CS->Val[0] ),VECTOR_NONE);
     rg=(double *)malloc(n*sizeof(double));
     //rg = itsol_malloc(n * sizeof(double), "bicgstab");
     rh = (double *)malloc(n*sizeof(double));
@@ -775,8 +776,8 @@ int itsol_solver_bicgstab(ITS_SMat *Amat, ITS_PC *lu, double *rhs, double *x, IT
     tp = (double *)malloc(n*sizeof(double));
     //Amat->matvec(Amat, x, tp);
     //parallel_balanced_gemv(balanced_handle,n,CS->RowPtr,CS->ColIdx,CS->Val,x,tp);
-    //spmv_parallel_balanced2_double_VECTOR_NONE(balanced_handle,n,CS->RowPtr,CS->ColIdx,CS->Val,x,tp);
-    spmv_serial_double_VECTOR_NONE(n,CS->RowPtr,CS->ColIdx,CS->Val,x,tp);
+    spmv(balanced_handle,n,CS->RowPtr,CS->ColIdx,CS->Val,x,tp);
+    //spmv_serial_double_VECTOR_NONE(n,CS->RowPtr,CS->ColIdx,CS->Val,x,tp);
     printf("%d",n);
     //mv(n,CS->RowPtr,CS->ColIdx,CS->Val,x,tp);
     for (i = 0; i < n; i++) rg[i] = rhs[i] - tp[i];
@@ -823,8 +824,8 @@ int itsol_solver_bicgstab(ITS_SMat *Amat, ITS_PC *lu, double *rhs, double *x, IT
 
         //Amat->matvec(Amat, ph, vg);
         //parallel_balanced_gemv(balanced_handle,n,RowPtr,ColIdx,Val,ph,vg);
-        //spmv_parallel_balanced2_double_VECTOR_NONE(balanced_handle,n,CS->RowPtr,CS->ColIdx,CS->Val,ph,vg);
-        spmv_serial_double_VECTOR_NONE(n,CS->RowPtr,CS->ColIdx,CS->Val,ph,vg);
+        spmv(balanced_handle,n,CS->RowPtr,CS->ColIdx,CS->Val,ph,vg);
+        //spmv_serial_double_VECTOR_NONE(n,CS->RowPtr,CS->ColIdx,CS->Val,ph,vg);
         //mv(n,CS->RowPtr,CS->ColIdx,CS->Val,ph,vg);
         pra = r1 / itsol_dot(rh, vg, n);
         for (i = 0; i < n; i++) {
@@ -838,7 +839,7 @@ int itsol_solver_bicgstab(ITS_SMat *Amat, ITS_PC *lu, double *rhs, double *x, IT
 
             //Amat->matvec(Amat, x, tp);
             //parallel_balanced_gemv(balanced_handle,n,RowPtr,ColIdx,Val,x,tp);
-            spmv_serial_double_VECTOR_NONE(n,CS->RowPtr,CS->ColIdx,CS->Val,x,tp);
+            spmv(balanced_handle,n,CS->RowPtr,CS->ColIdx,CS->Val,x,tp);
             //mv(n,CS->RowPtr,CS->ColIdx,CS->Val,x,tp);
             for (i = 0; i < n; i++) rg[i] = rhs[i] - tp[i];
             residual = itsol_norm(rg, n);
@@ -855,7 +856,7 @@ int itsol_solver_bicgstab(ITS_SMat *Amat, ITS_PC *lu, double *rhs, double *x, IT
 
         //Amat->matvec(Amat, sh, tg);
         //parallel_balanced_gemv(balanced_handle,n,RowPtr,ColIdx,Val,sh,tg);
-        spmv_serial_double_VECTOR_NONE(n,CS->RowPtr,CS->ColIdx,CS->Val,sh,tg);
+        spmv(balanced_handle,n,CS->RowPtr,CS->ColIdx,CS->Val,sh,tg);
         //mv(n,CS->RowPtr,CS->ColIdx,CS->Val,sh,tg);
         prc = itsol_dot(tg, sg, n) / itsol_dot(tg, tg, n);
         for (i = 0; i < n; i++) {
@@ -914,8 +915,8 @@ int main()
     ITS_CooMat A;
     ITS_SOLVER s;
     /* case: COO formats */
-    A = itsol_read_coo("pores3.coo");
-    //A = itsol_read_coo("sherman5.coo");
+    A = itsol_read_coo("matrix/pores3.coo");
+    //A = itsol_read_coo("matrix/sherman5.coo");
     n = A.n;
     int nnz=A.nnz;
     printf("nnz=%d\n",nnz);

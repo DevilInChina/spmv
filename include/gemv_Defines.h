@@ -27,12 +27,14 @@ typedef enum VECTORIZED_WAY{
 
 typedef enum STATUS_GEMV_HANDLE{
     STATUS_NONE,
+    STATUS_PARALLEL,
     STATUS_BALANCED,
     STATUS_BALANCED2,
     STATUS_SELL_C_SIGMA,
     STATUS_TOTAL_SIZE
 }STATUS_GEMV_HANDLE;
 
+extern const char * funcNames[];
 typedef struct Row_Block {
     const BASIC_INT_TYPE   *indxBegin;
     const void   *valBegin;
@@ -52,10 +54,12 @@ typedef struct C_Block{
 
 typedef struct gemv_Handle {
     STATUS_GEMV_HANDLE status;
+    BASIC_SIZE_TYPE data_size;
+    BASIC_SIZE_TYPE nthreads;
+    VECTORIZED_WAY vectorizedWay;
 
 
     ///------balanced balanced2------///
-    BASIC_INT_TYPE nthreads;
     BASIC_INT_TYPE* csrSplitter;
     BASIC_INT_TYPE* Yid;
     BASIC_INT_TYPE* Apinter;
@@ -102,17 +106,6 @@ extern const char*Line_s_Products_name[];
 
 extern const char*Line_d_Products_name[];
 
-#define GET_GEMV(FUNCTION,VECTORIZED) ((FUNCTION-1)*(VECTOR_AVX512+1) + (VECTORIZED))
-
-extern void (* const gemv[])
-        (const gemv_Handle_t handle,
-         BASIC_INT_TYPE m,
-         const BASIC_INT_TYPE* RowPtr,
-         const BASIC_INT_TYPE* ColIdx,
-         const BASIC_VAL_TYPE* Matrix_Val,
-         const BASIC_VAL_TYPE* Vector_Val_X,
-         BASIC_VAL_TYPE*       Vector_Val_Y);
-extern const char*gemv_name[];
 
 
 #define CONVERT_FLOAT(pointer) *((float*)(pointer))
@@ -126,49 +119,6 @@ extern const char*gemv_name[];
 (CONVERT_DOUBLE(pointer1)+=CONVERT_DOUBLE(pointer2)):(CONVERT_FLOAT(pointer1)+=CONVERT_FLOAT(pointer2))
 
 
-#define PARAMETER_HANDLE_IN(type) \
-const gemv_Handle_t handle , \
-BASIC_INT_TYPE m,\
-const BASIC_INT_TYPE*RowPtr,\
-const BASIC_INT_TYPE *ColIdx,\
-const type *Matrix_Val,\
-const type *Vector_Val_X, \
-type *Vector_Val_Y
-
-#define PARAMETER_NO_HANDLE_IN(type) BASIC_INT_TYPE m,\
-const BASIC_INT_TYPE*RowPtr,\
-const BASIC_INT_TYPE *ColIdx,\
-const type *Matrix_Val,\
-const type *Vector_Val_X, \
-type *Vector_Val_Y
-
-#define PARAMETER_HANDLE_CALL handle,m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y
-#define PARAMETER_NO_HANDLE_CALL m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y
-
-#define FUNC_HANDLE_DECLARES(ret_type,header,type,VECTOR_CHOICE) \
-ret_type spmv_##header##_##type##_##VECTOR_CHOICE(PARAMETER_HANDLE_IN(type))
-
-#define FUNC_NO_HANDLE_DECLARES(ret_type,header,type,VECTOR_CHOICE) \
-ret_type spmv_##header##_##type##_##VECTOR_CHOICE(PARAMETER_NO_HANDLE_IN(type))
-
-#define FUNC_HANDLE_DEFINES(ret_type,header,type,VECTOR_CHOICE) \
-ret_type spmv_##header##_##type##_##VECTOR_CHOICE(PARAMETER_HANDLE_IN(type)) {  \
-    spmv_##header##_Selected(PARAMETER_HANDLE_CALL,sizeof(type),VECTOR_CHOICE);\
-}
-
-#define FUNC_NO_HANDLE_DEFINES(ret_type,header,type,VECTOR_CHOICE) \
-ret_type spmv_##header##_##type##_##VECTOR_CHOICE(PARAMETER_NO_HANDLE_IN(type)) {  \
-    spmv_##header##_Selected(PARAMETER_NO_HANDLE_CALL,sizeof(type),VECTOR_CHOICE);\
-}
-
-#define FUNC_DECLARES_TYPE(DEC,name,VECTOR_CHOICE) \
-DEC(void,name,double,VECTOR_CHOICE);\
-DEC(void,name,float,VECTOR_CHOICE)\
-
-#define FUNC_DECLARES(DEC,name) \
-FUNC_DECLARES_TYPE(DEC,name,VECTOR_NONE); \
-FUNC_DECLARES_TYPE(DEC,name,VECTOR_AVX2); \
-FUNC_DECLARES_TYPE(DEC,name,VECTOR_AVX512)
 
 extern float (* const Dot_s_Products[])
         (BASIC_INT_TYPE len, const BASIC_INT_TYPE*
