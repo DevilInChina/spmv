@@ -74,10 +74,11 @@ void cg_double(int *RowPtr,int *ColIdx,double *Val, double *x, double *b, int n,
     double norm = 0;
     double rho = 0;
     double rho_1 = 0;
-
+    gemv_Handle_t temp = NULL;
+    spmv_create_handle_all_in_one(&temp,n,RowPtr,ColIdx,Val,8,STATUS_SELL_C_SIGMA,sizeof(Val[0]),VECTOR_AVX512);
     // p0 = r0 = b - Ax0
     //matvec(A, x, y, n);
-    spmv_serial_double_VECTOR_NONE(n,RowPtr,ColIdx,Val,x,y);
+    spmv(temp,n,RowPtr,ColIdx,Val,x,y);
     for (int i = 0; i < n; i++)
         residual[i] = b[i] - y[i];
     //printvec(residual, n);
@@ -99,7 +100,7 @@ void cg_double(int *RowPtr,int *ColIdx,double *Val, double *x, double *b, int n,
         }
 
         //matvec(A, p, q, n);
-        spmv_serial_double_VECTOR_NONE(n,RowPtr,ColIdx,Val,p,q);
+        spmv(temp,n,RowPtr,ColIdx,Val,p,q);
         double alpha = rho / dotproduct(p, q, n);
         //printf("alpha = %f\n", alpha);
         for (int i = 0; i < n; i++)
@@ -134,10 +135,12 @@ void new_cg_float(int *RowPtr,int *ColIdx,BASIC_VAL_TYPE *Val, BASIC_VAL_TYPE *x
     BASIC_VAL_TYPE norm = 0;
     BASIC_VAL_TYPE rho = 0;
     BASIC_VAL_TYPE rho_1 = 0;
+    gemv_Handle_t temp = NULL;
+    spmv_create_handle_all_in_one(&temp,n,RowPtr,ColIdx,Val,8,STATUS_SELL_C_SIGMA,sizeof(Val[0]),VECTOR_AVX512);
 
     // p0 = r0 = b - Ax0
     //matvec(A, x, y, n);
-    spmv_serial_float_VECTOR_NONE(n,RowPtr,ColIdx,Val,x,y);
+    spmv(temp,n,RowPtr,ColIdx,Val,x,y);
     for (int i = 0; i < n; i++)
         residual[i] = b[i] - y[i];
     //printvec(residual, n);
@@ -159,7 +162,7 @@ void new_cg_float(int *RowPtr,int *ColIdx,BASIC_VAL_TYPE *Val, BASIC_VAL_TYPE *x
         }
 
         //matvec(A, p, q, n);
-        spmv_serial_float_VECTOR_NONE(n,RowPtr,ColIdx,Val,p,q);
+        spmv(temp,n,RowPtr,ColIdx,Val,p,q);
         float alpha = rho / dotproduct_float(p, q, n);
         //printf("alpha = %f\n", alpha);
         for (int i = 0; i < n; i++)
