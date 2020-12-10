@@ -915,6 +915,7 @@ int main()
     ITS_CooMat A;
     ITS_SOLVER s;
     /* case: COO formats */
+
     A = itsol_read_coo("matrix/pores3.coo");
     //A = itsol_read_coo("matrix/sherman5.coo");
     n = A.n;
