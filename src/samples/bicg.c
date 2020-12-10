@@ -914,8 +914,8 @@ int main()
     ITS_CooMat A;
     ITS_SOLVER s;
     /* case: COO formats */
-    A = itsol_read_coo("pores3.coo");
-    //A = itsol_read_coo("sherman5.coo");
+    //A = itsol_read_coo("pores3.coo");
+    A = itsol_read_coo("sherman5.coo");
     n = A.n;
     int nnz=A.nnz;
     printf("nnz=%d\n",nnz);
