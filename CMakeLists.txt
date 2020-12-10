@@ -36,7 +36,9 @@ add_library(mv SHARED ${SPMVS})
 
 #target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
 
+add_executable(cg ${PROJECT_SOURCE_DIR}/src/samples/cg.c)
 
+target_link_libraries(cg mv)
 
 add_executable(bicg ${PROJECT_SOURCE_DIR}/src/samples/bicg.c)
 
