@@ -24,36 +24,12 @@ void testForFunctions(const char *functionName,
     gettimeofday(&t1, NULL);
     int currentiter = 0;
     gemv_Handle_t handle;
-    switch (FUNC_WAY) {
-        case STATUS_NONE: {
-            handle = NULL;
-        }
-            break;
-        case STATUS_BALANCED: {
-            parallel_balanced_get_handle(&handle, m, RowPtr, nnzR, nthreads);
-        }
-            break;
-        case STATUS_BALANCED2: {
-            parallel_balanced2_get_handle(&handle, m, RowPtr, nnzR, nthreads);
-        }break;
-        case STATUS_SELL_C_SIGMA:{
-            sell_C_Sigma_get_handle_Selected(&handle,4,16,m,RowPtr,
-                                             ColIdx,Matrix_Val,nnzR,sizeof(BASIC_VAL_TYPE));
-        }break;
-        default: {
-            printf("error\n");
-            break;
-        }
-    }
+    spmv_create_handle_all_in_one(&handle,m,RowPtr,ColIdx,Matrix_Val,
+                                  nthreads,FUNC_WAY,sizeof(BASIC_VAL_TYPE),PRODUCT_WAY);
 
 
     for (currentiter = 0; currentiter < iter; currentiter++) {
-        if (handle == NULL) {
-            spmv_parallel_Selected(m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y,
-                                   sizeof(BASIC_VAL_TYPE),PRODUCT_WAY);
-        } else {
-            spmvs[FUNC_WAY](handle,m,RowPtr,ColIdx,Matrix_Val,Vector_Val_X,Vector_Val_Y,sizeof(BASIC_VAL_TYPE),PRODUCT_WAY);
-        }
+        spmv(handle,m,RowPtr,ColIdx,Matrix_Val,Vector_Val_X,Vector_Val_Y);
     }
     gettimeofday(&t2, NULL);
     BASIC_VAL_TYPE time_overall_serial = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / iter;
@@ -115,41 +91,11 @@ int main(int argc, char ** argv) {
 
 //------------------------------------serial--------------------------------
     struct timeval t1, t2;
-    gettimeofday(&t1, NULL);
-    int currentiter = 0;
-    for (currentiter = 0; currentiter < iter; currentiter++) {
-        spmv_parallel_Selected(m, RowPtr, ColIdx, Val, X, Y,sizeof(BASIC_VAL_TYPE),VECTOR_NONE);
-    }
-    gettimeofday(&t2, NULL);
-    BASIC_VAL_TYPE time_overall_serial =
-            ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / atoi(argv[3]);
-    BASIC_VAL_TYPE GFlops_serial = 2 * nnzR / time_overall_serial / pow(10, 6);
-    int errorcount_serial = 0;
-    for (int i = 0; i < m; i++)
-        if (Y[i] != Y_golden[i])
-            errorcount_serial++;
-
-    //printf("-=-=-=-=-=-=-=-=-=-=-=-=-=-=serial-=-=-=-=-=-=-=-=-=-=-=-=-=-\n");
-    //printf("time_overall_serial = %f\n", time_overall_serial);
-    printf("errorcount_serial = %i\n", errorcount_serial);
-    printf("GFlops_serial = %f\n", GFlops_serial);
-    //printf("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n\n");
-    //free(Y);//加一
-//------------------------------------------------------------------------
-
-
-//-----------------------------------parallel_omp-------------------------------------
-    testForFunctions("parallel_omp", iter, nthreads, Y_golden, m, RowPtr, ColIdx, Val, X, Y,
-                     VECTOR_NONE, STATUS_NONE);
-
-//-----------------------------------parallel_omp_balanced/balanced_Yid_avx2/avx_512-------------------------------------
-
-
+     STATUS_GEMV_HANDLE d = STATUS_TOTAL_SIZE;
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
-    STATUS_GEMV_HANDLE Function[3] = {STATUS_BALANCED, STATUS_BALANCED2,STATUS_SELL_C_SIGMA};
-    for (int i = 0; i < 9; ++i) {
-        testForFunctions(gemv_name[i], iter, nthreads, Y_golden, m, RowPtr, ColIdx, Val, X, Y,
-                         way[i % 3], Function[i / 3]);
+    for (int i = 6; i < STATUS_TOTAL_SIZE*VECTOR_TOTAL_SIZE; ++i) {
+        testForFunctions(funcNames[i], iter, nthreads, Y_golden, m, RowPtr, ColIdx, Val, X, Y,
+                         i%VECTOR_TOTAL_SIZE, i/VECTOR_TOTAL_SIZE);
     }
 
     //free(X);

@@ -2,7 +2,7 @@
 // Created by kouushou on 2020/11/25.
 //
 
-#include <gemv.h>
+#include "inner_spmv.h"
 #include <math.h>
 #include <string.h>
 /**
@@ -92,21 +92,84 @@ void gemv_clear_handle(gemv_Handle_t this_handle){
 
 
 
-const char*gemv_name[]={
-        "parallel_balanced_gemv",
-        "parallel_balanced_gemv_avx2",
-        "parallel_balanced_gemv_avx512",
-        "parallel_balanced2_gemv",
-        "parallel_balanced2_gemv_avx2",
-        "parallel_balanced2_gemv_avx512",
-        "sell_C_Sigma_gemv",
-        "sell_C_Sigma_gemv_avx2",
-        "sell_C_Sigma_gemv_avx512",
-};
 
-const spmv_handle_function spmvs[]={
-        NULL,
+
+void handle_init_common_parameters(gemv_Handle_t this_handle,
+                                   BASIC_SIZE_TYPE nthreads,
+                                   STATUS_GEMV_HANDLE function,
+                                   BASIC_SIZE_TYPE size,
+                                   VECTORIZED_WAY vectorizedWay){
+    this_handle->nthreads = nthreads;
+    this_handle->vectorizedWay = vectorizedWay;
+    this_handle->data_size = size;
+    this_handle->status = function;
+}
+
+const spmv_function spmv_functions[] = {
+        spmv_serial_Selected,
+        spmv_parallel_Selected,
         spmv_parallel_balanced_Selected,
         spmv_parallel_balanced2_Selected,
-        spmv_sell_C_Sigma_Selected,
+        spmv_sell_C_Sigma_Selected
+};
+
+void spmv_create_handle_all_in_one(gemv_Handle_t *Handle,
+                                   BASIC_INT_TYPE m,
+                                   const BASIC_INT_TYPE*RowPtr,
+                                   const BASIC_INT_TYPE *ColIdx,
+                                   const void *Matrix_Val,
+                                   BASIC_SIZE_TYPE nthreads,
+                                   STATUS_GEMV_HANDLE Function,
+                                   BASIC_SIZE_TYPE size,
+                                   VECTORIZED_WAY vectorizedWay
+){
+    *Handle = gemv_create_handle();
+    if(Function<STATUS_NONE || Function>=STATUS_TOTAL_SIZE)Function = STATUS_NONE;
+
+    handle_init_common_parameters(*Handle,nthreads,Function,size,vectorizedWay);
+
+    switch (Function) {
+        case STATUS_BALANCED:{
+            parallel_balanced_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
+        }break;
+        case STATUS_BALANCED2:{
+            parallel_balanced2_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
+        }break;
+        case STATUS_SELL_C_SIGMA:{
+            sell_C_Sigma_get_handle_Selected(*Handle,4,32,m,RowPtr,ColIdx,Matrix_Val);
+        }
+        default:{
+
+            return;
+        }
+    }
+}
+
+void spmv(const gemv_Handle_t handle,
+          BASIC_INT_TYPE m,
+          const BASIC_INT_TYPE* RowPtr,
+          const BASIC_INT_TYPE* ColIdx,
+          const void* Matrix_Val,
+          const void* Vector_Val_X,
+          void*       Vector_Val_Y){
+    if(handle==NULL)return;
+    spmv_functions[handle->status](handle,m,RowPtr,ColIdx,Matrix_Val,Vector_Val_X,Vector_Val_Y);
+}
+
+#define STR(args1,args2) #args1 #args2
+
+#define VEC_STRING(NAME)\
+STR(NAME,_VECTOR_NONE),\
+STR(NAME,_VECTOR_AVX2),\
+STR(NAME,_VECTOR_AVX512)
+
+#define ALL_FUNC_SRTING \
+VEC_STRING(STATUS_NONE),\
+VEC_STRING(STATUS_PARALLEL),\
+VEC_STRING(STATUS_BALANCED),\
+VEC_STRING(STATUS_BALANCED2),\
+VEC_STRING(STATUS_SELL_C_SIGMA)
+
+const char * funcNames[]= {
+    ALL_FUNC_SRTING
 };

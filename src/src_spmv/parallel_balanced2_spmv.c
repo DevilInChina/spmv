@@ -1,19 +1,19 @@
 //
 // Created by kouushou on 2020/11/25.
 //
-#include <gemv.h>
+#include "inner_spmv.h"
 #include <math.h>
 #include <string.h>
 void parallel_balanced2_get_handle(
-        gemv_Handle_t* handle,
+        gemv_Handle_t handle,
         BASIC_INT_TYPE m,
         const BASIC_INT_TYPE*RowPtr,
-        BASIC_INT_TYPE nnzR,
-        BASIC_INT_TYPE nthreads) {
-    parallel_balanced_get_handle(handle, m, RowPtr, nnzR, nthreads);
-    (*handle)->status = STATUS_BALANCED2;
-    int *csrSplitter = (*handle)->csrSplitter;
+        BASIC_INT_TYPE nnzR
+        ) {
 
+    parallel_balanced_get_handle(handle, m, RowPtr, nnzR);
+    int *csrSplitter = (handle)->csrSplitter;
+    BASIC_SIZE_TYPE nthreads = handle->nthreads;
     int *Apinter = (int *) malloc(nthreads * sizeof(int));
     memset(Apinter, 0, nthreads * sizeof(int));
     //每个线程执行行数
@@ -55,7 +55,7 @@ void parallel_balanced2_get_handle(
     }
 
     //行平均用在多行上
-    int sto = nthreads > nnzR ? nthreads : nnzR;
+    BASIC_SIZE_TYPE sto = nthreads > nnzR ? nthreads : nnzR;
     int *Start1 = (int *) malloc(sizeof(int) * sto);
     memset(Start1, 0, sizeof(int) * sto);
     int *End1 = (int *) malloc(sizeof(int) * sto);
@@ -133,14 +133,14 @@ void parallel_balanced2_get_handle(
             search2 = 0;
         }
     }
-    (*handle)->Bpinter = Bpinter;
-    (*handle)->Apinter = Apinter;
-    (*handle)->Yid = Yid;
-    (*handle)->Start1 = Start1;
-    (*handle)->Start2 = Start2;
-    (*handle)->Yid = Yid;
-    (*handle)->End1 = End1;
-    (*handle)->End2 = End2;
+    (handle)->Bpinter = Bpinter;
+    (handle)->Apinter = Apinter;
+    (handle)->Yid = Yid;
+    (handle)->Start1 = Start1;
+    (handle)->Start2 = Start2;
+    (handle)->Yid = Yid;
+    (handle)->End1 = End1;
+    (handle)->End2 = End2;
 }
 
 
@@ -151,13 +151,8 @@ void spmv_parallel_balanced2_Selected(
         const BASIC_INT_TYPE* ColIdx,
         const void* Matrix_Val,
         const void* Vector_Val_X,
-        void*       Vector_Val_Y,
-        BASIC_SIZE_TYPE size,
-        VECTORIZED_WAY way
+        void*       Vector_Val_Y
 ) {
-    if (handle->status != STATUS_BALANCED2) {
-        return;
-    }
     int nthreads = handle->nthreads;
     int *Yid = handle->Yid;
     int *csrSplitter = handle->csrSplitter;
@@ -166,6 +161,8 @@ void spmv_parallel_balanced2_Selected(
     int *Start2 = handle->Start2;
     int *End2 = handle->End2;
     int *End1 = handle->End1;
+    BASIC_SIZE_TYPE size = handle->data_size;
+    VECTORIZED_WAY way = handle->vectorizedWay;
     dot_product_function dotProductFunction = inner_basic_GetDotProduct(size);
 
     for (int tid = 0; tid < nthreads; tid++) {
@@ -209,5 +206,3 @@ void spmv_parallel_balanced2_Selected(
 }
 
 
-
-FUNC_DECLARES(FUNC_HANDLE_DEFINES,parallel_balanced2);

@@ -37,9 +37,14 @@ add_library(mv SHARED ${SPMVS})
 #target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
 
 
-add_executable(gemv ${PROJECT_SOURCE_DIR}/src/samples/cg.c)
 
-target_link_libraries(gemv mv)
+add_executable(bicg ${PROJECT_SOURCE_DIR}/src/samples/bicg.c)
+
+target_link_libraries(bicg mv)
+
+add_executable(spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
+
+target_link_libraries(spmv mv)
 
 add_executable(line ${PROJECT_SOURCE_DIR}/src/samples/test_lineProduct.c)
 

@@ -2,7 +2,7 @@
 // Created by kouushou on 2020/11/25.
 //
 
-#include <gemv.h>
+#include "inner_spmv.h"
 #include <math.h>
 
 int binary_search_right_boundary_kernel(const int *row_pointer,
@@ -30,15 +30,16 @@ int binary_search_right_boundary_kernel(const int *row_pointer,
 }
 
 void parallel_balanced_get_handle(
-        gemv_Handle_t* handle,
+        gemv_Handle_t handle,
         BASIC_INT_TYPE m,
         const BASIC_INT_TYPE*RowPtr,
-        BASIC_INT_TYPE nnzR,
-        BASIC_INT_TYPE nthreads) {
+        BASIC_INT_TYPE nnzR
+        ) {
+    BASIC_SIZE_TYPE nthreads = handle->nthreads;
     int *csrSplitter = (int *) malloc((nthreads + 1) * sizeof(int));
     //int *csrSplitter_normal = (int *)malloc((nthreads+1) * sizeof(int));
 
-    int stridennz = ceil((double) nnzR / (double) nthreads);
+    int stridennz = (nnzR+nthreads-1) /  nthreads;
 
 #pragma omp parallel default(none) shared(nthreads, stridennz, nnzR, RowPtr, csrSplitter, m)
     for (int tid = 0; tid <= nthreads; tid++) {
@@ -49,10 +50,7 @@ void parallel_balanced_get_handle(
         // binary search
         csrSplitter[tid] = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
     }
-    *handle = gemv_create_handle();
-    (*handle)->nthreads = nthreads;
-    (*handle)->status = STATUS_BALANCED;
-    (*handle)->csrSplitter = csrSplitter;
+    (handle)->csrSplitter = csrSplitter;
 
 }
 
@@ -64,18 +62,14 @@ void spmv_parallel_balanced_Selected(
         const BASIC_INT_TYPE* ColIdx,
         const void* Matrix_Val,
         const void* Vector_Val_X,
-        void*       Vector_Val_Y,
-        BASIC_SIZE_TYPE size,
-        VECTORIZED_WAY way
+        void*       Vector_Val_Y
 ) {
-    if(handle->status != STATUS_BALANCED) {
-        return;
-    }
-
+    BASIC_SIZE_TYPE size = handle->data_size;
+    VECTORIZED_WAY way = handle->vectorizedWay;
     dot_product_function dotProductFunction = inner_basic_GetDotProduct(size);
 
     const int *csrSplitter = handle->csrSplitter;
-    const int nthreads = handle->nthreads;
+    const BASIC_SIZE_TYPE nthreads = handle->nthreads;
     {
 #pragma omp parallel for
         for (int tid = 0; tid < nthreads; tid++) {
@@ -89,5 +83,3 @@ void spmv_parallel_balanced_Selected(
 
 
 
-
-FUNC_DECLARES(FUNC_HANDLE_DEFINES,parallel_balanced);
