@@ -19,6 +19,7 @@ void testForFunctions(const char *functionName,
                       VECTORIZED_WAY PRODUCT_WAY,
                       SPMV_METHODS FUNC_WAY
 ) {
+    if(FUNC_WAY==Method_Serial)nthreads = 1;
     int nnzR = RowPtr[m] - RowPtr[0];
     struct timeval t1, t2;
     int currentiter = 0;
@@ -99,7 +100,7 @@ int main(int argc, char ** argv) {
     struct timeval t1, t2;
      SPMV_METHODS d = Method_Total_Size;
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
-    for (int i = 0; i < Method_Total_Size * VECTOR_TOTAL_SIZE; ++i) {
+    for (int i = Method_SellCSigma*VECTOR_TOTAL_SIZE; i < Method_Total_Size * VECTOR_TOTAL_SIZE; ++i) {
         testForFunctions(funcNames[i], iter, nthreads, Y_golden, m, RowPtr, ColIdx, Val, X, Y,
                          i%VECTOR_TOTAL_SIZE, i/VECTOR_TOTAL_SIZE);
     }

@@ -136,7 +136,7 @@ void spmv_create_handle_all_in_one(gemv_Handle_t *Handle,
             parallel_balanced2_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
         }break;
         case Method_SellCSigma:{
-            sell_C_Sigma_get_handle_Selected(*Handle,4,32,m,RowPtr,ColIdx,Matrix_Val);
+            sell_C_Sigma_get_handle_Selected(*Handle,m/nthreads/8,8,m,RowPtr,ColIdx,Matrix_Val);
         }
         default:{
 

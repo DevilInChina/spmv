@@ -87,6 +87,8 @@ float basic_s_dotProduct_avx512(
         sum += Val[j] * X[indx[j]];
     }
     return sum;
+#elif DOT_AVX2_CAN
+    return basic_s_dotProduct_avx2(len, indx, Val, X);
 #else
     return basic_s_dotProduct(len, indx, Val, X);
 #endif
@@ -154,6 +156,8 @@ double basic_d_dotProduct_avx512(
         sum += Val[j] * X[indx[j]];
     }
     return sum;
+#elif DOT_AVX2_CAN
+    return basic_d_dotProduct_avx2(len,indx,Val,X);
 #else
     return basic_d_dotProduct(len, indx, Val, X);
 #endif
