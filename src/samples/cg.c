@@ -63,7 +63,8 @@ float dotproduct_float(float *x1,float *x2,int n)
         sum += x1[i] * x2[i];
     return sum;
 }
-void cg_double(int *RowPtr,int *ColIdx,double *Val, double *x, double *b, int n, int *iter, int maxiter, double threshold)
+void cg_double(int *RowPtr,int *ColIdx,double *Val,
+               double *x, double *b, int n, int *iter, int maxiter, double threshold)
 {
     memset(x, 0, sizeof(double) * n);
     double *residual = (double *)malloc(sizeof(double) * n);
@@ -75,7 +76,7 @@ void cg_double(int *RowPtr,int *ColIdx,double *Val, double *x, double *b, int n,
     double rho = 0;
     double rho_1 = 0;
     gemv_Handle_t temp = NULL;
-    spmv_create_handle_all_in_one(&temp,n,RowPtr,ColIdx,Val,8,STATUS_SELL_C_SIGMA,sizeof(Val[0]),VECTOR_AVX512);
+    spmv_create_handle_all_in_one(&temp, n, RowPtr, ColIdx, Val, 8, Method_SellCSigma, sizeof(Val[0]), VECTOR_AVX512);
     // p0 = r0 = b - Ax0
     //matvec(A, x, y, n);
     spmv(temp,n,RowPtr,ColIdx,Val,x,y);
@@ -124,19 +125,19 @@ void cg_double(int *RowPtr,int *ColIdx,double *Val, double *x, double *b, int n,
     free(p);
     free(q);
 }
-void new_cg_float(int *RowPtr,int *ColIdx,BASIC_VAL_TYPE *Val, BASIC_VAL_TYPE *x, BASIC_VAL_TYPE *b, int n, int *iter, int maxiter, double threshold)
+void new_cg_float(int *RowPtr,int *ColIdx,float *Val, float *x, float *b, int n, int *iter, int maxiter, double threshold)
 {
-    memset(x, 0, sizeof(BASIC_VAL_TYPE) * n);
-    BASIC_VAL_TYPE *residual = (BASIC_VAL_TYPE *)malloc(sizeof(BASIC_VAL_TYPE) * n);
-    BASIC_VAL_TYPE *y = (BASIC_VAL_TYPE *)malloc(sizeof(BASIC_VAL_TYPE) * n);
-    BASIC_VAL_TYPE *p = (BASIC_VAL_TYPE *)malloc(sizeof(BASIC_VAL_TYPE) * n);
-    BASIC_VAL_TYPE *q = (BASIC_VAL_TYPE *)malloc(sizeof(BASIC_VAL_TYPE) * n);
+    memset(x, 0, sizeof(float) * n);
+    float *residual = (float *)malloc(sizeof(float) * n);
+    float *y = (float *)malloc(sizeof(float) * n);
+    float *p = (float *)malloc(sizeof(float) * n);
+    float *q = (float *)malloc(sizeof(float) * n);
     *iter = 0;
-    BASIC_VAL_TYPE norm = 0;
-    BASIC_VAL_TYPE rho = 0;
-    BASIC_VAL_TYPE rho_1 = 0;
+    float norm = 0;
+    float rho = 0;
+    float rho_1 = 0;
     gemv_Handle_t temp = NULL;
-    spmv_create_handle_all_in_one(&temp,n,RowPtr,ColIdx,Val,8,STATUS_SELL_C_SIGMA,sizeof(Val[0]),VECTOR_AVX512);
+    spmv_create_handle_all_in_one(&temp, n, RowPtr, ColIdx, Val, 8, Method_SellCSigma, sizeof(Val[0]), VECTOR_AVX512);
 
     // p0 = r0 = b - Ax0
     //matvec(A, x, y, n);
@@ -201,14 +202,14 @@ int main(int argc, char **argv)
 //    mmio_info(&m, &n, &nnzR, &isSymmetric, filename);
 //    int *RowPtr = (int *) aligned_alloc(ALIGENED_SIZE,(m + 1) * sizeof(int));
 //    int *ColIdx = (int *) aligned_alloc(ALIGENED_SIZE,nnzR * sizeof(int));
-//    BASIC_VAL_TYPE *Val = (BASIC_VAL_TYPE *) aligned_alloc(ALIGENED_SIZE, nnzR * sizeof(BASIC_VAL_TYPE));
+//    float *Val = (float *) aligned_alloc(ALIGENED_SIZE, nnzR * sizeof(float));
 //    mmio_data(RowPtr, ColIdx, Val, filename);
-//    BASIC_VAL_TYPE *X = (BASIC_VAL_TYPE *) aligned_alloc(ALIGENED_SIZE, sizeof(BASIC_VAL_TYPE) * (n));
-//    BASIC_VAL_TYPE *Y = (BASIC_VAL_TYPE *) aligned_alloc(ALIGENED_SIZE, sizeof(BASIC_VAL_TYPE) * (m));
-//    BASIC_VAL_TYPE *Y_golden = (BASIC_VAL_TYPE *) malloc(sizeof(BASIC_VAL_TYPE) * (m));
-//    memset(X, 0, sizeof(BASIC_VAL_TYPE) * (n));
-//    memset(Y, 0, sizeof(BASIC_VAL_TYPE) * (m));
-//    memset(Y_golden, 0, sizeof(BASIC_VAL_TYPE) * (m));
+//    float *X = (float *) aligned_alloc(ALIGENED_SIZE, sizeof(float) * (n));
+//    float *Y = (float *) aligned_alloc(ALIGENED_SIZE, sizeof(float) * (m));
+//    float *Y_golden = (float *) malloc(sizeof(float) * (m));
+//    memset(X, 0, sizeof(float) * (n));
+//    memset(Y, 0, sizeof(float) * (m));
+//    memset(Y_golden, 0, sizeof(float) * (m));
 //    for(int i = 0; i < n; i++)
 //    X[i] = 1;
 //    int iter=0;

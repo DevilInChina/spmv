@@ -29,7 +29,7 @@ void spmv_create_handle_all_in_one(gemv_Handle_t *Handle,
                                    const BASIC_INT_TYPE *ColIdx,
                                    const void *Matrix_Val,
                                    BASIC_SIZE_TYPE nthreads,
-                                   STATUS_GEMV_HANDLE Function,
+                                   SPMV_METHODS Function,
                                    BASIC_SIZE_TYPE size,
                                    VECTORIZED_WAY vectorizedWay
                         );

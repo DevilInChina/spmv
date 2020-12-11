@@ -9,10 +9,6 @@
 #define BASIC_INT_TYPE int
 #endif
 
-#ifndef BASIC_VAL_TYPE
-#define BASIC_VAL_TYPE float
-#endif
-
 #ifndef BASIC_SIZE_TYPE
 #define BASIC_SIZE_TYPE unsigned long
 #endif
@@ -23,18 +19,20 @@ typedef enum VECTORIZED_WAY{
     VECTOR_AVX512,
     VECTOR_TOTAL_SIZE
 }VECTORIZED_WAY;
+extern const char*Vectorized_names[];
 
-
-typedef enum STATUS_GEMV_HANDLE{
-    STATUS_NONE,
-    STATUS_PARALLEL,
-    STATUS_BALANCED,
-    STATUS_BALANCED2,
-    STATUS_SELL_C_SIGMA,
-    STATUS_TOTAL_SIZE
-}STATUS_GEMV_HANDLE;
+typedef enum SPMV_METHODS{
+    Method_Serial,
+    Method_Parallel,
+    Method_Balanced,
+    Method_Balanced2,
+    Method_SellCSigma,
+    Method_Total_Size
+}SPMV_METHODS;
+extern const char*Methods_names[];
 
 extern const char * funcNames[];
+
 typedef struct Row_Block {
     const BASIC_INT_TYPE   *indxBegin;
     const void   *valBegin;
@@ -53,7 +51,7 @@ typedef struct C_Block{
 
 
 typedef struct gemv_Handle {
-    STATUS_GEMV_HANDLE status;
+    SPMV_METHODS spmvMethod;
     BASIC_SIZE_TYPE data_size;
     BASIC_SIZE_TYPE nthreads;
     VECTORIZED_WAY vectorizedWay;

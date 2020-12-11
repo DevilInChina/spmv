@@ -122,7 +122,7 @@ void spmv_sell_C_Sigma_Selected(const gemv_Handle_t handle,
                                 const void* Vector_Val_X,
                                 void*       Vector_Val_Y
 ){
-    if(handle->status != STATUS_SELL_C_SIGMA){
+    if(handle->spmvMethod != Method_SellCSigma){
         return;
     }
     BASIC_SIZE_TYPE size = handle->data_size;

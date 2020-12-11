@@ -49,7 +49,7 @@ void sell_C_Sigma_get_handle_Selected(gemv_Handle_t handle,
 
 void handle_init_common_parameters(gemv_Handle_t this_handle,
                                    BASIC_SIZE_TYPE nthreads,
-                                   STATUS_GEMV_HANDLE function,
+                                   SPMV_METHODS function,
                                    BASIC_SIZE_TYPE size,
                                    VECTORIZED_WAY vectorizedWay);
 
