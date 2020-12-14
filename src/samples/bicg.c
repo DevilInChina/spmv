@@ -6,6 +6,7 @@
 #include <assert.h> 
 #include "data-types.h"
 #include <gemv.h>
+#include "mmio_highlevel.h"
 #define min(a,b) ((a<b)?(a):(b)) 
 /* run this program using the console pauser or add your own getch, system("pause") or input loop */
 
@@ -186,7 +187,7 @@ void itsol_solver_init_pars(ITS_PARS *p)
     p->bgsl = 4;
     p->restart = 30;               /* Dim of Krylov subspace [fgmr]   */
     p->maxits = 1000;              /* maximum number of fgmres iters  */
-    p->tol = 1e-6;                 /* tolerance for stopping fgmres   */
+    p->tol = 1e-5;                 /* tolerance for stopping fgmres   */
 
     p->eps = 0.8;
     p->ilut_p = 50;                /* initial lfil                    */
@@ -272,6 +273,7 @@ int itsol_pc_lofC(int lofM, ITS_SparMat *csmat, ITS_ILUSpar *lu, FILE * fp)
     int *levls = NULL, *jbuf = NULL, *iw = lu->work;
     int **ulvl;                 /*  stores lev-fils for U part of ILU factorization */
     ITS_SparMat *L = lu->L, *U = lu->U;
+    printf("nx=%d\n",n);
    //将二维转换成一维
     //转换结束
     /*--------------------------------------------------------------------
@@ -297,12 +299,14 @@ int itsol_pc_lofC(int lofM, ITS_SparMat *csmat, ITS_ILUSpar *lu, FILE * fp)
         iw[j] = -1;
     int sum=0;
     int sum_l=0;
+    printf("aa=%d\n",csmat->RowPtr[n]);
     for(i=0;i<n;i++)
     {
+        //printf("i=%d\n",i);
         incl=0;
         incu=i;
         /*-------------------- assign lof = 0 for matrix elements */
-        for(j=csmat->RowPtr[i];j<csmat->RowPtr[i+1];j++)
+        for(int j=csmat->RowPtr[i];j<csmat->RowPtr[i+1];j++)
         {
             col=csmat->ColIdx[j];
             if (col < i) {//initiliza the L part
@@ -321,6 +325,8 @@ int itsol_pc_lofC(int lofM, ITS_SparMat *csmat, ITS_ILUSpar *lu, FILE * fp)
         /*-------------------- symbolic k,i,j Gaussian elimination  */
         jpiv = -1;
         while (++jpiv < incl) {
+//            if(i==1994)
+//                printf("incl=%d\n",incl);
             k = jbuf[jpiv];
             /*-------------------- select leftmost pivot */
             kmin = k;
@@ -366,6 +372,8 @@ int itsol_pc_lofC(int lofM, ITS_SparMat *csmat, ITS_ILUSpar *lu, FILE * fp)
                     levls[ip] = min(levls[ip], it);
             }
         }
+        if(i==1994)
+            printf("sssll\n");
         /*-------------------- reset iw */
          for (j = 0; j < incl; j++)
             iw[jbuf[j]] = -1;
@@ -395,10 +403,11 @@ int itsol_pc_lofC(int lofM, ITS_SparMat *csmat, ITS_ILUSpar *lu, FILE * fp)
 
     }
     }
+    printf("sxxx\n");
     /*-------------------- free temp space and leave --*/
-    free(levls);
-    free(jbuf);
-    free(ulvl);
+//    free(levls);
+//    free(jbuf);
+//    free(ulvl);
 
     return 0;
 }
@@ -436,21 +445,25 @@ int itsol_pc_lofC(int lofM, ITS_SparMat *csmat, ITS_ILUSpar *lu, FILE * fp)
 int itsol_pc_ilukC(int lofM, ITS_SparMat *csmat, ITS_ILUSpar *lu, FILE * fp)
 {
     int ierr;
-    int n = csmat->n; 
+    int n = csmat->n;
+    printf("n=%d\n",n);
     int *jw, i, j, k, col, jpos, jrow;
     ITS_SparMat *L, *U;
     double *D;
     int nnzr=csmat->RowPtr[n];
+    printf("nnzr=%d\n",nnzr);
     itsol_setupILU(lu, n,nnzr);
     // L = lu->L;
     // U = lu->U;
     // D = lu->D;
     /* symbolic factorization to calculate level of fill index arrays */
     //level of fill
+    printf("sxxx\n");
     if ((ierr = itsol_pc_lofC(lofM, csmat, lu, fp)) != 0) {
         fprintf(fp, "Error: lofC\n");
         return -1;
     }
+    printf("sxxx\n");
     L = lu->L;
     U = lu->U;
     D = lu->D;
@@ -588,7 +601,7 @@ int itsol_pc_assemble(ITS_SOLVER *s)//The initialization of precondition
     int ierr;
     ITS_PARS p;
     ITS_PC *pc;
-
+    printf("sawdsxxxx");
     assert(s != NULL);
     pc = &s->pc;
 
@@ -596,7 +609,7 @@ int itsol_pc_assemble(ITS_SOLVER *s)//The initialization of precondition
     pctype = pc->pc_type;
     p = s->pars;
     if (pctype == ITS_PC_ILUK) {
-        ierr = itsol_pc_ilukC(p.iluk_level, s->csmat, pc->ILU, pc->log);
+        ierr = itsol_pc_ilukC(p.iluk_level, s->csmat_new, pc->ILU, pc->log);//or s->csmat_new
 
         if (ierr != 0) {
             fprintf(pc->log, "pc assemble, ILUK error\n");
@@ -688,7 +701,7 @@ int itsol_COOcs(int n, int nnz, double *a, int *ja, int *ia, ITS_SparMat *bmat)/
     free(len);
     return 0;
 }
-int itsol_solver_assemble(ITS_SOLVER *s)//The intilization of solver
+int itsol_solver_assemble(ITS_SOLVER *s,int *RowPtr,int *ColIdx,double *Val,int m,int nnzR)//The intilization of solver
 {
     ITS_PC_TYPE pctype;
     ITS_CooMat A;
@@ -711,6 +724,7 @@ int itsol_solver_assemble(ITS_SOLVER *s)//The intilization of solver
     pctype = s->pc_type;
 
     s->csmat = (ITS_SparMat *) itsol_malloc(sizeof(ITS_SparMat), "solver assemble");
+    s->csmat_new=(ITS_SparMat *) itsol_malloc(sizeof(ITS_SparMat), "solver assemble");
     A = *s->A;
 
     // if (pctype == ITS_PC_ILUC) {
@@ -740,7 +754,23 @@ int itsol_solver_assemble(ITS_SOLVER *s)//The intilization of solver
         fprintf(log, "solver assemble, wrong preconditioner type\n");
         exit(-1);
     }
-
+    s->csmat_new->RowPtr=(int *)malloc((m+1)*sizeof (int));
+    s->csmat_new->ColIdx=(int *)malloc(nnzR*sizeof(int));
+    s->csmat_new->Val=(double *)malloc(nnzR*sizeof(double));
+    s->csmat_new->n=m;
+    for(int i=0;i<m+1;i++)
+        s->csmat_new->RowPtr[i]=RowPtr[i];
+    for(int i=0;i<m;i++)
+    {
+        for(int j=s->csmat_new->RowPtr[i];j<s->csmat_new->RowPtr[i+1];j++)
+        {
+            s->csmat_new->ColIdx[j]=ColIdx[j];
+            s->csmat_new->Val[j]=Val[j];
+        }
+    }
+    printf("m=%d\n",m);
+    s->smat.CS=s->csmat_new;
+    s->smat.n=m;
     /* pc assemble */
     itsol_pc_assemble(s);//����Ԥ����
 
@@ -890,7 +920,7 @@ skip:
 
     return retval;
 }
-int itsol_solver_solve(ITS_SOLVER *s, double *x, double *rhs)
+int itsol_solver_solve(ITS_SOLVER *s, double *x, double *rhs,int *RowPtr,int *ColIdx,double *Val,int m,int nnzR)
 {
     ITS_PARS io;
     ITS_PC_TYPE pctype;
@@ -901,21 +931,29 @@ int itsol_solver_solve(ITS_SOLVER *s, double *x, double *rhs)
     assert(rhs != NULL);
 
     /* assemble */
-    itsol_solver_assemble(s);//coo��ʽת����CSR��ʽ
-
+    itsol_solver_assemble(s,RowPtr,ColIdx,Val,m,nnzR);//coo��ʽת����CSR��ʽ
+    printf("sawd");
     io = s->pars;
     pctype = s->pc_type;
     stype = s->s_type;
     return itsol_solver_bicgstab(&s->smat, &s->pc, rhs, x, io, &s->nits, &s->res);
 }
-int main()
+int main(int argc, char **argv)
 {
    double *x = NULL, *rhs = NULL;
     int n, i;
     ITS_CooMat A;
     ITS_SOLVER s;
+    char *filename = argv[1];
+    printf ("filename = %s\n", filename);
+    int m, n_csr, nnzR, isSymmetric;
+    mmio_info(&m, &n_csr, &nnzR, &isSymmetric, filename);
     /* case: COO formats */
-
+    int *RowPtr = (int *) aligned_alloc(ALIGENED_SIZE,(m + 1) * sizeof(int));
+    int *ColIdx = (int *) aligned_alloc(ALIGENED_SIZE,nnzR * sizeof(int));
+    double *Val = (double *) aligned_alloc(ALIGENED_SIZE, nnzR * sizeof(double));
+    mmio_data(RowPtr, ColIdx, Val, filename);
+    printf("val_row=%f",Val[0]);
     A = itsol_read_coo("matrix/pores3.coo");
     //A = itsol_read_coo("matrix/sherman5.coo");
     n = A.n;
@@ -924,16 +962,22 @@ int main()
     /* solution vectors */
     x = (double *)itsol_malloc(n * sizeof(double), "main");
     rhs = (double *)itsol_malloc(n * sizeof(double), "main");
+    double *x1 = (double *)itsol_malloc(m * sizeof(double), "main");
+    double *rhs1 = (double *)itsol_malloc(m * sizeof(double), "main");
 
     for( i = 0; i < n; i++ ) {
         x[i] = 0.0;
         rhs[i] = i;
     }
-
+    for(int i=0;i<m;i++)
+    {
+        x1[i]=0.0;
+        rhs1[i]=i;
+    }
     /* init */
     itsol_solver_initialize(&s, ITS_SOLVER_BICGSTAB, ITS_PC_ILUK, &A);
     /* call solver */
-    itsol_solver_solve(&s, x, rhs);
+    itsol_solver_solve(&s, x1, rhs1,RowPtr,ColIdx,Val,m,nnzR);
 
     /* get results */
     printf("solver converged in %d steps...\n\n", s.nits);
