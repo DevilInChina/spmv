@@ -22,6 +22,8 @@ make
 
 ## Compile to a shared library
 
+### Lib location
+
 See at 
 
 ```shell
@@ -29,19 +31,19 @@ spmv/lib/
 ```
 ### Defines
 #### AVX2 & AVX512
-see at [Use avx2 avx512](#Performance avx2 and avx512)
+see at [Performance avx2 and avx512](#Performance avx2 and avx512)
 
 
 
 ## Compile some executable samples
 
-See at
+### Bin location
 
 ```shell
 spmv/bin/
 ```
 
-and their source code locate in
+### Source code location
 
 ```shell
 spmv/src/samples/
@@ -159,7 +161,7 @@ spmv(new_handle,m,RowPtr,ColIdx,Matrix_Val,Vector_Val_X,Vector_Val_Y);
 ```
 ### Performance avx2 and avx512
 
-add to CMakelists.txt after
+add to CMakeLists.txt after
 
 ```cmake
 add_library(mv SHARED ${SPMVS})
@@ -175,31 +177,31 @@ target_compile_definitions(mv PRIVATE DOT_AVX512_CAN)
 
 and recompile lib to make work properly
 
-
-
-
-
-### none
+#### none
 
 All of codes support functions use none vectorized method 
 
-### avx2
+#### avx2
 
+If defined DOT_AVX2_CAN program will use AVX2 to calculate dot product and line product
 
+Otherwise use none to calculate . 
 
-### avx512
+#### avx512
 
+If defined DOT_AVX512_CAN program will use AVX2 to calculate dot product and line product
 
+Otherwise use AVX2 to calculate . 
 
 ## Different method
 
 ### serial
 
-
+Just use dot product and choose vectorized way 
 
 ### omp_parallel
 
-
+Use omp parallel
 
 ### balanced
 
