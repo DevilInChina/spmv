@@ -5,7 +5,7 @@
 #include <string.h>
 #include <math.h>
 #include <sys/time.h>
-#include <gemv.h>
+#include <spmv.h>
 // sum up 8 single-precision numbers
 void testForFunctions(const char *functionName,
                       int iter, int nthreads,
@@ -23,7 +23,7 @@ void testForFunctions(const char *functionName,
     int nnzR = RowPtr[m] - RowPtr[0];
     struct timeval t1, t2;
     int currentiter = 0;
-    gemv_Handle_t handle = NULL;
+    spmv_Handle_t handle = NULL;
     spmv_create_handle_all_in_one(&handle,m,RowPtr,ColIdx,Matrix_Val,
                                   nthreads,FUNC_WAY,sizeof(VALUE_TYPE),PRODUCT_WAY);
 
@@ -49,7 +49,7 @@ void testForFunctions(const char *functionName,
                Methods_names[FUNC_WAY], Vectorized_names[PRODUCT_WAY], thread, s, GFlops_serial);
     }
     if (handle)
-        gemv_destory_handle(handle);
+        spmv_destory_handle(handle);
 
 }
 

@@ -4,7 +4,7 @@
 
 #ifndef GEMV_LINEPRODUCT_H
 #define GEMV_LINEPRODUCT_H
-#include "gemv_Defines.h"
+#include "spmv_Defines.h"
 
 
 void basic_d_lineProduct(BASIC_INT_TYPE length, const double*Val, const BASIC_INT_TYPE* indx,

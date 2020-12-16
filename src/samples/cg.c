@@ -4,7 +4,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <sys/time.h>
-#include <gemv.h>
+#include <spmv.h>
 #include "mmio_highlevel.h"
 
 
@@ -77,7 +77,7 @@ void cg_VALUE_TYPE(int *RowPtr,int *ColIdx,VALUE_TYPE *Val,
     VALUE_TYPE norm = 0;
     VALUE_TYPE rho = 0;
     VALUE_TYPE rho_1 = 0;
-    gemv_Handle_t temp = NULL;
+    spmv_Handle_t temp = NULL;
     spmv_create_handle_all_in_one(&temp, n, RowPtr, ColIdx, Val, 8, Method_SellCSigma, sizeof(Val[0]), VECTOR_AVX512);
     // p0 = r0 = b - Ax0
     //matvec(A, x, y, n);

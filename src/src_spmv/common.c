@@ -9,7 +9,7 @@
  * @brief init parameters used in balanced and balanced2
  * @param this_handle
  */
-void init_Balance_Balance2(gemv_Handle_t this_handle){
+void init_Balance_Balance2(spmv_Handle_t this_handle){
     this_handle->csrSplitter = NULL;
     this_handle->Yid = NULL;
     this_handle->Apinter = NULL;
@@ -20,7 +20,7 @@ void init_Balance_Balance2(gemv_Handle_t this_handle){
     this_handle->Bpinter = NULL;
 }
 
-void init_sell_C_Sigma(gemv_Handle_t this_handle){
+void init_sell_C_Sigma(spmv_Handle_t this_handle){
     this_handle->Sigma = 0;
     this_handle->C = 0;
     this_handle->banner = 0;
@@ -32,7 +32,7 @@ void init_sell_C_Sigma(gemv_Handle_t this_handle){
  * @brief free parameters used in balanced and balanced2
  * @param this_handle
  */
-void clear_Balance_Balance2(gemv_Handle_t this_handle){
+void clear_Balance_Balance2(spmv_Handle_t this_handle){
     free(this_handle->csrSplitter);
     free(this_handle->Yid);
     free(this_handle->Apinter);
@@ -50,7 +50,7 @@ void C_Block_destory(C_Block_t this_block){
     free(this_block->Y);
 }
 
-void clear_Sell_C_Sigma(gemv_Handle_t this_handle) {
+void clear_Sell_C_Sigma(spmv_Handle_t this_handle) {
     int siz = this_handle->banner / (this_handle->C ? this_handle->C : 1);
     for (int i = 0; i < siz; ++i) {
         C_Block_destory(this_handle->C_Blocks + i);
@@ -58,7 +58,7 @@ void clear_Sell_C_Sigma(gemv_Handle_t this_handle) {
     free(this_handle->C_Blocks);
 }
 
-void gemv_Handle_init(gemv_Handle_t this_handle){
+void gemv_Handle_init(spmv_Handle_t this_handle){
     this_handle->spmvMethod = Method_Serial;
     this_handle->nthreads = 0;
 
@@ -67,25 +67,25 @@ void gemv_Handle_init(gemv_Handle_t this_handle){
 
 }
 
-void gemv_Handle_clear(gemv_Handle_t this_handle) {
+void gemv_Handle_clear(spmv_Handle_t this_handle) {
     clear_Balance_Balance2(this_handle);
     clear_Sell_C_Sigma(this_handle);
 
     gemv_Handle_init(this_handle);
 }
 
-void gemv_destory_handle(gemv_Handle_t this_handle){
+void spmv_destory_handle(spmv_Handle_t this_handle){
     gemv_Handle_clear(this_handle);
     free(this_handle);
 }
 
-gemv_Handle_t gemv_create_handle(){
-    gemv_Handle_t ret = malloc(sizeof(gemv_Handle));
+spmv_Handle_t gemv_create_handle(){
+    spmv_Handle_t ret = malloc(sizeof(spmv_Handle));
     gemv_Handle_init(ret);
     return ret;
 }
 
-void gemv_clear_handle(gemv_Handle_t this_handle){
+void spmv_clear_handle(spmv_Handle_t this_handle){
     gemv_Handle_clear(this_handle);
 }
 
@@ -94,7 +94,7 @@ void gemv_clear_handle(gemv_Handle_t this_handle){
 
 
 
-void handle_init_common_parameters(gemv_Handle_t this_handle,
+void handle_init_common_parameters(spmv_Handle_t this_handle,
                                    BASIC_SIZE_TYPE nthreads,
                                    SPMV_METHODS function,
                                    BASIC_SIZE_TYPE size,
@@ -113,7 +113,7 @@ const spmv_function spmv_functions[] = {
         spmv_sell_C_Sigma_Selected
 };
 
-void spmv_create_handle_all_in_one(gemv_Handle_t *Handle,
+void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
                                    BASIC_INT_TYPE m,
                                    const BASIC_INT_TYPE*RowPtr,
                                    const BASIC_INT_TYPE *ColIdx,
@@ -145,7 +145,7 @@ void spmv_create_handle_all_in_one(gemv_Handle_t *Handle,
     }
 }
 
-void spmv(const gemv_Handle_t handle,
+void spmv(const spmv_Handle_t handle,
           BASIC_INT_TYPE m,
           const BASIC_INT_TYPE* RowPtr,
           const BASIC_INT_TYPE* ColIdx,

@@ -2,8 +2,8 @@
 // Created by kouushou on 2020/12/6.
 //
 
-#ifndef GEMV_GEMV_DEFINES_H
-#define GEMV_GEMV_DEFINES_H
+#ifndef GEMV_SPMV_DEFINES_H
+#define GEMV_SPMV_DEFINES_H
 
 #ifndef BASIC_INT_TYPE
 #define BASIC_INT_TYPE int
@@ -17,7 +17,7 @@ typedef enum VECTORIZED_WAY{
     VECTOR_NONE,
     VECTOR_AVX2,
     VECTOR_AVX512,
-    VECTOR_TOTAL_SIZE
+    VECTOR_TOTAL_SIZE /// count total ways of vectorized
 }VECTORIZED_WAY;
 extern const char*Vectorized_names[];
 
@@ -27,7 +27,7 @@ typedef enum SPMV_METHODS{
     Method_Balanced,
     Method_Balanced2,
     Method_SellCSigma,
-    Method_Total_Size
+    Method_Total_Size /// count total ways of methods
 }SPMV_METHODS;
 extern const char*Methods_names[];
 
@@ -50,7 +50,7 @@ typedef struct C_Block{
 }C_Block,*C_Block_t;
 
 
-typedef struct gemv_Handle {
+typedef struct spmv_Handle {
     SPMV_METHODS spmvMethod;
     BASIC_SIZE_TYPE data_size;
     BASIC_SIZE_TYPE nthreads;
@@ -74,9 +74,9 @@ typedef struct gemv_Handle {
     BASIC_INT_TYPE banner;
     C_Block_t C_Blocks;
     ///---------sell C Sigma---------///
-}gemv_Handle;
+}spmv_Handle;
 
-typedef gemv_Handle*  gemv_Handle_t;
+typedef spmv_Handle*  spmv_Handle_t;
 
 typedef enum LINE_PRODUCT_WAY{
     GEMV_LINE_PRODUCT_4,
@@ -126,4 +126,4 @@ extern float (* const Dot_s_Products[])
 extern double (* const Dot_d_Products[])
         (BASIC_INT_TYPE len, const BASIC_INT_TYPE*
         indx, const double *Val, const double *X);
-#endif //GEMV_GEMV_DEFINES_H
+#endif //GEMV_SPMV_DEFINES_H
