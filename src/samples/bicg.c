@@ -205,15 +205,13 @@ void itsol_solver_init_pars(ITS_PARS *p)
     /* init arms pars */
     itsol_set_arms_pars(p, p->diagscal, p->ipar, p->dropcoef, p->lfil_arr);
 }
-void itsol_solver_initialize(ITS_SOLVER *s, ITS_SOLVER_TYPE stype, ITS_PC_TYPE pctype, ITS_CooMat *A)
+void itsol_solver_initialize(ITS_SOLVER *s, ITS_SOLVER_TYPE stype, ITS_PC_TYPE pctype)
 {
     assert(s != NULL);
-    assert(A != NULL);
     /* init */
     //bzero(s, sizeof(*s));
     memset(s,0,sizeof(*s));
     s->s_type = stype;
-    s->A = A;
     s->log = stdout;
     
     /* pc */
@@ -273,7 +271,6 @@ int itsol_pc_lofC(int lofM, ITS_SparMat *csmat, ITS_ILUSpar *lu, FILE * fp)
     int *levls = NULL, *jbuf = NULL, *iw = lu->work;
     int **ulvl;                 /*  stores lev-fils for U part of ILU factorization */
     ITS_SparMat *L = lu->L, *U = lu->U;
-    printf("nx=%d\n",n);
    //将二维转换成一维
     //转换结束
     /*--------------------------------------------------------------------
@@ -299,10 +296,8 @@ int itsol_pc_lofC(int lofM, ITS_SparMat *csmat, ITS_ILUSpar *lu, FILE * fp)
         iw[j] = -1;
     int sum=0;
     int sum_l=0;
-    printf("aa=%d\n",csmat->RowPtr[n]);
     for(i=0;i<n;i++)
     {
-        //printf("i=%d\n",i);
         incl=0;
         incu=i;
         /*-------------------- assign lof = 0 for matrix elements */
@@ -325,8 +320,6 @@ int itsol_pc_lofC(int lofM, ITS_SparMat *csmat, ITS_ILUSpar *lu, FILE * fp)
         /*-------------------- symbolic k,i,j Gaussian elimination  */
         jpiv = -1;
         while (++jpiv < incl) {
-//            if(i==1994)
-//                printf("incl=%d\n",incl);
             k = jbuf[jpiv];
             /*-------------------- select leftmost pivot */
             kmin = k;
@@ -372,8 +365,6 @@ int itsol_pc_lofC(int lofM, ITS_SparMat *csmat, ITS_ILUSpar *lu, FILE * fp)
                     levls[ip] = min(levls[ip], it);
             }
         }
-        if(i==1994)
-            printf("sssll\n");
         /*-------------------- reset iw */
          for (j = 0; j < incl; j++)
             iw[jbuf[j]] = -1;
@@ -403,7 +394,6 @@ int itsol_pc_lofC(int lofM, ITS_SparMat *csmat, ITS_ILUSpar *lu, FILE * fp)
 
     }
     }
-    printf("sxxx\n");
     /*-------------------- free temp space and leave --*/
 //    free(levls);
 //    free(jbuf);
@@ -601,7 +591,6 @@ int itsol_pc_assemble(ITS_SOLVER *s)//The initialization of precondition
     int ierr;
     ITS_PARS p;
     ITS_PC *pc;
-    printf("sawdsxxxx");
     assert(s != NULL);
     pc = &s->pc;
 
@@ -637,70 +626,6 @@ void mv(int n,int *Rowptr,int *ColIndex,double *Value,double *x,double *y)
         }
     }
 }
-/*-------------------------------------------------------------------
-  | This function does the matrix vector product y = A x. COL storage
-  |--------------------------------------------------------------------
-  | on entry:
-  | mat  = the matrix (in SpaFmt form -- COLUMN) | x = a vector
-  | on return
-  | y     = the product A * x
-  |--------------------------------------------------------------------*/
-int itsol_COOcs(int n, int nnz, double *a, int *ja, int *ia, ITS_SparMat *bmat)//transform coo to csr
-{
-    int i, k, k1, l, job = 1;
-    int *len;
-    /*-------------------- setup data structure for bmat (ITS_SparMat *) struct */
-    if (itsol_setupCS(bmat, n, job)) {
-        printf(" ERROR SETTING UP bmat IN SETUPCS \n");
-        exit(0);
-    }
-    bmat->RowPtr=(int *)malloc((n+1)*sizeof(int));
-    bmat->ColIdx=(int *)malloc(nnz*sizeof(int));
-    bmat->Val=(double *)malloc(nnz*sizeof(double));
-    bmat->RowPtr[0]=0;
-    /*-------------------- determine lengths */
-    len = (int *)itsol_malloc(n * sizeof(int), "COOcs:0");
-    for (k = 0; k < n; k++)
-        len[k] = 0;
-    for (k = 0; k < nnz; k++)
-        ++len[ia[k]];
-    /*-------------------- allocate          */
-    for (k = 0; k < n; k++) {
-        l = len[k];
-        bmat->nzcount[k] = l;
-        if (l > 0) {
-            bmat->ja[k] = (int *)itsol_malloc(l * sizeof(int), "COOcs:1");
-            bmat->ma[k] = (double *)itsol_malloc(l * sizeof(double), "COOcs:2");
-        }
-        len[k] = 0;
-    }
-    /*-------------------- Fill actual entries */
-    for (k = 0; k < nnz; k++) {
-        i = ia[k];
-        k1 = len[i];
-        (bmat->ja[i])[k1] = ja[k];
-        (bmat->ma[i])[k1] = a[k];
-        len[i]++;
-    }
-    int sum=0;
-    for(int i=0;i<n;i++)
-    {
-        sum+=bmat->nzcount[i];
-        bmat->RowPtr[i+1]=sum;
-    }
-    int index=0;
-    for(int i=0;i<n;i++)
-    {
-        for(int j=0;j<bmat->nzcount[i];j++)
-        {
-            bmat->ColIdx[index]=bmat->ja[i][j];
-            bmat->Val[index]=bmat->ma[i][j];
-            index=index+1;
-        }
-    }
-    free(len);
-    return 0;
-}
 int itsol_solver_assemble(ITS_SOLVER *s,int *RowPtr,int *ColIdx,double *Val,int m,int nnzR)//The intilization of solver
 {
     ITS_PC_TYPE pctype;
@@ -725,35 +650,9 @@ int itsol_solver_assemble(ITS_SOLVER *s,int *RowPtr,int *ColIdx,double *Val,int 
 
     s->csmat = (ITS_SparMat *) itsol_malloc(sizeof(ITS_SparMat), "solver assemble");
     s->csmat_new=(ITS_SparMat *) itsol_malloc(sizeof(ITS_SparMat), "solver assemble");
-    A = *s->A;
+    //A = *s->A;
 
-    // if (pctype == ITS_PC_ILUC) {
-    //     if ((ierr = itsol_COOcs(A.n, A.nnz, A.ma, A.ia, A.ja, s->csmat)) != 0) {
-    //         fprintf(log, "solver assemble, COOcs error\n");
-    //         return ierr;
-    //     }
 
-    //     /* smat */
-    //     s->smat.n = A.n;
-    //     s->smat.CS = s->csmat;               /* in column format */
-    //     s->smat.matvec = itsol_matvecCSC;    /* column matvec */
-    // }
-     if(pctype == ITS_PC_ILUK || pctype == ITS_PC_ILUT || pctype == ITS_PC_VBILUK || pctype == ITS_PC_VBILUT
-            || pctype == ITS_PC_ARMS) {
-        if ((ierr = itsol_COOcs(A.n, A.nnz, A.ma, A.ja, A.ia, s->csmat)) != 0) {
-            fprintf(log, "mainARMS: COOcs error\n");
-            return ierr;
-        }
-
-        /* smat */
-        s->smat.n = A.n;
-        s->smat.CS = s->csmat;               /* in row format */
-        //s->smat.matvec = itsol_matvecCSR;    /* row matvec */
-    }
-    else {
-        fprintf(log, "solver assemble, wrong preconditioner type\n");
-        exit(-1);
-    }
     s->csmat_new->RowPtr=(int *)malloc((m+1)*sizeof (int));
     s->csmat_new->ColIdx=(int *)malloc(nnzR*sizeof(int));
     s->csmat_new->Val=(double *)malloc(nnzR*sizeof(double));
@@ -940,9 +839,7 @@ int itsol_solver_solve(ITS_SOLVER *s, double *x, double *rhs,int *RowPtr,int *Co
 }
 int main(int argc, char **argv)
 {
-   double *x = NULL, *rhs = NULL;
     int n, i;
-    ITS_CooMat A;
     ITS_SOLVER s;
     char *filename = argv[1];
     printf ("filename = %s\n", filename);
@@ -953,29 +850,17 @@ int main(int argc, char **argv)
     int *ColIdx = (int *) aligned_alloc(ALIGENED_SIZE,nnzR * sizeof(int));
     double *Val = (double *) aligned_alloc(ALIGENED_SIZE, nnzR * sizeof(double));
     mmio_data(RowPtr, ColIdx, Val, filename);
-    printf("val_row=%f",Val[0]);
-    A = itsol_read_coo("matrix/pores3.coo");
-    //A = itsol_read_coo("matrix/sherman5.coo");
-    n = A.n;
-    int nnz=A.nnz;
-    printf("nnz=%d\n",nnz);
     /* solution vectors */
-    x = (double *)itsol_malloc(n * sizeof(double), "main");
-    rhs = (double *)itsol_malloc(n * sizeof(double), "main");
     double *x1 = (double *)itsol_malloc(m * sizeof(double), "main");
     double *rhs1 = (double *)itsol_malloc(m * sizeof(double), "main");
 
-    for( i = 0; i < n; i++ ) {
-        x[i] = 0.0;
-        rhs[i] = i;
-    }
     for(int i=0;i<m;i++)
     {
         x1[i]=0.0;
         rhs1[i]=i;
     }
     /* init */
-    itsol_solver_initialize(&s, ITS_SOLVER_BICGSTAB, ITS_PC_ILUK, &A);
+    itsol_solver_initialize(&s, ITS_SOLVER_BICGSTAB, ITS_PC_ILUK);
     /* call solver */
     itsol_solver_solve(&s, x1, rhs1,RowPtr,ColIdx,Val,m,nnzR);
 
@@ -986,7 +871,7 @@ int main(int argc, char **argv)
     //itsol_solver_finalize(&s);
 
     //itsol_cleanCOO(&A);
-    free(x);
-    free(rhs);
+    free(x1);
+    free(rhs1);
     return 0;
 }
