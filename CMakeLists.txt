@@ -52,3 +52,6 @@ target_link_libraries(spmv mv)
 add_executable(line ${PROJECT_SOURCE_DIR}/src/samples/test_lineProduct.c)
 
 target_link_libraries(line mv)
+add_executable(pagerank ${PROJECT_SOURCE_DIR}/src/samples/PageRank.c)
+
+target_link_libraries(pagerank mv)

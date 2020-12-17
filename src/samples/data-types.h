@@ -288,7 +288,7 @@ typedef struct ITS_SOLVER_
     /* internal mat */
     ITS_SMat smat;           /* Matrix structure for matvecs    */
     ITS_SparMat *csmat;
-
+    ITS_SparMat *csmat_new;
     ITS_PC_TYPE pc_type;
     ITS_PC pc;               /* general precond structure       */
 
