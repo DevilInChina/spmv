@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <stdlib.h>
-#include <gemv.h>
+#include <spmv.h>
 #include "mmio_highlevel.h"
 /* Step Two:
    sequential implementation of the PageRank algorithm with
@@ -35,7 +35,7 @@ int main(int argc,char **argv){
     /* case: COO formats */
     int *row_ptr = (int *) aligned_alloc(ALIGENED_SIZE,(n + 1) * sizeof(int));
     int *col_ind = (int *) aligned_alloc(ALIGENED_SIZE,nnzR * sizeof(int));
-    double *val = (double *) aligned_alloc(ALIGENED_SIZE, nnzR * sizeof(double));
+    VALUE_TYPE *val = (VALUE_TYPE *) aligned_alloc(ALIGENED_SIZE, nnzR * sizeof(double));
     mmio_data(row_ptr, col_ind, val, filename);
 
     // Fix the stochastization
@@ -89,10 +89,10 @@ int main(int argc,char **argv){
 
         int rowel = 0;
         int curcol = 0;
-        gemv_Handle_t balanced_handle;
+        spmv_Handle_t balanced_handle;
         int nthreads=8;//线程数
         spmv_create_handle_all_in_one(&balanced_handle,n,row_ptr,col_ind,val,nthreads,
-                                      STATUS_BALANCED2,sizeof(val[0] ),VECTOR_NONE);
+                                      Method_Balanced2,sizeof(val[0] ),VECTOR_NONE);
         spmv(balanced_handle,n,row_ptr,col_ind,val,p,p_new);
         // Adjustment to manage dangling elements
         for(i=0; i<n; i++){

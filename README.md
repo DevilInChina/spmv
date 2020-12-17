@@ -201,15 +201,15 @@ Just use dot product and choose vectorized way
 
 ### omp_parallel
 
-Use omp parallel
+Just use omp parallel
 
 ### balanced
 
-
+Simple add load balancing to speed up processing , as a result need to use 'spmv_create_handle_all_in_one' to cost some time to create a handle.
 
 ### balanced2
 
-
+Deeper load balancing than balanced , need more time to prepare.
 
 ### sell_C_Sigma
 
