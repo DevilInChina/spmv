@@ -2,7 +2,7 @@
 #define _MMIO_HIGHLEVEL_
 
 #ifndef VALUE_TYPE
-#define VALUE_TYPE float
+#define VALUE_TYPE double
 #endif
 
 #include "mmio.h"

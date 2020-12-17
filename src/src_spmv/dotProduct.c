@@ -114,12 +114,11 @@ double basic_d_dotProduct_avx2(
     int remainder = dif % DEPTH;
     long long high[2]={0,0};
     for (int li = 0,j = 0; li < nloop; li++,j+=DEPTH) {
-
-        __m256d vecv = _mm256_load_pd(&Val[j]);
-        __m256i veci = _mm256_loadu_si256((__m256i *) (&indx[j]));
-        __m128i vec128i = _mm256_castsi256_si128(veci);
+        __m128i vec128i = _mm256_castsi256_si128(*(__m256i *) (indx+j));
         __m256d vecx = _mm256_i32gather_pd(X, vec128i, sizeof(X[0]));
-        res = _mm256_fmadd_pd(vecv, vecx, res);
+        res = _mm256_fmadd_pd(
+                *((__m256d*) (Val+j)),
+                vecx, res);
     }
     //Y[u] += _mm256_reduce_add_ps(res);
     sum += hsum_d_avx(res);

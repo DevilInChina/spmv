@@ -4,12 +4,13 @@
 #include "inner_spmv.h"
 #include <math.h>
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 #define MAX(a,b) ((a)>(b)?(a):(b))
 
 void gemv_C_Block_init(C_Block_t this_block, int C,
                        const BASIC_INT_TYPE *RowPtr, Row_Block_t *rowBlock,
-                       BASIC_SIZE_TYPE size
+                       BASIC_SIZE_TYPE size,int *total,int *zero
                        ) {
     int maxs = 0;
     for (int i = 0; i < C; ++i) {
@@ -31,7 +32,7 @@ void gemv_C_Block_init(C_Block_t this_block, int C,
     this_block->ColIndex = aligned_alloc(ALIGENED_SIZE, sizeof(BASIC_INT_TYPE) * C * maxs);
     this_block->RowIndex = aligned_alloc(ALIGENED_SIZE, sizeof(BASIC_INT_TYPE) * C);
     this_block->Y = aligned_alloc(ALIGENED_SIZE,size*C);
-
+    *total+=C*maxs;
     for (int i = 0; i < C; ++i) {
         int j = 0;
         for (; j < RowPtr[rowBlock[i]->rowNumber + 1] - RowPtr[rowBlock[i]->rowNumber]; ++j) {
@@ -50,7 +51,7 @@ void gemv_C_Block_init(C_Block_t this_block, int C,
                      = 0):
             (*(CONVERT_FLOAT_T(this_block->ValT)+i + j * C)
                      = 0);
-
+            ++(*zero);
             this_block->ColIndex[i + j * C] = 0;
         }
         this_block->RowIndex[i] = rowBlock[i]->rowNumber;
@@ -84,7 +85,8 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
     (handle)->C = C;
     (handle)->banner = banner;
     BASIC_SIZE_TYPE size = handle->data_size;
-
+    int total = 0;
+    int zero = 0;
     if (banner > 0) {
         rowBlock_ts = (Row_Block_t *) malloc(sizeof(Row_Block_t) * banner);
         rowBlocks = (Row_Block_t) malloc(sizeof(struct Row_Block) * banner);
@@ -105,8 +107,9 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
 
         for (int CBlock = 0; CBlock < (handle)->banner; CBlock += C) {
             gemv_C_Block_init((handle)->C_Blocks + CBlock / C, C, RowPtr,
-                              rowBlock_ts + CBlock,size);
+                              rowBlock_ts + CBlock,size,&total,&zero);
         }
+        printf("%d %.5f%%\n",C,zero*100.0/total);
         free(rowBlock_ts);
         free(rowBlocks);
     }else{
@@ -131,8 +134,8 @@ void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
     dot_product_function
     dot_product = inner_basic_GetDotProduct(size);
 
-    line_product_function
-    line_product = inner_basic_GetLineProduct(size);
+    packLine_product_function
+    packLine_product = inner_basic_GetPackLineProduct(size);
 
     gather_function
     gather = inner_basic_GetGather(size);
@@ -151,15 +154,13 @@ void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
 
             for (int j = 0; j < C_times; ++j) {
                 memset(cBlocks[j + SigmaBlock].Y, 0, size * cBlocks[j + SigmaBlock].C);
-                for (int k = 0, C_Pack = 0; k < cBlocks[j + SigmaBlock].ld; ++k, C_Pack += C) {
-                    line_product(C, cBlocks[j + SigmaBlock].ValT + C_Pack*size,
-                                       cBlocks[j + SigmaBlock].ColIndex + C_Pack,
-                                       Vector_Val_X, cBlocks[j + SigmaBlock].Y, way);
-
-                }
+                packLine_product(cBlocks[j + SigmaBlock].ld, C, cBlocks[j + SigmaBlock].ValT,
+                                 cBlocks[j + SigmaBlock].ColIndex,
+                                 Vector_Val_X, cBlocks[j + SigmaBlock].Y, way
+                );
                 gather(cBlocks[j + SigmaBlock].C,
-                              cBlocks[j + SigmaBlock].Y,
-                              cBlocks[j + SigmaBlock].RowIndex, Vector_Val_Y,way);
+                       cBlocks[j + SigmaBlock].Y,
+                       cBlocks[j + SigmaBlock].RowIndex, Vector_Val_Y, way);
             }
         }
     }

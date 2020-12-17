@@ -45,10 +45,30 @@ void Test_##type##_LineProduct(const char*funcName,void (* LineProducts)\
 
 Test_LineProduct(double );
 Test_LineProduct(float );
+#define type double
+void testDotProduct(int len){
+    int lenC = len;
+    type *X = aligned_alloc(ALIEN, sizeof(type) * len);
+    int *indx = aligned_alloc(ALIEN, sizeof(int) * len);
+    type *Val = aligned_alloc(ALIEN, sizeof(type) * len);
+    type Y_golden = 0;
+    type *Y = aligned_alloc(ALIEN, sizeof(type) * len);
+    for (int i = 0; i < lenC; ++i) {
+        indx[i] = lenC - 1 - i;
+        X[i] = i + 1;
+        Val[i] = i + 1;
+    }
+    for (int i = 0; i < lenC; ++i) {
+        Y_golden+= Val[i] * X[indx[i]];
+    }
+    double ret = basic_d_dotProduct(len,indx,Val,X);
+    printf("%f %f \n",ret,Y_golden);
+}
 
 int main(){
     for(int i = 0 ; i < 9 ; ++i){
         Test_double_LineProduct(Line_d_Products_name[i],Line_d_Products[i],4<<(i/3),1 );
         Test_float_LineProduct(Line_s_Products_name[i],Line_s_Products[i],4<<(i/3),1 );
     }
+    testDotProduct(128);
 }
