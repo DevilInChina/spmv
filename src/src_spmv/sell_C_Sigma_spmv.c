@@ -67,7 +67,7 @@ int cmp(const void* A,const void* B){
 
 
 
-void sell_C_Sigma_get_handle_Selected(gemv_Handle_t handle,
+void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
                                       BASIC_INT_TYPE Times, BASIC_INT_TYPE C,
                                       BASIC_INT_TYPE m,
                                       const BASIC_INT_TYPE*RowPtr,
@@ -114,7 +114,7 @@ void sell_C_Sigma_get_handle_Selected(gemv_Handle_t handle,
     }
 }
 
-void spmv_sell_C_Sigma_Selected(const gemv_Handle_t handle,
+void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
                                 BASIC_INT_TYPE m,
                                 const BASIC_INT_TYPE* RowPtr,
                                 const BASIC_INT_TYPE* ColIdx,
@@ -122,7 +122,7 @@ void spmv_sell_C_Sigma_Selected(const gemv_Handle_t handle,
                                 const void* Vector_Val_X,
                                 void*       Vector_Val_Y
 ){
-    if(handle->status != STATUS_SELL_C_SIGMA){
+    if(handle->spmvMethod != Method_SellCSigma){
         return;
     }
     BASIC_SIZE_TYPE size = handle->data_size;

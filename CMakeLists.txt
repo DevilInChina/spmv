@@ -35,6 +35,7 @@ aux_source_directory(${PROJECT_SOURCE_DIR}/src/src_spmv SPMVS)
 add_library(mv SHARED ${SPMVS})
 
 #target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
+#target_compile_definitions(mv PRIVATE DOT_AVX512_CAN )
 
 add_executable(cg ${PROJECT_SOURCE_DIR}/src/samples/cg.c)
 

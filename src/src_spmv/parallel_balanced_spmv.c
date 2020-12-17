@@ -30,7 +30,7 @@ int binary_search_right_boundary_kernel(const int *row_pointer,
 }
 
 void parallel_balanced_get_handle(
-        gemv_Handle_t handle,
+        spmv_Handle_t handle,
         BASIC_INT_TYPE m,
         const BASIC_INT_TYPE*RowPtr,
         BASIC_INT_TYPE nnzR
@@ -56,7 +56,7 @@ void parallel_balanced_get_handle(
 
 
 void spmv_parallel_balanced_Selected(
-        const gemv_Handle_t handle,
+        const spmv_Handle_t handle,
         BASIC_INT_TYPE m,
         const BASIC_INT_TYPE* RowPtr,
         const BASIC_INT_TYPE* ColIdx,

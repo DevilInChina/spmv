@@ -1,7 +1,7 @@
 
 
 #include "inner_spmv.h"
-void spmv_parallel_Selected(const gemv_Handle_t handle,
+void spmv_parallel_Selected(const spmv_Handle_t handle,
                             BASIC_INT_TYPE m,
                             const BASIC_INT_TYPE*RowPtr,
                             const BASIC_INT_TYPE *ColIdx,

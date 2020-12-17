@@ -4,13 +4,13 @@
 
 #ifndef GEMV_INNER_SPMV_H
 #define GEMV_INNER_SPMV_H
-#include <gemv.h>
+#include <spmv.h>
 
 /**
  * @brief create a empty handle with initialize
  * @return
  */
-gemv_Handle_t gemv_create_handle();
+spmv_Handle_t gemv_create_handle();
 /**
  *
  * @param handle
@@ -20,7 +20,7 @@ gemv_Handle_t gemv_create_handle();
  * @param nthreads
  */
 void parallel_balanced_get_handle(
-        gemv_Handle_t handle,
+        spmv_Handle_t handle,
         BASIC_INT_TYPE m,
         const BASIC_INT_TYPE*RowPtr,
         BASIC_INT_TYPE nnzR);
@@ -34,12 +34,12 @@ void parallel_balanced_get_handle(
  * @param nthreads
  */
 void parallel_balanced2_get_handle(
-        gemv_Handle_t handle,
+        spmv_Handle_t handle,
         BASIC_INT_TYPE m,
         const BASIC_INT_TYPE*RowPtr,
         BASIC_INT_TYPE nnzR);
 
-void sell_C_Sigma_get_handle_Selected(gemv_Handle_t handle,
+void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
                                       BASIC_INT_TYPE Times, BASIC_INT_TYPE C,
                                       BASIC_INT_TYPE m,
                                       const BASIC_INT_TYPE*RowPtr,
@@ -47,14 +47,14 @@ void sell_C_Sigma_get_handle_Selected(gemv_Handle_t handle,
                                       const void*Matrix_Val
 ) ;
 
-void handle_init_common_parameters(gemv_Handle_t this_handle,
+void handle_init_common_parameters(spmv_Handle_t this_handle,
                                    BASIC_SIZE_TYPE nthreads,
-                                   STATUS_GEMV_HANDLE function,
+                                   SPMV_METHODS function,
                                    BASIC_SIZE_TYPE size,
                                    VECTORIZED_WAY vectorizedWay);
 
 void spmv_parallel_balanced_Selected(
-        const gemv_Handle_t handle,
+        const spmv_Handle_t handle,
         BASIC_INT_TYPE m,
         const BASIC_INT_TYPE* RowPtr,
         const BASIC_INT_TYPE* ColIdx,
@@ -63,7 +63,7 @@ void spmv_parallel_balanced_Selected(
         void*       Vector_Val_Y);
 
 void spmv_parallel_balanced2_Selected(
-        const gemv_Handle_t handle,
+        const spmv_Handle_t handle,
         BASIC_INT_TYPE m,
         const BASIC_INT_TYPE* RowPtr,
         const BASIC_INT_TYPE* ColIdx,
@@ -73,7 +73,7 @@ void spmv_parallel_balanced2_Selected(
 );
 
 
-void spmv_sell_C_Sigma_Selected(const gemv_Handle_t handle,
+void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
                                 BASIC_INT_TYPE m,
                                 const BASIC_INT_TYPE* RowPtr,
                                 const BASIC_INT_TYPE* ColIdx,
@@ -82,7 +82,7 @@ void spmv_sell_C_Sigma_Selected(const gemv_Handle_t handle,
                                 void*       Vector_Val_Y
 );
 
-void spmv_serial_Selected(const gemv_Handle_t handle,
+void spmv_serial_Selected(const spmv_Handle_t handle,
                           BASIC_INT_TYPE m,
                           const BASIC_INT_TYPE* RowPtr,
                           const BASIC_INT_TYPE* ColIdx,
@@ -90,7 +90,7 @@ void spmv_serial_Selected(const gemv_Handle_t handle,
                           const void* Vector_Val_X,
                           void*       Vector_Val_Y);
 
-void spmv_parallel_Selected(const gemv_Handle_t handle,
+void spmv_parallel_Selected(const spmv_Handle_t handle,
                             BASIC_INT_TYPE m,
                             const BASIC_INT_TYPE* RowPtr,
                             const BASIC_INT_TYPE* ColIdx,
@@ -99,7 +99,7 @@ void spmv_parallel_Selected(const gemv_Handle_t handle,
                             void*       Vector_Val_Y
 );
 
-typedef void(*spmv_function) (const gemv_Handle_t handle,
+typedef void(*spmv_function) (const spmv_Handle_t handle,
                       BASIC_INT_TYPE m,
                       const BASIC_INT_TYPE* RowPtr,
                       const BASIC_INT_TYPE* ColIdx,

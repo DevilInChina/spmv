@@ -5,8 +5,8 @@
 #include <time.h>
 #include <assert.h> 
 #include "data-types.h"
-#include <gemv.h>
 #include "mmio_highlevel.h"
+#include <spmv.h>
 #define min(a,b) ((a<b)?(a):(b)) 
 /* run this program using the console pauser or add your own getch, system("pause") or input loop */
 
@@ -689,10 +689,10 @@ int itsol_solver_bicgstab(ITS_SMat *Amat, ITS_PC *lu, double *rhs, double *x, IT
     FILE * fp = io.fp;
     ITS_SparMat *CS=Amat->CS;
     n = Amat->n;
-    gemv_Handle_t balanced_handle;
+    spmv_Handle_t balanced_handle;
     int nthreads=8;//线程数
-    spmv_create_handle_all_in_one(&balanced_handle,n,CS->RowPtr,CS->ColIdx,CS->Val,nthreads,
-                                  STATUS_BALANCED2,sizeof(CS->Val[0] ),VECTOR_NONE);
+    spmv_create_handle_all_in_one(&balanced_handle, n, CS->RowPtr, CS->ColIdx, CS->Val, nthreads,
+                                  Method_Balanced2, sizeof(CS->Val[0] ), VECTOR_NONE);
     rg=(double *)malloc(n*sizeof(double));
     //rg = itsol_malloc(n * sizeof(double), "bicgstab");
     rh = (double *)malloc(n*sizeof(double));

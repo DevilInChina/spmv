@@ -4,7 +4,7 @@
 
 #ifndef GEMV_DOTPRODUCT_H
 #define GEMV_DOTPRODUCT_H
-#include "gemv_Defines.h"
+#include "spmv_Defines.h"
 float basic_s_dotProduct(
         BASIC_INT_TYPE len, const BASIC_INT_TYPE* indx, const float *Val, const float *X);
 
