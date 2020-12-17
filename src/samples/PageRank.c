@@ -89,18 +89,11 @@ int main(int argc,char **argv){
 
         int rowel = 0;
         int curcol = 0;
-
-        // Page rank modified algorithm
-        //spmv
-        // for(i=0; i<n; i++){
-        //   rowel = row_ptr[i+1] - row_ptr[i];
-        //   for (j=0; j<rowel; j++) {
-        //     p_new[col_ind[curcol]] = p_new[col_ind[curcol]] + val[curcol] * p[i];
-        //     curcol++;
-        //   }
-        // }
-        mv(n,row_ptr,col_ind,val,p,p_new);
-
+        gemv_Handle_t balanced_handle;
+        int nthreads=8;//线程数
+        spmv_create_handle_all_in_one(&balanced_handle,n,row_ptr,col_ind,val,nthreads,
+                                      STATUS_BALANCED2,sizeof(val[0] ),VECTOR_NONE);
+        spmv(balanced_handle,n,row_ptr,col_ind,val,p,p_new);
         // Adjustment to manage dangling elements
         for(i=0; i<n; i++){
             p_new[i] = d * p_new[i] + (1.0 - d) / n;
