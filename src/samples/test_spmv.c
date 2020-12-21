@@ -108,7 +108,7 @@ int main(int argc, char ** argv) {
                      VECTOR_AVX2, Method_SellCSigma);
 */
     testForFunctions("Balanced-2",iter,nthreads,Y_golden, m, RowPtr, ColIdx, Val, X, Y,
-                     VECTOR_AVX2, Method_Balanced2);
+                     VECTOR_AVX2, Method_Serial);
     /*
     for (int i = Method_Balanced2*VECTOR_TOTAL_SIZE; i < Method_Total_Size * VECTOR_TOTAL_SIZE; ++i) {
         testForFunctions(funcNames[i], iter, nthreads, Y_golden, m, RowPtr, ColIdx, Val, X, Y,
