@@ -100,21 +100,12 @@ int main(int argc, char ** argv) {
     struct timeval t1, t2;
      SPMV_METHODS d = Method_Total_Size;
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
-    /*
-    testForFunctions("Sell_C_Sigma_none",iter,nthreads,Y_golden, m, RowPtr, ColIdx, Val, X, Y,
-                     VECTOR_NONE, Method_SellCSigma);
 
-    testForFunctions("Sell_C_Sigma_AVX2",iter,nthreads,Y_golden, m, RowPtr, ColIdx, Val, X, Y,
-                     VECTOR_AVX2, Method_SellCSigma);
-*/
-    testForFunctions("Balanced-2",iter,nthreads,Y_golden, m, RowPtr, ColIdx, Val, X, Y,
-                     VECTOR_AVX2, Method_Serial);
-    /*
-    for (int i = Method_Balanced2*VECTOR_TOTAL_SIZE; i < Method_Total_Size * VECTOR_TOTAL_SIZE; ++i) {
+
+    for (int i = Method_Balanced2 *VECTOR_TOTAL_SIZE + VECTOR_AVX2; i < Method_SellCSigma * VECTOR_TOTAL_SIZE; ++i) {
         testForFunctions(funcNames[i], iter, nthreads, Y_golden, m, RowPtr, ColIdx, Val, X, Y,
                          i%VECTOR_TOTAL_SIZE, i/VECTOR_TOTAL_SIZE);
-    }*/
-
+    }
     free(Val);
     free(RowPtr);
     free(ColIdx);

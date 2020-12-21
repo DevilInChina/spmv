@@ -61,14 +61,45 @@ void testDotProduct(int len){
     for (int i = 0; i < lenC; ++i) {
         Y_golden+= Val[i] * X[indx[i]];
     }
-    double ret = basic_d_dotProduct(len,indx,Val,X);
+    dot_product_function func = inner_basic_GetDotProduct(sizeof (type));
+    type ret = 0;
+    func(len,indx,Val,X,&ret,VECTOR_AVX2);
+    //ret  = Dot_d_Products[VECTOR_AVX2](len,indx,Val,X);
     printf("%f %f \n",ret,Y_golden);
 }
-
+void testLineProduct(int len){
+    int lenC = len;
+    type *X = aligned_alloc(ALIEN, sizeof(type) * len);
+    int *indx = aligned_alloc(ALIEN, sizeof(int) * len);
+    type *Val = aligned_alloc(ALIEN, sizeof(type) * len);
+    type *Y_golden = aligned_alloc(ALIEN, sizeof(type) * len);;
+    type *Y = aligned_alloc(ALIEN, sizeof(type) * len);
+    for (int i = 0; i < lenC; ++i) {
+        indx[i] = lenC - 1 - i;
+        X[i] = i*0.3 + 1;
+        Val[i] = i*0.3 + 1;
+    }
+    line_product_function func = inner_basic_GetLineProduct(sizeof (type));
+    for (int i = 0; i < lenC; ++i) {
+        Y_golden[i]= Val[i] * X[indx[i]];
+    }
+    func (len,Val,indx,X,Y,VECTOR_AVX2);
+    int cnt = 0;
+    for (int i = 0; i < lenC; ++i) {
+        if (Y[i] != Y_golden[i]) {
+            ++cnt;
+            printf("%f %f\n", Y[i], Y_golden[i]);
+        }
+    }
+    printf("%s_errcnt=  %d in %d\n", "line_product", cnt, lenC);
+}
 int main(){
     for(int i = 0 ; i < 9 ; ++i){
         Test_double_LineProduct(Line_d_Products_name[i],Line_d_Products[i],4<<(i/3),1 );
         Test_float_LineProduct(Line_s_Products_name[i],Line_s_Products[i],4<<(i/3),1 );
     }
+
+
     testDotProduct(128);
+    testLineProduct(12822);
 }

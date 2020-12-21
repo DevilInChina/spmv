@@ -2,6 +2,7 @@
 // Created by kouushou on 2020/12/6.
 //
 #include <spmv.h>
+#include <string.h>
 #define LINE_S_PRODUCT_PARAMETERS_IN const float*Val,const BASIC_INT_TYPE* indx, const float *Vector_X,float *Vector_Y
 #define LINE_D_PRODUCT_PARAMETERS_IN const double*Val,const BASIC_INT_TYPE* indx, const double *Vector_X,double *Vector_Y
 #define LINE_PRODUCT_PARAMETERS_CALL(banner) Val+(banner),indx+(banner),Vector_X,Vector_Y+(banner)
@@ -38,10 +39,10 @@ void basic_s_lineProduct_8_avx2(const float*Val, const BASIC_INT_TYPE* indx, con
 #ifdef DOT_AVX2_CAN
 
 
-    __m256 vecx = _mm256_i32gather_ps(Vector_X, *((__m256i*)indx), sizeof(Vector_X[0]));
+    //__m256 vecx = _mm256_i32gather_ps(Vector_X, *((__m256i*)indx), sizeof(Vector_X[0]));
 
     *(__m256_u *) (Vector_Y ) = _mm256_fmadd_ps(*(__m256_u *)(Val),
-                                                vecx,
+                                                _mm256_i32gather_ps(Vector_X, *((__m256i*)indx), sizeof(Vector_X[0])),
                                                 *(__m256_u *) (Vector_Y ));
 
 
@@ -110,22 +111,22 @@ void basic_d_lineProduct_16(const double*Val, const BASIC_INT_TYPE* indx, const 
         Vector_Y[ri] += Val[ri]*Vector_X[indx[ri]];
     }
 }
-
-#include <string.h>
+#include <stdio.h>
 void basic_d_lineProduct_4_avx2(const double*Val, const BASIC_INT_TYPE* indx, const double *Vector_X, double *Vector_Y){
 #ifdef DOT_AVX2_CAN
+      //__m256d vecv = _mm256_loadu_pd(&Val[0]);
 
-      __m256d vecv = _mm256_load_pd(&Val[0]);
+       //__m256i veci = _mm256_loadu_si256((__m256i_u*)indx);
+       //__m128i vec128i = _mm256_castsi256_si128(*(__m256i_u *) (indx));
+       //__m256d vecx =_mm256_i32gather_pd(Vector_X, _mm256_castsi256_si128(*(__m256i_u *) (indx)), sizeof(Vector_X[0]));
 
-       __m256i veci = _mm256_loadu_si256((__m256i *) (&indx[0]));
-       __m128i vec128i = _mm256_castsi256_si128(veci);
-       __m256d vecx = _mm256_i32gather_pd(Vector_X, vec128i, sizeof(Vector_X[0]));
+       //__m256d vecY = _mm256_load_pd(&Vector_Y[0]);
+        *(__m256d_u *) (Vector_Y )  = _mm256_fmadd_pd(
+               *(__m256d_u*)(Val),
+               _mm256_i32gather_pd(Vector_X, _mm256_castsi256_si128(*(__m256i_u *) (indx)), sizeof(Vector_X[0])),
+               *(__m256d_u *) (Vector_Y ));
 
-       __m256d vecY = _mm256_load_pd(&Vector_Y[0]);
-
-       vecY = _mm256_fmadd_pd(vecv,vecx,vecY);
-
-       _mm256_store_pd(Vector_Y,vecY);
+       //_mm256_store_pd(Vector_Y,vecY);
 
 #else
     basic_d_lineProduct_4(Val,indx,Vector_X,Vector_Y);
