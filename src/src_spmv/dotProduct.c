@@ -52,8 +52,10 @@ float basic_s_dotProduct_avx2(
 
         //__m256 vecv = _mm256_loadu_ps(&Val[j]);
         //__m256i veci = _mm256_loadu_si256((__m256i *) (&indx[j]));
-        __m256 vecx = _mm256_i32gather_ps(X, *(__m256i_u*)(indx+j), sizeof(X[0]));
-        res = _mm256_fmadd_ps(*(__m256_u*)(Val+j), vecx, res);
+        //__m256 vecx = _mm256_i32gather_ps(X, *(__m256i_u*)(indx+j), sizeof(X[0]));
+        res = _mm256_fmadd_ps(*(__m256_u*)(Val+j),
+                              _mm256_i32gather_ps(X, *(__m256i_u*)(indx+j), sizeof(X[0])),
+                              res);
     }
     //Y[u] += _mm256_reduce_add_ps(res);
     sum += hsum_s_avx(res);
