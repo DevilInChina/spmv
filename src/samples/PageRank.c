@@ -91,7 +91,7 @@ int main(int argc,char **argv){
         int curcol = 0;
         spmv_Handle_t balanced_handle;
         int nthreads=8;//线程数
-        spmv_create_handle_all_in_one(&balanced_handle,n,row_ptr,col_ind,val,nthreads,
+        spmv_create_handle_all_in_one(&balanced_handle,n,n,row_ptr,col_ind,val,nthreads,
                                       Method_Balanced2,sizeof(val[0] ),VECTOR_NONE);
         spmv(balanced_handle,n,row_ptr,col_ind,val,p,p_new);
         // Adjustment to manage dangling elements

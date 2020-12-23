@@ -31,7 +31,6 @@ void spmv_csr5Spmv_Selected(const spmv_Handle_t handle,
 
     A.setX((double *)Vector_Val_X);
     A.spmv(1,(double *)Vector_Val_Y);
-
 }
 
 

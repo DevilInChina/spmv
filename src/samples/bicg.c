@@ -691,7 +691,7 @@ int itsol_solver_bicgstab(ITS_SMat *Amat, ITS_PC *lu, double *rhs, double *x, IT
     n = Amat->n;
     spmv_Handle_t balanced_handle;
     int nthreads=8;//线程数
-    spmv_create_handle_all_in_one(&balanced_handle, n, CS->RowPtr, CS->ColIdx, CS->Val, nthreads,
+    spmv_create_handle_all_in_one(&balanced_handle,n, n, CS->RowPtr, CS->ColIdx, CS->Val, nthreads,
                                   Method_Balanced2, sizeof(CS->Val[0] ), VECTOR_NONE);
     rg=(double *)malloc(n*sizeof(double));
     //rg = itsol_malloc(n * sizeof(double), "bicgstab");
