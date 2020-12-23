@@ -36,6 +36,7 @@ void spmv_clear_handle(spmv_Handle_t this_handle);
  */
 void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
                                    BASIC_INT_TYPE m,
+                                   BASIC_INT_TYPE n,
                                    const BASIC_INT_TYPE *RowPtr,
                                    const BASIC_INT_TYPE *ColIdx,
                                    const void *Matrix_Val,

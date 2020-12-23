@@ -11,6 +11,7 @@ void testForFunctions(const char *functionName,
                       int iter, int nthreads,
                           const VALUE_TYPE *Y_golden,
                       BASIC_INT_TYPE m,
+                      BASIC_INT_TYPE n,
                       const BASIC_INT_TYPE*RowPtr,
                       const BASIC_INT_TYPE *ColIdx,
                       const VALUE_TYPE*Matrix_Val,
@@ -24,7 +25,7 @@ void testForFunctions(const char *functionName,
     struct timeval t1, t2;
     int currentiter = 0;
     spmv_Handle_t handle = NULL;
-    spmv_create_handle_all_in_one(&handle,m,RowPtr,ColIdx,Matrix_Val,
+    spmv_create_handle_all_in_one(&handle,m,n,RowPtr,ColIdx,Matrix_Val,
                                   nthreads,FUNC_WAY,sizeof(VALUE_TYPE),PRODUCT_WAY);
 
     for(BASIC_SIZE_TYPE thread = 1u; thread <= nthreads ; thread<<=1u) {
@@ -100,10 +101,8 @@ int main(int argc, char ** argv) {
     struct timeval t1, t2;
      SPMV_METHODS d = Method_Total_Size;
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
-
-
-    for (int i = Method_Balanced2 *VECTOR_TOTAL_SIZE + VECTOR_AVX2; i < Method_SellCSigma * VECTOR_TOTAL_SIZE; ++i) {
-        testForFunctions(funcNames[i], iter, nthreads, Y_golden, m, RowPtr, ColIdx, Val, X, Y,
+    for (int i = Method_Balanced2 *VECTOR_TOTAL_SIZE + VECTOR_AVX2; i < Method_Total_Size * VECTOR_TOTAL_SIZE; ++i) {
+        testForFunctions(funcNames[i], iter, nthreads, Y_golden, m,n, RowPtr, ColIdx, Val, X, Y,
                          i%VECTOR_TOTAL_SIZE, i/VECTOR_TOTAL_SIZE);
     }
     free(Val);

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(gemv C)
+project(gemv C CXX)
 
 set(CMAKE_C_STANDARD 11)
 SET(CMAKE_BUILD_TYPE "Debug")
@@ -32,7 +32,9 @@ file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/src_spmv SPMVS)
 
-add_library(mv SHARED ${SPMVS})
+add_library(mv SHARED ${SPMVS} )
+target_include_directories(mv PRIVATE src/avx2_CSR5)
+target_include_directories(mv PRIVATE src/avx2_CSR5/avx2)
 
 target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
 #target_compile_definitions(mv PRIVATE DOT_AVX512_CAN )

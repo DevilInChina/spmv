@@ -9,19 +9,19 @@ float hsum_s_avx(__m256 in256) {
 
     __m256 hsum = _mm256_hadd_ps(in256, in256);
     hsum = _mm256_add_ps(hsum, _mm256_permute2f128_ps(hsum, hsum, 0x1));
-    _mm_store_ss(&sum, _mm_hadd_ps(_mm256_castps256_ps128(hsum), _mm256_castps256_ps128(hsum)));
+    _mm_store_ss(&sum, _mm_hadd_ps( _mm256_castps256_ps128(hsum), _mm256_castps256_ps128(hsum) ) );
 
     return sum;
 }
 
-double hsum_d_avx(__m256d in256){
+double hsum_d_avx(__m256d in256d){/*
     double sum = 0;
-    //double * s = (double *)&in256;
-    //for(int i = 0 ; i < 4 ; ++i)sum+=s[i];
+    double * s = (double *)&in256;
+    for(int i = 0 ; i < 4 ; ++i)sum+=s[i];*/
+    double sum;
 
-    __m256d hsum = _mm256_hadd_pd(in256, in256);
-    //hsum = _mm256_add_pd(hsum, _mm256_permute2f128_pd(hsum, hsum, 0x1));
-    _mm_store_sd(&sum, _mm_hadd_pd(_mm256_castpd256_pd128(hsum), _mm256_castpd256_pd128(hsum)));
+    __m256d hsum = _mm256_add_pd(in256d, _mm256_permute2f128_pd(in256d, in256d, 0x1));
+    _mm_store_sd(&sum, _mm_hadd_pd( _mm256_castpd256_pd128(hsum), _mm256_castpd256_pd128(hsum) ) );
 
     return sum;
 }

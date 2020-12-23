@@ -98,6 +98,30 @@ void spmv_parallel_Selected(const spmv_Handle_t handle,
                             const void* Vector_Val_X,
                             void*       Vector_Val_Y
 );
+#if defined(__cplusplus)
+extern "C" {
+#endif
+void csr5Spmv_get_handle_Selected(spmv_Handle_t handle,
+                                  BASIC_INT_TYPE m,
+                                  BASIC_INT_TYPE n,
+                                  BASIC_INT_TYPE*RowPtr,
+                                  BASIC_INT_TYPE*ColIdx,
+                                  const void*Matrix_Val
+) ;
+
+void spmv_csr5Spmv_Selected(const spmv_Handle_t handle,
+                            BASIC_INT_TYPE m,
+                            const BASIC_INT_TYPE* RowPtr,
+                            const BASIC_INT_TYPE* ColIdx,
+                            const void* Matrix_Val,
+                            const void* Vector_Val_X,
+                            void*       Vector_Val_Y
+);
+
+#if defined(__cplusplus)
+}
+#endif
+
 
 typedef void(*spmv_function) (const spmv_Handle_t handle,
                       BASIC_INT_TYPE m,
@@ -109,5 +133,6 @@ typedef void(*spmv_function) (const spmv_Handle_t handle,
 );
 
 extern const spmv_function spmv_functions[];
+
 
 #endif //GEMV_INNER_SPMV_H
