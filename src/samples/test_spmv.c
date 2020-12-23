@@ -101,7 +101,7 @@ int main(int argc, char ** argv) {
     struct timeval t1, t2;
      SPMV_METHODS d = Method_Total_Size;
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
-    for (int i = Method_Balanced2 *VECTOR_TOTAL_SIZE + VECTOR_AVX2; i < Method_Total_Size * VECTOR_TOTAL_SIZE; ++i) {
+    for (int i = Method_CSR5SPMV *VECTOR_TOTAL_SIZE + VECTOR_AVX2; i < Method_Total_Size * VECTOR_TOTAL_SIZE; ++i) {
         testForFunctions(funcNames[i], iter, nthreads, Y_golden, m,n, RowPtr, ColIdx, Val, X, Y,
                          i%VECTOR_TOTAL_SIZE, i/VECTOR_TOTAL_SIZE);
     }

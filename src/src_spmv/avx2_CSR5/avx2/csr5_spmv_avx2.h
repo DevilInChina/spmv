@@ -271,11 +271,11 @@ void spmv_csr5_compute_kernel(const iT           *d_column_index,
 
                 y_idx128i = empty_rows ? _mm_i32gather_epi32 (&d_partition_descriptor_offset[offset_pointer], y_offset128i, 4) : y_offset128i;
 
-                _mm256_store_si256((__m256i *)s_cond, direct256i);
-                _mm_store_si128((__m128i *)s_y_idx, y_idx128i);
-                _mm256_store_pd(s_sum, last_sum256d);
+                _mm256_storeu_si256((__m256i *)s_cond, direct256i);
+                _mm_storeu_si128((__m128i *)s_y_idx, y_idx128i);
+                _mm256_storeu_pd(s_sum, last_sum256d);
 
-                if (s_cond[0]) {d_y_local[s_y_idx[0]] = s_sum[0]; _mm256_store_pd(s_first_sum, first_sum256d);}
+                if (s_cond[0]) {d_y_local[s_y_idx[0]] = s_sum[0]; _mm256_storeu_pd(s_first_sum, first_sum256d);}
                 if (s_cond[1]) d_y_local[s_y_idx[1]] = s_sum[1];
                 if (s_cond[2]) d_y_local[s_y_idx[2]] = s_sum[2];
                 if (s_cond[3]) d_y_local[s_y_idx[3]] = s_sum[3];
