@@ -1,5 +1,5 @@
 #include "inner_spmv.h"
-#include "avx2_CSR5/anonymouslib_avx2.h"
+#include "csr5_avx2/anonymouslib_avx2.h"
 void csr5Spmv_get_handle_Selected(spmv_Handle_t handle,
                                       BASIC_INT_TYPE m,
                                       BASIC_INT_TYPE n,
