@@ -109,7 +109,7 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
             gemv_C_Block_init((handle)->C_Blocks + CBlock / C, C, RowPtr,
                               rowBlock_ts + CBlock,size,&total,&zero);
         }
-        printf("%d %.5f%%\n",C,zero*100.0/total);
+        //printf("%d %.5f%%\n",C,zero*100.0/total);
         free(rowBlock_ts);
         free(rowBlocks);
     }else{

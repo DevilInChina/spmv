@@ -116,7 +116,7 @@ int anonymouslibHandle<ANONYMOUSLIB_IT, ANONYMOUSLIB_UIT, ANONYMOUSLIB_VT>::asCS
 
         // compute sigma
         _csr5_sigma = computeSigma();
-        cout << "omega = " << ANONYMOUSLIB_CSR5_OMEGA << ", sigma = " << _csr5_sigma << ". ";
+        //cout << "omega = " << ANONYMOUSLIB_CSR5_OMEGA << ", sigma = " << _csr5_sigma << ". ";
 
         // compute how many bits required for `y_offset' and `carry_offset'
         int base = 2;
@@ -140,7 +140,7 @@ int anonymouslibHandle<ANONYMOUSLIB_IT, ANONYMOUSLIB_UIT, ANONYMOUSLIB_VT>::asCS
 
         // calculate the number of partitions
         _p = ceil((double)_nnz / (double)(ANONYMOUSLIB_CSR5_OMEGA * _csr5_sigma));
-        cout << "#partition = " << _p << endl;
+        //cout << "#partition = " << _p << endl;
 
         malloc_timer.start();
         // malloc the newly added arrays for CSR5
@@ -209,10 +209,10 @@ int anonymouslibHandle<ANONYMOUSLIB_IT, ANONYMOUSLIB_UIT, ANONYMOUSLIB_VT>::asCS
             return ANONYMOUSLIB_CSR_TO_CSR5_FAILED;
         transpose_time += transpose_timer.stop();
 
-        printf("CSR->CSR5 malloc time = %f ms\n", malloc_time);
-        printf("CSR->CSR5 tile_ptr time = %f ms\n", tile_ptr_time);
-        printf("CSR->CSR5 tile_desc time = %f ms\n", tile_desc_time);
-        printf("CSR->CSR5 transpose time = %f ms\n", transpose_time);
+        //printf("CSR->CSR5 malloc time = %f ms\n", malloc_time);
+        //printf("CSR->CSR5 tile_ptr time = %f ms\n", tile_ptr_time);
+        //printf("CSR->CSR5 tile_desc time = %f ms\n", tile_desc_time);
+        //printf("CSR->CSR5 transpose time = %f ms\n", transpose_time);
 
         _format = ANONYMOUSLIB_FORMAT_CSR5;
     }
