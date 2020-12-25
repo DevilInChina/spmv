@@ -12,7 +12,7 @@ template <class ANONYMOUSLIB_IT, class ANONYMOUSLIB_UIT, class ANONYMOUSLIB_VT>
 class anonymouslibHandle
 {
 public:
-    anonymouslibHandle(ANONYMOUSLIB_IT m, ANONYMOUSLIB_IT n) { _m = m; _n = n; }
+    anonymouslibHandle(ANONYMOUSLIB_IT m, ANONYMOUSLIB_IT n);
     int warmup();
     int inputCSR(ANONYMOUSLIB_IT  nnz, ANONYMOUSLIB_IT *csr_row_pointer, ANONYMOUSLIB_IT *csr_column_index, ANONYMOUSLIB_VT *csr_value);
     int asCSR();
@@ -271,6 +271,13 @@ template <class ANONYMOUSLIB_IT, class ANONYMOUSLIB_UIT, class ANONYMOUSLIB_VT>
 int anonymouslibHandle<ANONYMOUSLIB_IT, ANONYMOUSLIB_UIT, ANONYMOUSLIB_VT>::computeSigma()
 {
     return _csr5_sigma;
+}
+
+template<class ANONYMOUSLIB_IT, class ANONYMOUSLIB_UIT, class ANONYMOUSLIB_VT>
+anonymouslibHandle<ANONYMOUSLIB_IT, ANONYMOUSLIB_UIT, ANONYMOUSLIB_VT>::anonymouslibHandle(ANONYMOUSLIB_IT m,
+                                                                                           ANONYMOUSLIB_IT n) {
+    _m = m;
+    _n = n;
 }
 
 #endif // ANONYMOUSLIB_AVX2_H

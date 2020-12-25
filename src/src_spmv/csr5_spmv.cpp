@@ -7,7 +7,7 @@ void csr5Spmv_get_handle_Selected(spmv_Handle_t handle,
                                       BASIC_INT_TYPE*ColIdx,
                                       const void*Matrix_Val
 ) {
-    handle->cppHandle = malloc(sizeof (anonymouslibHandle<int, unsigned int, double> ));
+    handle->cppHandle = malloc(sizeof (anonymouslibHandle<int, int, double> ));
     *( (anonymouslibHandle<int,  int, double>*)handle->cppHandle ) = anonymouslibHandle<int,  int, double>(m,n);
     anonymouslibHandle<int,  int, double>&A = *( (anonymouslibHandle<int,  int, double>*)handle->cppHandle );
 
