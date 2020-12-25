@@ -96,20 +96,6 @@ typedef enum LINE_PRODUCT_WAY{
     GEMV_LINE_PRODUCT_16_AVX512,
 }LINE_PRODUCT_WAY;
 
-extern
-void (* const Line_s_Products[])
-        (const float*Val,const BASIC_INT_TYPE* indx,
-         const float *Vector_X,float *Vector_Y);
-
-extern
-void (* const Line_d_Products[])
-        (const double*Val,const BASIC_INT_TYPE* indx,
-         const double *Vector_X,double *Vector_Y);
-
-extern const char*Line_s_Products_name[];
-
-extern const char*Line_d_Products_name[];
-
 
 
 #define CONVERT_FLOAT(pointer) *((float*)(pointer))

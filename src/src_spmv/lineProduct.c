@@ -7,32 +7,19 @@
 #define LINE_D_PRODUCT_PARAMETERS_IN const double*Val,const BASIC_INT_TYPE* indx, const double *Vector_X,double *Vector_Y
 #define LINE_PRODUCT_PARAMETERS_CALL(banner) Val+(banner),indx+(banner),Vector_X,Vector_Y+(banner)
 
-void basic_s_lineProduct_4(const float*Val, const BASIC_INT_TYPE* indx, const float *Vector_X, float *Vector_Y){
-    Vector_Y[0] += Val[0]*Vector_X[indx[0]];
-    Vector_Y[1] += Val[1]*Vector_X[indx[1]];
-    Vector_Y[2] += Val[2]*Vector_X[indx[2]];
-    Vector_Y[3] += Val[3]*Vector_X[indx[3]];
-}
-void basic_s_lineProduct_8(const float*Val, const BASIC_INT_TYPE* indx, const float *Vector_X, float *Vector_Y){
-    for(unsigned int i = 0 ; i < 4 ; ++i){
-        unsigned int li = i<<1u;
-        unsigned int ri = i<<1u|1u;
-        Vector_Y[li] += Val[li]*Vector_X[indx[li]];
-        Vector_Y[ri] += Val[ri]*Vector_X[indx[ri]];
+
+
+ void basic_s_lineProduct_len(int len ,LINE_S_PRODUCT_PARAMETERS_IN){
+    for(int i = 0 ; i < len ; ++ i){
+        Vector_Y[i]+=Val[i]*Vector_X[indx[i]];
     }
 }
 
-void basic_s_lineProduct_16(const float*Val, const BASIC_INT_TYPE* indx, const float *Vector_X, float *Vector_Y){
-    for(unsigned int i = 0 ; i < 8 ; ++i){
-        unsigned int li = i<<1u;
-        unsigned int ri = i<<1u|1u;
-        Vector_Y[li] += Val[li]*Vector_X[indx[li]];
-        Vector_Y[ri] += Val[ri]*Vector_X[indx[ri]];
-    }
-}
 
-void basic_s_lineProduct_4_avx2(const float*Val, const BASIC_INT_TYPE* indx, const float *Vector_X, float *Vector_Y){
-    basic_s_lineProduct_4(Val,indx,Vector_X,Vector_Y);
+ void basic_d_lineProduct_len(int len ,LINE_D_PRODUCT_PARAMETERS_IN){
+    for(int i = 0 ; i < len ; ++ i){
+        Vector_Y[i]+=Val[i]*Vector_X[indx[i]];
+    }
 }
 
 void basic_s_lineProduct_8_avx2(const float*Val, const BASIC_INT_TYPE* indx, const float *Vector_X, float *Vector_Y){
@@ -45,28 +32,12 @@ void basic_s_lineProduct_8_avx2(const float*Val, const BASIC_INT_TYPE* indx, con
                                                 _mm256_i32gather_ps(Vector_X, *((__m256i*)indx), sizeof(Vector_X[0])),
                                                 *(__m256_u *) (Vector_Y ));
 
-
 #else
-    basic_s_lineProduct_8(Val,indx,Vector_X,Vector_Y);
+    basic_s_lineProduct_len(8,LINE_PRODUCT_PARAMETERS_CALL(0));
 #endif
 }
 
-void basic_s_lineProduct_16_avx2(LINE_S_PRODUCT_PARAMETERS_IN){
-#ifdef DOT_AVX2_CAN
-    for(int i = 0 ; i < 2 ; ++i){
-        basic_s_lineProduct_8_avx2(LINE_PRODUCT_PARAMETERS_CALL(i*8));
-    }
-#else
-    basic_s_lineProduct_16(Val,indx,Vector_X,Vector_Y);
-#endif
-}
-void basic_s_lineProduct_4_avx512(LINE_S_PRODUCT_PARAMETERS_IN) {
-    basic_s_lineProduct_4(LINE_PRODUCT_PARAMETERS_CALL(0));
-}
 
-void basic_s_lineProduct_8_avx512(LINE_S_PRODUCT_PARAMETERS_IN) {
-    basic_s_lineProduct_8_avx2(LINE_PRODUCT_PARAMETERS_CALL(0));
-}
 void basic_s_lineProduct_16_avx512(LINE_S_PRODUCT_PARAMETERS_IN){
 #ifdef DOT_AVX512_CAN
     __m512 vecv = _mm512_loadu_ps(&Val[0]);
@@ -87,31 +58,12 @@ void basic_s_lineProduct_16_avx512(LINE_S_PRODUCT_PARAMETERS_IN){
 #endif
 }
 
-void basic_d_lineProduct_4(const double*Val, const BASIC_INT_TYPE* indx, const double *Vector_X, double *Vector_Y){
-    Vector_Y[0] += Val[0]*Vector_X[indx[0]];
-    Vector_Y[1] += Val[1]*Vector_X[indx[1]];
-    Vector_Y[2] += Val[2]*Vector_X[indx[2]];
-    Vector_Y[3] += Val[3]*Vector_X[indx[3]];
-}
+typedef void (*line_d_function)(const double*Val, const BASIC_INT_TYPE* indx,
+                                        const double *Vector_X, double *Vector_Y);
 
-void basic_d_lineProduct_8(const double*Val, const BASIC_INT_TYPE* indx, const double *Vector_X, double *Vector_Y){
-    for(unsigned int i = 0 ; i < 4 ; ++i){
-        unsigned int li = i<<1u;
-        unsigned int ri = i<<1u|1u;
-        Vector_Y[li] += Val[li]*Vector_X[indx[li]];
-        Vector_Y[ri] += Val[ri]*Vector_X[indx[ri]];
-    }
-}
+typedef void (*line_s_function)(const float *Val, const BASIC_INT_TYPE* indx,
+                                        const float *Vector_X, float *Vector_Y);
 
-void basic_d_lineProduct_16(const double*Val, const BASIC_INT_TYPE* indx, const double *Vector_X, double *Vector_Y){
-    for(unsigned int i = 0 ; i < 8 ; ++i){
-        unsigned int li = i<<1u;
-        unsigned int ri = i<<1u|1u;
-        Vector_Y[li] += Val[li]*Vector_X[indx[li]];
-        Vector_Y[ri] += Val[ri]*Vector_X[indx[ri]];
-    }
-}
-#include <stdio.h>
 void basic_d_lineProduct_4_avx2(const double*Val, const BASIC_INT_TYPE* indx, const double *Vector_X, double *Vector_Y){
 #ifdef DOT_AVX2_CAN
       //__m256d vecv = _mm256_loadu_pd(&Val[0]);
@@ -127,34 +79,9 @@ void basic_d_lineProduct_4_avx2(const double*Val, const BASIC_INT_TYPE* indx, co
                *(__m256d_u *) (Vector_Y ));
 
        //_mm256_store_pd(Vector_Y,vecY);
-
 #else
-    basic_d_lineProduct_4(Val,indx,Vector_X,Vector_Y);
+    basic_d_lineProduct_len(4,LINE_PRODUCT_PARAMETERS_CALL(0));
 #endif
-}
-void basic_d_lineProduct_8_avx2(const double*Val, const BASIC_INT_TYPE* indx, const double *Vector_X, double *Vector_Y){
-#ifdef DOT_AVX2_CAN
-    for(int i = 0 ; i < 2 ; ++i){
-        basic_d_lineProduct_4_avx2(Val+i*4,indx+i*4,Vector_X,Vector_Y+i*4);
-    }
-#else
-    basic_d_lineProduct_8(Val,indx,Vector_X,Vector_Y);
-#endif
-}
-
-void basic_d_lineProduct_16_avx2(const double*Val, const BASIC_INT_TYPE* indx, const double *Vector_X, double *Vector_Y){
-#ifdef DOT_AVX2_CAN
-    for(int i = 0 ; i < 2 ; ++i){
-        basic_d_lineProduct_8_avx2(LINE_PRODUCT_PARAMETERS_CALL(i*8));
-    }
-#else
-    basic_d_lineProduct_16(Val,indx,Vector_X,Vector_Y);
-#endif
-}
-
-
-void basic_d_lineProduct_4_avx512(const double*Val, const BASIC_INT_TYPE* indx, const double *Vector_X, double *Vector_Y){
-    basic_d_lineProduct_4_avx2(Val,indx,Vector_X,Vector_Y);
 }
 
 void basic_d_lineProduct_8_avx512(const double*Val, const BASIC_INT_TYPE* indx, const double *Vector_X, double *Vector_Y) {
@@ -170,64 +97,20 @@ void basic_d_lineProduct_8_avx512(const double*Val, const BASIC_INT_TYPE* indx, 
     _mm512_store_pd(Vector_Y, vecY);
 
 #else
-    basic_d_lineProduct_8(Val,indx,Vector_X,Vector_Y);
+    for(int i = 0 ; i < 2; ++i) {
+        basic_d_lineProduct_4_avx2(LINE_PRODUCT_PARAMETERS_CALL(i*4));
+    }
 #endif
 }
 
-void basic_d_lineProduct_16_avx512(LINE_D_PRODUCT_PARAMETERS_IN){
-    for(int i = 0 ; i < 2 ; ++i){
-        basic_d_lineProduct_8_avx512(LINE_PRODUCT_PARAMETERS_CALL(i*8));
-    }
-}
-
-void (* const Line_s_Products[])
-        (const float*Val,const BASIC_INT_TYPE* indx,
-         const float *Vector_X,float *Vector_Y)={
-                basic_s_lineProduct_4,
-                basic_s_lineProduct_4_avx2,
-                basic_s_lineProduct_4_avx512,
-                basic_s_lineProduct_8,
-                basic_s_lineProduct_8_avx2,
-                basic_s_lineProduct_8_avx512,
-                basic_s_lineProduct_16,
-                basic_s_lineProduct_16_avx2,
-                basic_s_lineProduct_16_avx512,
-        };
-
-void (* const Line_d_Products[])
-        (const double*Val,const BASIC_INT_TYPE* indx,
-         const double *Vector_X,double *Vector_Y)={
-                basic_d_lineProduct_4,
-                basic_d_lineProduct_4_avx2,
-                basic_d_lineProduct_4_avx512,
-                basic_d_lineProduct_8,
-                basic_d_lineProduct_8_avx2,
-                basic_d_lineProduct_8_avx512,
-                basic_d_lineProduct_16,
-                basic_d_lineProduct_16_avx2,
-                basic_d_lineProduct_16_avx512,
-        };
-const char*Line_s_Products_name[]={
-        "basic_s_lineProduct_4",
-        "basic_s_lineProduct_4_avx2",
-        "basic_s_lineProduct_4_avx512",
-        "basic_s_lineProduct_8",
-        "basic_s_lineProduct_8_avx2",
-        "basic_s_lineProduct_8_avx512",
-        "basic_s_lineProduct_16",
-        "basic_s_lineProduct_16_avx2",
-        "basic_s_lineProduct_16_avx512"
+line_s_function func_cal_s_8_16[]={
+        basic_s_lineProduct_8_avx2,
+        basic_s_lineProduct_16_avx512
 };
-const char*Line_d_Products_name[]={
-        "basic_d_lineProduct_4",
-        "basic_d_lineProduct_4_avx2",
-        "basic_d_lineProduct_4_avx512",
-        "basic_d_lineProduct_8",
-        "basic_d_lineProduct_8_avx2",
-        "basic_d_lineProduct_8_avx512",
-        "basic_d_lineProduct_16",
-        "basic_d_lineProduct_16_avx2",
-        "basic_d_lineProduct_16_avx512",
+
+line_d_function func_cal_d_4_8[]={
+        basic_d_lineProduct_4_avx2,
+        basic_d_lineProduct_8_avx512
 };
 
 int pow2(unsigned int l){
@@ -254,51 +137,38 @@ int pow_ksm(unsigned int a,unsigned int  b) {
 
 void basic_d_lineProduct(BASIC_INT_TYPE length, const double*Val, const BASIC_INT_TYPE* indx,
                          const double *Vector_X, double *Vector_Y, VECTORIZED_WAY vectorizedWay){
-    int Level = 2;
-    if(Level>2)Level = 2;
-    if(Level<0)Level = 0;
-
-    int Pack = pow_ksm(2,Level+2);
-
-    BASIC_INT_TYPE HEX_turn = length / Pack;
-    int i = 0;
-
-    while (Pack>=4) {
-        int functionChoose = Level*VECTOR_TOTAL_SIZE + vectorizedWay;
-        for (; i+Pack < length; i += Pack) {
-            Line_d_Products[functionChoose](Val+i,indx+i,Vector_X,Vector_Y+i);
-        }
-        Pack>>=1;
-        --Level;
+    int caller = (int)vectorizedWay-VECTOR_AVX2;
+    if(caller<0 || caller > 1){
+        basic_d_lineProduct_len(length,LINE_PRODUCT_PARAMETERS_CALL(0));
+        return;
     }
-    for(; i < length ; ++i){
-        Vector_Y[i] += Val[i]*Vector_X[indx[i]];
+    const int block = 2 << vectorizedWay;
+    int i;
+    for(i = 0 ; i + block  < length ; i+=block){
+        func_cal_d_4_8[caller](LINE_PRODUCT_PARAMETERS_CALL(i));
     }
+
+    basic_d_lineProduct_len(length-i, LINE_PRODUCT_PARAMETERS_CALL(i));
 }
 
 void basic_s_lineProduct(BASIC_INT_TYPE length, const float *Val, const BASIC_INT_TYPE* indx,
-                         const float *Vector_X, float *Vector_Y, VECTORIZED_WAY dotProductWay){
-    int Level = 2;
+                         const float *Vector_X, float *Vector_Y, VECTORIZED_WAY vectorizedWay){
 
-    if(Level>2)Level = 2;
-    if(Level<0)Level = 0;
+    int caller = (int)vectorizedWay-VECTOR_AVX2;
 
-    int Pack = pow_ksm(2,Level+2);
-
-    BASIC_INT_TYPE HEX_turn = length / Pack;
-    int i = 0;
-
-    while (Pack>=4) {
-        int functionChoose = Level*VECTOR_TOTAL_SIZE+dotProductWay;
-        for (; i+Pack < length; i += Pack) {
-            Line_s_Products[functionChoose](Val+i,indx+i,Vector_X,Vector_Y+i);
-        }
-        Pack>>=1;
-        --Level;
+    if(caller<0 || caller > 1){
+        basic_s_lineProduct_len(length,LINE_PRODUCT_PARAMETERS_CALL(0));
+        return;
     }
-    for(; i < length ; ++i){
-        Vector_Y[i] += Val[i]*Vector_X[indx[i]];
+
+    const int block = 4 << vectorizedWay;
+    int i;
+    for( i = 0 ; i + block  < length ; i+=block){
+        func_cal_s_8_16[caller](LINE_PRODUCT_PARAMETERS_CALL(i));
     }
+
+
+    basic_s_lineProduct_len(length-i, LINE_PRODUCT_PARAMETERS_CALL(i));
 }
 
 void basic_d_lineProduct_set_zero(BASIC_INT_TYPE length, const double*Val, const BASIC_INT_TYPE* indx,
@@ -372,18 +242,18 @@ gather_function inner_basic_GetGather(BASIC_SIZE_TYPE types){
 
 void basic_s_pack_lineProduct(BASIC_INT_TYPE pack_size,BASIC_INT_TYPE length, const float *Val, const BASIC_INT_TYPE* indx,
                               const float *Vector_X, float *Vector_Y, VECTORIZED_WAY dotProductWay) {
-
+    memset(Vector_Y,0,sizeof (float )*length);
     for (int i = 0; i < pack_size; ++i) {
-        basic_s_lineProduct(length, Val + i * length, indx + i * length, Vector_X, Vector_Y, dotProductWay);
+        basic_s_lineProduct(length,  LINE_PRODUCT_PARAMETERS_CALL(i*length)-i*length, dotProductWay);
     }
 }
 
 
 void basic_d_pack_lineProduct(BASIC_INT_TYPE pack_size,BASIC_INT_TYPE length, const double *Val, const BASIC_INT_TYPE* indx,
                               const double *Vector_X, double *Vector_Y, VECTORIZED_WAY dotProductWay) {
-
+    memset(Vector_Y,0,sizeof (double )*length);
     for (int i = 0; i < pack_size; ++i) {
-        basic_d_lineProduct(length, Val + i * length, indx + i * length, Vector_X, Vector_Y, dotProductWay);
+        basic_d_lineProduct(length, LINE_PRODUCT_PARAMETERS_CALL(i*length)-i*length, dotProductWay);
     }
 }
 

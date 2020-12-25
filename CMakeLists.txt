@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
-project(gemv C CXX)
-#set(CMAKE_CXX_COMPILER icc)
+project(spmv C CXX)
+set(CMAKE_CXX_COMPILER g++)
 #set(CMAKE_C_COMPILER icc)
 set(CMAKE_C_STANDARD 11)
 SET(CMAKE_BUILD_TYPE "Debug")
@@ -9,7 +9,7 @@ SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -g")
 
 include_directories(include)
 
-add_compile_options(-mavx -mavx2 -march=native -O3)
+add_compile_options(-mavx -mavx2 -march=native )
 
 find_package(OpenMP REQUIRED)
 if (OPENMP_FOUND)

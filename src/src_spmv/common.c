@@ -140,10 +140,10 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
         }break;
         case Method_SellCSigma:{
             sell_C_Sigma_get_handle_Selected(*Handle,m/nthreads/512,512,m,RowPtr,ColIdx,Matrix_Val);
-        }
+        }break;
         case Method_CSR5SPMV:{
             csr5Spmv_get_handle_Selected(*Handle,m,n,(int*)RowPtr,(int*)ColIdx,Matrix_Val);
-        }
+        }break;
         default:{
 
             return;

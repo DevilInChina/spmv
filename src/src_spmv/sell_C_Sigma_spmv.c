@@ -76,7 +76,13 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
                                       const void*Matrix_Val
                              ) {
     BASIC_INT_TYPE Sigma = C * Times;
-    int len = m / Sigma;
+    int len ;
+    if(Sigma==0){
+        len = 0;
+    } else{
+        len = m/Sigma;
+    }
+
     int banner = Sigma * len;
     Row_Block_t *rowBlock_ts = NULL;
     Row_Block_t rowBlocks = NULL;
@@ -126,6 +132,7 @@ void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
                                 void*       Vector_Val_Y
 ){
     if(handle->spmvMethod != Method_SellCSigma){
+        printf("error");
         return;
     }
     BASIC_SIZE_TYPE size = handle->data_size;
@@ -169,7 +176,10 @@ void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
 #pragma omp parallel for
         for (int i = handle->banner; i < m; ++i) {
             dot_product(RowPtr[i+1]-RowPtr[i],
-                        ColIdx+RowPtr[i],Matrix_Val+RowPtr[i]*size,Vector_Val_X,Vector_Val_Y+i*size,way);
+                        ColIdx+RowPtr[i],
+                        Matrix_Val+RowPtr[i]*handle->data_size,
+                        Vector_Val_X,Vector_Val_Y+i*handle->data_size,
+                        handle->vectorizedWay);
         }
     }
 }

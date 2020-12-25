@@ -18,7 +18,9 @@ void spmv_serial_Selected(
 
     for (int i = 0; i < m; i++) {
         dot_product(RowPtr[i+1]-RowPtr[i],
-                    ColIdx+RowPtr[i],Matrix_Val+RowPtr[i]*handle->data_size, Vector_Val_X,Vector_Val_Y+i*handle->data_size,
+                    ColIdx+RowPtr[i],
+                    Matrix_Val+RowPtr[i]*handle->data_size,
+                    Vector_Val_X,Vector_Val_Y+i*handle->data_size,
                     handle->vectorizedWay);
 
     }
