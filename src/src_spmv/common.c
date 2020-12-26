@@ -71,7 +71,7 @@ void gemv_Handle_init(spmv_Handle_t this_handle){
 void gemv_Handle_clear(spmv_Handle_t this_handle) {
     clear_Balance_Balance2(this_handle);
     clear_Sell_C_Sigma(this_handle);
-    free(this_handle->cppHandle);
+    csr5HandleDestory(this_handle);
     gemv_Handle_init(this_handle);
 }
 

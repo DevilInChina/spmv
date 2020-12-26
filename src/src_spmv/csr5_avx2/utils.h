@@ -7,12 +7,10 @@
 #include <sys/types.h>
 #include <dirent.h>
 
-double getB(const int m, const int nnz, int type)
+template<typename iT, typename vT>
+double getB(const iT m, const iT nnz)
 {
-    return 1.0*
-    ((m + 1 + nnz) *
-    4 + (2 * nnz + m)
-    * type);
+    return (double)((m + 1 + nnz) * sizeof(iT) + (2 * nnz + m) * sizeof(vT));
 }
 
 template<typename iT>

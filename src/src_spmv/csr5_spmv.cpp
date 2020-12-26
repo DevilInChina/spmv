@@ -1,5 +1,17 @@
 #include "inner_spmv.h"
 #include "csr5_avx2/anonymouslib_avx2.h"
+
+void csr5HandleDestory(spmv_Handle_t handle){
+    if(handle){
+        if(handle->cppHandle){
+            anonymouslibHandle<int,  int, double>&A = *( (anonymouslibHandle<int,  int, double>*)handle->cppHandle );
+            A.destroy();
+            free(handle->cppHandle);
+            handle->cppHandle = nullptr;
+        }
+    }
+}
+
 void csr5Spmv_get_handle_Selected(spmv_Handle_t handle,
                                       BASIC_INT_TYPE m,
                                       BASIC_INT_TYPE n,
@@ -7,6 +19,8 @@ void csr5Spmv_get_handle_Selected(spmv_Handle_t handle,
                                       BASIC_INT_TYPE*ColIdx,
                                       const void*Matrix_Val
 ) {
+
+    //printf("begin handle\n");
     handle->cppHandle = malloc(sizeof (anonymouslibHandle<int, int, double> ));
     *( (anonymouslibHandle<int,  int, double>*)handle->cppHandle ) = anonymouslibHandle<int,  int, double>(m,n);
     anonymouslibHandle<int,  int, double>&A = *( (anonymouslibHandle<int,  int, double>*)handle->cppHandle );
@@ -17,6 +31,7 @@ void csr5Spmv_get_handle_Selected(spmv_Handle_t handle,
 
     A.setSigma(sigma);
     A.asCSR5();
+    //printf("handle done\n");
 }
 
 void spmv_csr5Spmv_Selected(const spmv_Handle_t handle,

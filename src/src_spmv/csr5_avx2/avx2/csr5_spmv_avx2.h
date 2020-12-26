@@ -148,7 +148,7 @@ void spmv_csr5_compute_kernel(const iT           *d_column_index,
                 // remember if the first element of this partition is the first element of a new row
                 local_bit256i = _mm256_cvtepu32_epi64(_mm_srli_epi32(descriptor128i, 31));
                 bool first_direct = false;
-                _mm256_storeu_si256((__m256i *)s_cond, local_bit256i);
+                _mm256_store_si256((__m256i *)s_cond, local_bit256i);
                 if(s_cond[0])
                     first_direct = true;
                     
@@ -209,9 +209,9 @@ void spmv_csr5_compute_kernel(const iT           *d_column_index,
                         y_idx128i = empty_rows ? _mm_i32gather_epi32 (&d_partition_descriptor_offset[offset_pointer], y_offset128i, 4) : y_offset128i;
 
                         // mask scatter store
-                        _mm_storeu_si128((__m128i *)s_y_idx, y_idx128i);
-                        _mm256_storeu_pd(s_sum, sum256d);
-                        _mm256_storeu_si256((__m256i *)s_cond, _mm256_and_si256(direct256i, local_bit256i));
+                        _mm_store_si128((__m128i *)s_y_idx, y_idx128i);
+                        _mm256_store_pd(s_sum, sum256d);
+                        _mm256_store_si256((__m256i *)s_cond, _mm256_and_si256(direct256i, local_bit256i));
                         inc0 = 0, inc1 = 0, inc2 = 0, inc3 = 0;
                         if (s_cond[0]) {d_y_local[s_y_idx[0]] = s_sum[0]; inc0 = 1;}
                         if (s_cond[1]) {d_y_local[s_y_idx[1]] = s_sum[1]; inc1 = 1;}
@@ -271,11 +271,11 @@ void spmv_csr5_compute_kernel(const iT           *d_column_index,
 
                 y_idx128i = empty_rows ? _mm_i32gather_epi32 (&d_partition_descriptor_offset[offset_pointer], y_offset128i, 4) : y_offset128i;
 
-                _mm256_storeu_si256((__m256i *)s_cond, direct256i);
-                _mm_storeu_si128((__m128i *)s_y_idx, y_idx128i);
-                _mm256_storeu_pd(s_sum, last_sum256d);
+                _mm256_store_si256((__m256i *)s_cond, direct256i);
+                _mm_store_si128((__m128i *)s_y_idx, y_idx128i);
+                _mm256_store_pd(s_sum, last_sum256d);
 
-                if (s_cond[0]) {d_y_local[s_y_idx[0]] = s_sum[0]; _mm256_storeu_pd(s_first_sum, first_sum256d);}
+                if (s_cond[0]) {d_y_local[s_y_idx[0]] = s_sum[0]; _mm256_store_pd(s_first_sum, first_sum256d);}
                 if (s_cond[1]) d_y_local[s_y_idx[1]] = s_sum[1];
                 if (s_cond[2]) d_y_local[s_y_idx[2]] = s_sum[2];
                 if (s_cond[3]) d_y_local[s_y_idx[3]] = s_sum[3];
@@ -368,6 +368,8 @@ int csr5_spmv(const int                 sigma,
 {
     int err = ANONYMOUSLIB_SUCCESS;
 
+    const int num_thread = omp_get_max_threads();
+    memset(calibrator,0,ANONYMOUSLIB_X86_CACHELINE*num_thread);
     spmv_csr5_compute_kernel
             <ANONYMOUSLIB_IT, ANONYMOUSLIB_UIT, ANONYMOUSLIB_VT>
             (column_index, value, row_pointer, x,

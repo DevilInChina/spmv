@@ -101,6 +101,8 @@ void spmv_parallel_Selected(const spmv_Handle_t handle,
 #if defined(__cplusplus)
 extern "C" {
 #endif
+void csr5HandleDestory(spmv_Handle_t handle);
+
 void csr5Spmv_get_handle_Selected(spmv_Handle_t handle,
                                   BASIC_INT_TYPE m,
                                   BASIC_INT_TYPE n,

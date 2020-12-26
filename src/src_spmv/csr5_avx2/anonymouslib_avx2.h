@@ -11,8 +11,44 @@
 template <class ANONYMOUSLIB_IT, class ANONYMOUSLIB_UIT, class ANONYMOUSLIB_VT>
 class anonymouslibHandle
 {
+    void initBaseCsr(){
+        _csr_value = nullptr;
+        _csr_column_index = nullptr;
+        _csr_row_pointer = nullptr;
+    }
+
+    void clearBaseCsr(){
+
+        _mm_free(_csr_row_pointer);
+        _mm_free(_csr_column_index);
+        _mm_free(_csr_value);
+        initBaseCsr();
+    }
+    void initCsr5(){
+        _num_offsets = 0;
+        _csr5_partition_pointer = nullptr;
+        _csr5_partition_descriptor = nullptr;
+        _csr5_partition_descriptor_offset = nullptr;
+        _csr5_partition_descriptor_offset_pointer= nullptr;
+        _temp_calibrator = nullptr;
+    }
+
+    void clearCsr5(){
+        // free the two newly added CSR5 arrays
+        _mm_free(_csr5_partition_pointer);
+        _mm_free(_csr5_partition_descriptor);
+        _mm_free(_temp_calibrator);
+        _mm_free(_csr5_partition_descriptor_offset_pointer);
+        if (_num_offsets) _mm_free(_csr5_partition_descriptor_offset);
+        initCsr5();
+    }
 public:
-    anonymouslibHandle(ANONYMOUSLIB_IT m, ANONYMOUSLIB_IT n);
+    anonymouslibHandle(ANONYMOUSLIB_IT m, ANONYMOUSLIB_IT n) {
+        //printf("%p construct called\n", this);
+        _m = m; _n = n;
+        initBaseCsr();
+        initCsr5();
+    }
     int warmup();
     int inputCSR(ANONYMOUSLIB_IT  nnz, ANONYMOUSLIB_IT *csr_row_pointer, ANONYMOUSLIB_IT *csr_column_index, ANONYMOUSLIB_VT *csr_value);
     int asCSR();
@@ -21,7 +57,10 @@ public:
     int spmv(const ANONYMOUSLIB_VT alpha, ANONYMOUSLIB_VT *y);
     int destroy();
     void setSigma(int sigma);
-
+    ~anonymouslibHandle(){
+        //printf("%p destruct called\n", this);
+        destroy();
+    }
 private:
     int computeSigma();
     int _format;
@@ -64,12 +103,14 @@ int anonymouslibHandle<ANONYMOUSLIB_IT, ANONYMOUSLIB_UIT, ANONYMOUSLIB_VT>::inpu
                                                                      ANONYMOUSLIB_VT *csr_value)
 {
     _format = ANONYMOUSLIB_FORMAT_CSR;
-
+    clearBaseCsr();
     _nnz = nnz;
-
-    _csr_row_pointer  = csr_row_pointer;
-    _csr_column_index = csr_column_index;
-    _csr_value        = csr_value;
+    _csr_row_pointer  =(ANONYMOUSLIB_IT*) _mm_malloc((_m+1)*sizeof (csr_row_pointer[0]),ANONYMOUSLIB_X86_CACHELINE);//csr_row_pointer;
+    memcpy(_csr_row_pointer,csr_row_pointer,(_m+1)*sizeof (csr_row_pointer[0]));
+    _csr_column_index = (ANONYMOUSLIB_IT*) _mm_malloc((_nnz)*sizeof (csr_column_index[0]),ANONYMOUSLIB_X86_CACHELINE);//csr_column_index;
+    memcpy(_csr_column_index,csr_column_index,(_nnz)*sizeof (csr_column_index[0]));
+    _csr_value        = (ANONYMOUSLIB_VT*) _mm_malloc((_nnz)*sizeof (csr_value[0]),ANONYMOUSLIB_X86_CACHELINE);//csr_value;
+    memcpy(_csr_value,csr_value,(_nnz)*sizeof (csr_value[0]));
 
     return ANONYMOUSLIB_SUCCESS;
 }
@@ -89,11 +130,7 @@ int anonymouslibHandle<ANONYMOUSLIB_IT, ANONYMOUSLIB_UIT, ANONYMOUSLIB_VT>::asCS
                               _csr5_partition_pointer, _csr_column_index, _csr_value, false);
 
         // free the two newly added CSR5 arrays
-        _mm_free(_csr5_partition_pointer);
-        _mm_free(_csr5_partition_descriptor);
-        _mm_free(_temp_calibrator);
-        _mm_free(_csr5_partition_descriptor_offset_pointer);
-        if (_num_offsets) _mm_free(_csr5_partition_descriptor_offset);
+        clearCsr5();
 
         _format = ANONYMOUSLIB_FORMAT_CSR;
     }
@@ -125,12 +162,7 @@ int anonymouslibHandle<ANONYMOUSLIB_IT, ANONYMOUSLIB_UIT, ANONYMOUSLIB_VT>::asCS
 
         base = 2;
         _bit_scansum_offset = 1;
-        while (base
-                <
-                ANONYMOUSLIB_CSR5_OMEGA) {
-            base *= 2;
-            _bit_scansum_offset++;
-        }
+        while (base < ANONYMOUSLIB_CSR5_OMEGA) { base *= 2; _bit_scansum_offset++; }
 
         if (_bit_y_offset + _bit_scansum_offset > sizeof(ANONYMOUSLIB_UIT) * 8 - 1) //the 1st bit of bit-flag should be in the first packet
             return ANONYMOUSLIB_UNSUPPORTED_CSR5_OMEGA;
@@ -258,7 +290,10 @@ int anonymouslibHandle<ANONYMOUSLIB_IT, ANONYMOUSLIB_UIT, ANONYMOUSLIB_VT>::spmv
 template <class ANONYMOUSLIB_IT, class ANONYMOUSLIB_UIT, class ANONYMOUSLIB_VT>
 int anonymouslibHandle<ANONYMOUSLIB_IT, ANONYMOUSLIB_UIT, ANONYMOUSLIB_VT>::destroy()
 {
-    return asCSR();
+    clearCsr5();
+    clearBaseCsr();
+    //printf("%d\n",1);
+    return ANONYMOUSLIB_SUCCESS;
 }
 
 template <class ANONYMOUSLIB_IT, class ANONYMOUSLIB_UIT, class ANONYMOUSLIB_VT>
@@ -271,13 +306,6 @@ template <class ANONYMOUSLIB_IT, class ANONYMOUSLIB_UIT, class ANONYMOUSLIB_VT>
 int anonymouslibHandle<ANONYMOUSLIB_IT, ANONYMOUSLIB_UIT, ANONYMOUSLIB_VT>::computeSigma()
 {
     return _csr5_sigma;
-}
-
-template<class ANONYMOUSLIB_IT, class ANONYMOUSLIB_UIT, class ANONYMOUSLIB_VT>
-anonymouslibHandle<ANONYMOUSLIB_IT, ANONYMOUSLIB_UIT, ANONYMOUSLIB_VT>::anonymouslibHandle(ANONYMOUSLIB_IT m,
-                                                                                           ANONYMOUSLIB_IT n) {
-    _m = m;
-    _n = n;
 }
 
 #endif // ANONYMOUSLIB_AVX2_H
