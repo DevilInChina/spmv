@@ -31,7 +31,7 @@ void testForFunctions(const char *functionName,
     spmv_create_handle_all_in_one(&handle,m,n,RowPtr,ColIdx,Matrix_Val,
                                   nthreads,FUNC_WAY,sizeof(VALUE_TYPE),PRODUCT_WAY);
 
-    for(BASIC_SIZE_TYPE thread = nthreads; thread <= nthreads ; thread<<=1u) {
+    for(BASIC_SIZE_TYPE thread = 1u; thread <= nthreads ; thread<<=1u) {
         omp_set_num_threads(thread);
         gettimeofday(&t1, NULL);
 
@@ -105,7 +105,7 @@ int main(int argc, char ** argv) {
     struct timeval t1, t2;
      SPMV_METHODS d = Method_Total_Size;
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
-    for (int i = Method_CSR5SPMV *VECTOR_TOTAL_SIZE ; i < Method_Total_Size * VECTOR_TOTAL_SIZE; ++i) {
+    for (int i = Method_Serial *VECTOR_TOTAL_SIZE ; i < Method_Total_Size * VECTOR_TOTAL_SIZE; ++i) {
 
         testForFunctions(funcNames[i], iter, nthreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                              i % VECTOR_TOTAL_SIZE, i / VECTOR_TOTAL_SIZE);
