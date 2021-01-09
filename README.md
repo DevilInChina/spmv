@@ -213,7 +213,11 @@ Deeper load balancing than balanced , need more time to prepare.
 
 ### sell_C_Sigma
 
+### csr5_format storage
 
+Using csr5 by Weifeng Liu 
+avx2 codes from https://github.com/weifengliu-ssslab/Benchmark_SpMV_using_CSR5
+only modified avx2 currently
 
 # Matrix inspect and choose best method to run
 

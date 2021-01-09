@@ -104,6 +104,14 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
             rowBlock_ts[i] = rowBlocks + i;
         }
         //qsort(rowBlock_ts, m, sizeof(Row_Block_t), cmp);
+        srand(banner);
+        for(int i = 0,j ; i < banner ; ++i){
+            Row_Block_t temp = rowBlock_ts[i];
+            j = rand()%banner;
+            rowBlock_ts[i] = rowBlock_ts[j];
+            rowBlock_ts[j] = temp;
+        }
+
         for (int i = 0, I_of_Sigma = 0; i < len; ++i, I_of_Sigma += Sigma) {
             qsort(rowBlock_ts + I_of_Sigma, Sigma, sizeof(Row_Block_t), cmp);
         }
