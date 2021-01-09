@@ -103,7 +103,7 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
             rowBlocks[i].rowNumber = i;
             rowBlock_ts[i] = rowBlocks + i;
         }
-        //qsort(rowBlock_ts, m, sizeof(Row_Block_t), cmp);
+
         srand(banner);
         for(int i = 0,j ; i < banner ; ++i){
             Row_Block_t temp = rowBlock_ts[i];
@@ -112,10 +112,20 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
             rowBlock_ts[j] = temp;
         }
 
+        qsort(rowBlock_ts, banner, sizeof(Row_Block_t), cmp);
+
+
+        Row_Block_t* Temps = (Row_Block_t *) malloc(sizeof(Row_Block_t) * banner);
+        for(int i = 0 ; i < len ; ++i){
+            for(int j = 0 ; j < Sigma; ++j){
+                Temps[j*len+i] = rowBlock_ts[i*Sigma+j];
+            }
+        }
+        memcpy(rowBlock_ts,Temps,sizeof(Row_Block_t) * banner);
+        free(Temps);
         for (int i = 0, I_of_Sigma = 0; i < len; ++i, I_of_Sigma += Sigma) {
             qsort(rowBlock_ts + I_of_Sigma, Sigma, sizeof(Row_Block_t), cmp);
         }
-
         int siz = (handle)->banner / C;
         (handle)->C_Blocks = (C_Block_t) malloc(sizeof(C_Block) * siz);
 
@@ -123,7 +133,18 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
             gemv_C_Block_init((handle)->C_Blocks + CBlock / C, C, RowPtr,
                               rowBlock_ts + CBlock,size,&total,&zero);
         }
-        //printf("%d %.5f%%\n",C,zero*100.0/total);
+        double S = 0;
+        double ave = 1.0*total/len;
+        for(int i = 0 ; i < banner ; i+=Sigma){
+            double cur = 0;
+            for(int j = i/C ; j < (i+Sigma)/C ; ++j){
+                cur+=handle->C_Blocks[j].C*handle->C_Blocks[j].ld;
+            }
+            S+=(cur-ave)*(cur-ave);
+        }
+        S = sqrt(S/len)/ave;
+        printf("C=%d \nzero=%.5f%%\n",C,zero*100.0/total);
+        printf("Average = %16.10f \ns = %16.10f\n",ave,S);
         free(rowBlock_ts);
         free(rowBlocks);
     }else{
