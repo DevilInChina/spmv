@@ -103,7 +103,7 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
             rowBlocks[i].rowNumber = i;
             rowBlock_ts[i] = rowBlocks + i;
         }
-
+/*
         srand(banner);
         for(int i = 0,j ; i < banner ; ++i){
             Row_Block_t temp = rowBlock_ts[i];
@@ -122,7 +122,7 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
             }
         }
         memcpy(rowBlock_ts,Temps,sizeof(Row_Block_t) * banner);
-        free(Temps);
+        free(Temps);*/
         for (int i = 0, I_of_Sigma = 0; i < len; ++i, I_of_Sigma += Sigma) {
             qsort(rowBlock_ts + I_of_Sigma, Sigma, sizeof(Row_Block_t), cmp);
         }
@@ -145,6 +145,7 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
         S = sqrt(S/len)/ave;
         printf("C=%d \nzero=%.5f%%\n",C,zero*100.0/total);
         printf("Average = %16.10f \ns = %16.10f\n",ave,S);
+        printf("res = %16.10f%%\n",(m-banner)*100.0/m);
         free(rowBlock_ts);
         free(rowBlocks);
     }else{
@@ -194,6 +195,8 @@ void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
                                  cBlocks[j + SigmaBlock].ColIndex,
                                  Vector_Val_X, cBlocks[j + SigmaBlock].Y, way
                 );
+            }
+            for(int j = 0 ; j < C_times ; ++j){
                 gather(cBlocks[j + SigmaBlock].C,
                        cBlocks[j + SigmaBlock].Y,
                        cBlocks[j + SigmaBlock].RowIndex, Vector_Val_Y, way);

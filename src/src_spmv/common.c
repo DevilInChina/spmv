@@ -130,7 +130,8 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
     if(Function < Method_Serial || Function >= Method_Total_Size)Function = Method_Serial;
 
     handle_init_common_parameters(*Handle,nthreads,Function,size,vectorizedWay);
-
+    const int C = 16;
+    const int Turn = 8;
     switch (Function) {
         case Method_Balanced:{
             parallel_balanced_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
@@ -139,15 +140,15 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
             parallel_balanced2_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
         }break;
         case Method_SellCSigma:{
-            sell_C_Sigma_get_handle_Selected(*Handle,m/nthreads/512,512,m,RowPtr,ColIdx,Matrix_Val);
+            sell_C_Sigma_get_handle_Selected(*Handle,m/nthreads/Turn/C,C,m,RowPtr,ColIdx,Matrix_Val);
         }break;
         case Method_CSR5SPMV: {
             if (size == sizeof(double)) {
                 csr5Spmv_get_handle_Selected(*Handle, m, n, (int *) RowPtr, (int *) ColIdx, Matrix_Val);
             }else{
                 (*Handle)->spmvMethod = Method_SellCSigma;
-                sell_C_Sigma_get_handle_Selected(*Handle,m/nthreads/512
-                                                 ,512,m,RowPtr,ColIdx,Matrix_Val);
+                sell_C_Sigma_get_handle_Selected(*Handle,m/nthreads/Turn/C
+                                                 ,C,m,RowPtr,ColIdx,Matrix_Val);
             }
         }break;
         default:{
