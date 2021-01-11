@@ -130,8 +130,8 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
     if(Function < Method_Serial || Function >= Method_Total_Size)Function = Method_Serial;
 
     handle_init_common_parameters(*Handle,nthreads,Function,size,vectorizedWay);
-    const int C = 16;
-    const int Turn = 8;
+    const int C = 88;
+    const int Turn = 4;
     switch (Function) {
         case Method_Balanced:{
             parallel_balanced_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);

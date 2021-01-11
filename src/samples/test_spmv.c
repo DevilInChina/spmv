@@ -31,8 +31,13 @@ void testForFunctions(const char *functionName,
     spmv_create_handle_all_in_one(&handle,m,n,RowPtr,ColIdx,Matrix_Val,
                                   nthreads,FUNC_WAY,sizeof(VALUE_TYPE),PRODUCT_WAY);
 
-    for(BASIC_SIZE_TYPE thread = 1u; thread <= nthreads ; thread<<=1u) {
+    for(BASIC_SIZE_TYPE thread = nthreads; thread <= nthreads ; thread<<=1u) {
         omp_set_num_threads(thread);
+
+        for (currentiter = 0; currentiter < 100; currentiter++) {
+            spmv(handle, m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
+        }
+
         gettimeofday(&t1, NULL);
 
         for (currentiter = 0; currentiter < iter; currentiter++) {
@@ -105,12 +110,13 @@ int main(int argc, char ** argv) {
     struct timeval t1, t2;
      SPMV_METHODS d = Method_Total_Size;
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
-    for (int i = Method_SellCSigma *VECTOR_TOTAL_SIZE ; i < Method_Total_Size * VECTOR_TOTAL_SIZE; ++i) {
+    for (int i = Method_SellCSigma *VECTOR_TOTAL_SIZE+VECTOR_AVX2 ; i <  Method_SellCSigma* VECTOR_TOTAL_SIZE + VECTOR_AVX512; ++i) {
 
         testForFunctions(funcNames[i], iter, nthreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                              i % VECTOR_TOTAL_SIZE, i / VECTOR_TOTAL_SIZE);
 
     }
+    testForFunctions("csr5",iter,nthreads,Y_golden,m,n,RowPtr,ColIdx,Val,X,Y,VECTOR_AVX2,Method_CSR5SPMV);
     free(Val);
     free(RowPtr);
     free(ColIdx);

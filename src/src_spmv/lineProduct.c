@@ -66,19 +66,11 @@ typedef void (*line_s_function)(const float *Val, const BASIC_INT_TYPE* indx,
 
 void basic_d_lineProduct_4_avx2(const double*Val, const BASIC_INT_TYPE* indx, const double *Vector_X, double *Vector_Y){
 #ifdef DOT_AVX2_CAN
-      //__m256d vecv = _mm256_loadu_pd(&Val[0]);
-
-       //__m256i veci = _mm256_loadu_si256((__m256i_u*)indx);
-       //__m128i vec128i = _mm256_castsi256_si128(*(__m256i_u *) (indx));
-       //__m256d vecx =_mm256_i32gather_pd(Vector_X, _mm256_castsi256_si128(*(__m256i_u *) (indx)), sizeof(Vector_X[0]));
-
-       //__m256d vecY = _mm256_load_pd(&Vector_Y[0]);
-        *(__m256d_u *) (Vector_Y )  = _mm256_fmadd_pd(
+      *(__m256d_u *) (Vector_Y )  = _mm256_fmadd_pd(
                *(__m256d_u*)(Val),
                _mm256_i32gather_pd(Vector_X, _mm256_castsi256_si128(*(__m256i_u *) (indx)), sizeof(Vector_X[0])),
                *(__m256d_u *) (Vector_Y ));
 
-       //_mm256_store_pd(Vector_Y,vecY);
 #else
     basic_d_lineProduct_len(4,LINE_PRODUCT_PARAMETERS_CALL(0));
 #endif
@@ -144,11 +136,14 @@ void basic_d_lineProduct(BASIC_INT_TYPE length, const double*Val, const BASIC_IN
     }
     const int block = 2 << vectorizedWay;
     int i;
-    for(i = 0 ; i + block  < length ; i+=block){
+    int cal = length-length%block;
+
+    //line_d_function calf = func_cal_d_4_8[caller];
+    for(i = 0 ; i < cal ; i+=block){
         func_cal_d_4_8[caller](LINE_PRODUCT_PARAMETERS_CALL(i));
     }
-
-    basic_d_lineProduct_len(length-i, LINE_PRODUCT_PARAMETERS_CALL(i));
+    if(length%block)
+        basic_d_lineProduct_len(length%block, LINE_PRODUCT_PARAMETERS_CALL(i));
 }
 
 void basic_s_lineProduct(BASIC_INT_TYPE length, const float *Val, const BASIC_INT_TYPE* indx,
@@ -163,12 +158,13 @@ void basic_s_lineProduct(BASIC_INT_TYPE length, const float *Val, const BASIC_IN
 
     const int block = 4 << vectorizedWay;
     int i;
-    for( i = 0 ; i + block  < length ; i+=block){
+    int cal = length-length%block;
+    for( i = 0 ; i < cal ; i+=block){
         func_cal_s_8_16[caller](LINE_PRODUCT_PARAMETERS_CALL(i));
     }
 
-
-    basic_s_lineProduct_len(length-i, LINE_PRODUCT_PARAMETERS_CALL(i));
+    if(length%block)
+        basic_s_lineProduct_len(length-i, LINE_PRODUCT_PARAMETERS_CALL(i));
 }
 
 void basic_d_lineProduct_set_zero(BASIC_INT_TYPE length, const double*Val, const BASIC_INT_TYPE* indx,
