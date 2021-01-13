@@ -116,16 +116,31 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
 
 
         Row_Block_t* Temps = (Row_Block_t *) malloc(sizeof(Row_Block_t) * banner);
-        for(int i = 0 ; i < len ; ++i){
-            for(int j = 0 ; j < Sigma; ++j){
-                Temps[j*len+i] = rowBlock_ts[i*Sigma+j];
+        int cnt = 0;
+        for(int i = 0 ; i < Times ; ++i){
+            if(i%2){
+                for(int j = 0 ; j < len ; ++j){
+                    for(int k = 0 ; k < C; ++k){
+                        Temps[i*C + j * Sigma +k] = rowBlock_ts[cnt++];
+                    }
+                }
+            }else{
+                for(int j = len-1 ; j >= 0 ; --j){
+                    for(int k = 0 ; k < C; ++k){
+                        Temps[i*C + j * Sigma +k] = rowBlock_ts[cnt++];
+                    }
+                }
             }
         }
         memcpy(rowBlock_ts,Temps,sizeof(Row_Block_t) * banner);
         free(Temps);
+        srand(len);
+
+
         for (int i = 0, I_of_Sigma = 0; i < len; ++i, I_of_Sigma += Sigma) {
             qsort(rowBlock_ts + I_of_Sigma, Sigma, sizeof(Row_Block_t), cmp);
         }
+
         int siz = (handle)->banner / C;
         (handle)->C_Blocks = (C_Block_t) malloc(sizeof(C_Block) * siz);
 
@@ -143,12 +158,9 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
             S+=(cur-ave)*(cur-ave);
         }
         S = sqrt(S/len)/ave;
-        printf("Sigma = %d\n",Sigma);
-        printf("banner = %d\n",banner);
-        printf("m = %d\n",m);
-        printf("C=%d \nzero=%.5f%%\n",C,zero*100.0/total);
-        printf("Average = %16.10f \ns = %16.10f\n",ave,S);
-        printf("res = %16.10f%%\n",(m-banner)*100.0/m);
+        printf("Sigma,banner,m,C,zero,Average,s,res\n");
+        printf("%d,%d,%d,%d,%f,%f,%f,%f\n",Sigma,banner,m,C,zero*1.0/total,ave,S,(m-banner)*1.0/m);
+
         free(rowBlock_ts);
         free(rowBlocks);
     }else{
@@ -188,7 +200,7 @@ void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
         int C_times = Sigma / C;
         memset(Vector_Val_Y, 0, size * m);
 
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic)
         for (int i = 0; i < length; ++i) {/// sigma
             int SigmaBlock = i * C_times;
 

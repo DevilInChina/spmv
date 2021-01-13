@@ -10,7 +10,7 @@
 #include <wait.h>
 
 // sum up 8 single-precision numbers
-void testForFunctions(const char *functionName,
+void testForFunctions(const char *matrixName,
                       int iter, int nthreads,
                           const VALUE_TYPE *Y_golden,
                       BASIC_INT_TYPE m,
@@ -54,7 +54,8 @@ void testForFunctions(const char *functionName,
                     (Vector_Val_Y[ind]-Y_golden[ind])/m;
         }
         s = sqrt(s);
-        printf("%s,%s,%lu,%16.10f,%.10f\n",
+        printf("Matrix,Methods,Vectorized,threads,error,Gflops\n");
+        printf("%s,%s,%s,%lu,%16.10f,%.10f\n",matrixName,
                Methods_names[FUNC_WAY], Vectorized_names[PRODUCT_WAY], thread, s, GFlops_serial);
     }
     if (handle)
@@ -94,7 +95,9 @@ void LoadMtx_And_GetGolden(char *filePath,
 
 
 }
-
+#ifndef TEST_METHOD
+#define TEST_METHOD Method_Total_Size
+#endif
 int main(int argc, char ** argv) {
 
     char *file = argv[1];
@@ -110,13 +113,17 @@ int main(int argc, char ** argv) {
     struct timeval t1, t2;
      SPMV_METHODS d = Method_Total_Size;
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
-    for (int i = Method_SellCSigma *VECTOR_TOTAL_SIZE+VECTOR_AVX2 ; i <  Method_SellCSigma* VECTOR_TOTAL_SIZE + VECTOR_AVX512; ++i) {
-
-        testForFunctions(funcNames[i], iter, nthreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
+    if(TEST_METHOD != Method_Total_Size) {
+        for (int i = TEST_METHOD * VECTOR_TOTAL_SIZE; i < (TEST_METHOD + 1) * VECTOR_TOTAL_SIZE; ++i) {
+            testForFunctions(file, iter, nthreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                              i % VECTOR_TOTAL_SIZE, i / VECTOR_TOTAL_SIZE);
-
+        }
+    }else{
+        for (int i = Method_Serial * VECTOR_TOTAL_SIZE; i < Method_Total_Size * VECTOR_TOTAL_SIZE; ++i) {
+            testForFunctions(file, iter, nthreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
+                             i % VECTOR_TOTAL_SIZE, i / VECTOR_TOTAL_SIZE);
+        }
     }
-    testForFunctions("csr5",iter,nthreads,Y_golden,m,n,RowPtr,ColIdx,Val,X,Y,VECTOR_AVX2,Method_CSR5SPMV);
     free(Val);
     free(RowPtr);
     free(ColIdx);

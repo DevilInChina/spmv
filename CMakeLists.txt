@@ -48,9 +48,7 @@ add_executable(bicg ${PROJECT_SOURCE_DIR}/src/samples/bicg.c)
 
 target_link_libraries(bicg mv)
 
-add_executable(spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
 
-target_link_libraries(spmv mv)
 
 add_executable(line ${PROJECT_SOURCE_DIR}/src/samples/test_lineProduct.c)
 
@@ -58,3 +56,37 @@ target_link_libraries(line mv)
 add_executable(pagerank ${PROJECT_SOURCE_DIR}/src/samples/PageRank.c)
 
 target_link_libraries(pagerank mv)
+
+add_executable(spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
+target_link_libraries(spmv mv)
+
+#[[
+add_executable(serial_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
+target_compile_options(serial_spmv PRIVATE -D TEST_METHOD=0)
+target_link_libraries(serial_spmv mv)
+
+
+add_executable(parallel_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
+target_compile_options(parallel_spmv PRIVATE -D TEST_METHOD=1)
+target_link_libraries(parallel_spmv mv)
+
+
+add_executable(balanced_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
+target_compile_options(balanced_spmv PRIVATE -D TEST_METHOD=2)
+target_link_libraries(balanced_spmv mv)
+
+
+add_executable(2balanced_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
+target_compile_options(2balanced_spmv PRIVATE -D TEST_METHOD=3)
+target_link_libraries(2balanced_spmv mv)
+
+
+add_executable(sellCSigma_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
+target_compile_options(sellCSigma_spmv PRIVATE -D TEST_METHOD=4)
+target_link_libraries(sellCSigma_spmv mv)
+
+
+add_executable(csr5_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
+target_compile_options(csr5_spmv PRIVATE -D TEST_METHOD=5)
+target_link_libraries(csr5_spmv mv)
+#]]
