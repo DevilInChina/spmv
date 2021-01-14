@@ -40,6 +40,7 @@ void basic_s_lineProduct_8_avx2(const float*Val, const BASIC_INT_TYPE* indx, con
 
 void basic_s_lineProduct_16_avx512(LINE_S_PRODUCT_PARAMETERS_IN){
 #ifdef DOT_AVX512_CAN
+    /*
     __m512 vecv = _mm512_loadu_ps(&Val[0]);
 
     __m512i veci =  _mm512_loadu_si512(&indx[0]);
@@ -51,6 +52,10 @@ void basic_s_lineProduct_16_avx512(LINE_S_PRODUCT_PARAMETERS_IN){
     vecY = _mm512_fmadd_ps(vecv,vecx,vecY);
 
     _mm512_store_ps(Vector_Y,vecY);
+*/
+    *(__m512_u*)(Vector_Y) = _mm512_fmadd_ps(*(__m512_u*)(Val),
+                    _mm512_i32gather_ps (_mm512_loadu_si512( (__m512i_u *)(indx)), Vector_X, sizeof(Vector_X[0])),
+                               *(__m512_u*)(Vector_Y));
 #else
     for(int i = 0 ; i < 2 ; ++i){
         basic_s_lineProduct_8_avx2(LINE_PRODUCT_PARAMETERS_CALL(i*8));
