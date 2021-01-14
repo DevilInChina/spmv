@@ -150,13 +150,16 @@ double basic_d_dotProduct_avx512(
     int nloop = dif / DEPTH;
     int remainder = dif % DEPTH;
     for (int li = 0,j = 0; li < nloop; li++,j+=DEPTH) {
-        //__m512d vecv = _mm512_loadu_pd(&Val[j]);
-        //__m256i veci =  _mm256_loadu_si256((__m256i *) (&indx[j]));
-        //__m512d vecx = _mm512_i32gather_pd (_mm256_loadu_si256((__m256i_u *) (indx+j)), X, sizeof(X[0]));
+        __m512d vecv = _mm512_loadu_pd(&Val[j]);
+        __m256i veci =  _mm256_loadu_si256((__m256i *) (&indx[j]));
+        __m512d vecx = _mm512_i32gather_pd (_mm256_loadu_si256((__m256i_u *) (indx+j)), X, sizeof(X[0]));
+        /*
         res = _mm512_fmadd_pd(
                 _mm512_loadu_pd((__m512d_u *) (Val + j)),
                 _mm512_i32gather_pd (_mm256_loadu_si256((__m256i_u *) (indx + j)), X, sizeof(X[0])),
                 res);
+                */
+        res = _mm512_fmadd_pd(vecv,vecx,res);
     }
     sum += _mm512_reduce_add_pd(res);
 
