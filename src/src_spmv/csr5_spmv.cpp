@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "inner_spmv.h"
 #include "csr5_avx2/anonymouslib_avx2.h"
 
@@ -49,6 +50,13 @@ void spmv_csr5Spmv_Selected(const spmv_Handle_t handle,
     A.spmv(1,(double *)Vector_Val_Y);
 }
 
+int lower_bound(const int *first,const int *last,int key){
+    return (int)(std::lower_bound(first,last,key) - first);
+}
+
+int upper_bound(const int *first,const int *last,int key){
+    return (int)(std::upper_bound (first,last,key) - first);
+}
 
 
 

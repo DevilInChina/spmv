@@ -136,5 +136,8 @@ typedef void(*spmv_function) (const spmv_Handle_t handle,
 
 extern const spmv_function spmv_functions[];
 
+int lower_bound(const int *first,const int *last,int key);
+
+int upper_bound(const int *first,const int *last,int key);
 
 #endif //GEMV_INNER_SPMV_H

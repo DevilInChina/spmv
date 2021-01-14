@@ -200,7 +200,7 @@ void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
         int C_times = Sigma / C;
         memset(Vector_Val_Y, 0, size * m);
 
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for
         for (int i = 0; i < length; ++i) {/// sigma
             int SigmaBlock = i * C_times;
 

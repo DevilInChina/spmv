@@ -7,15 +7,13 @@
 
 int binary_search_right_boundary_kernel(const int *row_pointer,
                                         const int  key_input,
-                                        const int  size)
-{
+                                        const int  size) {
     int start = 0;
-    int stop  = size - 1;
+    int stop = size - 1;
     int median;
     int key_median;
 
-    while (stop >= start)
-    {
+    while (stop >= start) {
         median = (stop + start) / 2;
 
         key_median = row_pointer[median];
@@ -40,15 +38,20 @@ void parallel_balanced_get_handle(
     //int *csrSplitter_normal = (int *)malloc((nthreads+1) * sizeof(int));
 
     int stridennz = (nnzR+nthreads-1) /  nthreads;
-
-#pragma omp parallel default(none) shared(nthreads, stridennz, nnzR, RowPtr, csrSplitter, m)
-    for (int tid = 0; tid <= nthreads; tid++) {
+    csrSplitter[0] = 0;
+    for (int tid = 1; tid <= nthreads; tid++) {
         // compute partition boundaries by partition of size stride
         int boundary = tid * stridennz;
         // clamp partition boundaries to [0, nnzR]
         boundary = boundary > nnzR ? nnzR : boundary;
         // binary search
-        csrSplitter[tid] = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
+        int spl = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
+        if(spl==csrSplitter[tid-1]){
+            spl = m>(spl+1)? (spl+1):m;
+            csrSplitter[tid] = spl;
+        }else{
+            csrSplitter[tid] = spl;
+        }
     }
     (handle)->csrSplitter = csrSplitter;
 
