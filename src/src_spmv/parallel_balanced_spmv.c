@@ -64,7 +64,7 @@ void spmv_parallel_balanced_Selected(
         const void* Vector_Val_X,
         void*       Vector_Val_Y
 ) {
-    BASIC_SIZE_TYPE size = handle->data_size;
+    BASIC_SIZE_TYPE size = handle->data_size ;
     VECTORIZED_WAY way = handle->vectorizedWay;
     dot_product_function dotProductFunction = inner_basic_GetDotProduct(size);
 
