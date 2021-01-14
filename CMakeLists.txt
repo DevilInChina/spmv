@@ -9,7 +9,7 @@ SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -g")
 
 include_directories(include)
 
-add_compile_options(-mavx -mavx2 -mavx512f -march=native -O3)
+add_compile_options(-mavx -mavx512f -march=native -O3)
 
 find_package(OpenMP REQUIRED)
 if (OPENMP_FOUND)
@@ -37,7 +37,7 @@ add_library(mv SHARED ${SPMVS} )
 target_include_directories(mv PRIVATE src/csr5_avx2)
 target_include_directories(mv PRIVATE src/csr5_avx2/avx2)
 
-target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
+#target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
 target_compile_definitions(mv PRIVATE DOT_AVX512_CAN )
 
 add_executable(cg ${PROJECT_SOURCE_DIR}/src/samples/cg.c)

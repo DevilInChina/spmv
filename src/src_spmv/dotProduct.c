@@ -85,8 +85,7 @@ float basic_s_dotProduct_avx512(
         //__m512i veci =  _mm512_loadu_si512(&indx[j]);
         //__m512 vecx = _mm512_i32gather_ps (_mm512_loadu_si512( (__m512i_u *)(indx+j)), X, sizeof(X[0]));
         res = _mm512_fmadd_ps(*(__m512_u*)(Val+j),
-                              _mm512_i32gather_ps (_mm512_loadu_si512(
-                                      (__m512i_u *)(indx+j)), X, sizeof(X[0])),
+                              _mm512_i32gather_ps (_mm512_loadu_si512( (__m512i_u *)(indx+j)), X, sizeof(X[0])),
                               res);
     }
     sum += _mm512_reduce_add_ps(res);
