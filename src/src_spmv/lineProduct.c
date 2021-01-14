@@ -83,6 +83,7 @@ void basic_d_lineProduct_4_avx2(const double*Val, const BASIC_INT_TYPE* indx, co
 
 void basic_d_lineProduct_8_avx512(const double*Val, const BASIC_INT_TYPE* indx, const double *Vector_X, double *Vector_Y) {
 #ifdef DOT_AVX512_CAN
+    /*
     __m512d vecv = _mm512_loadu_pd(&Val[0]);
 
     __m256i veci = _mm256_loadu_si256((__m256i *) (&indx[0]));
@@ -92,6 +93,10 @@ void basic_d_lineProduct_8_avx512(const double*Val, const BASIC_INT_TYPE* indx, 
     vecY = _mm512_fmadd_pd(vecv,vecx,vecY);
 
     _mm512_store_pd(Vector_Y, vecY);
+*/
+    *((__m512d_u *)(Vector_Y)) = _mm512_fmadd_pd(*((__m512d_u *)(Val)),
+                          _mm512_i32gather_pd (_mm256_loadu_si256((__m256i_u *) (indx)), Vector_X, sizeof(Vector_X[0]))
+            ,*((__m512d_u *)(Vector_Y)));
 
 #else
     for(int i = 0 ; i < 2; ++i) {
