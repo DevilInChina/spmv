@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.3)
 project(spmv C CXX)
 set(CMAKE_CXX_COMPILER g++)
 #set(CMAKE_C_COMPILER icc)
@@ -38,7 +38,7 @@ target_include_directories(mv PRIVATE src/csr5_avx2)
 target_include_directories(mv PRIVATE src/csr5_avx2/avx2)
 
 target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
-#target_compile_definitions(mv PRIVATE DOT_AVX512_CAN )
+target_compile_definitions(mv PRIVATE DOT_AVX512_CAN )
 
 add_executable(cg ${PROJECT_SOURCE_DIR}/src/samples/cg.c)
 
