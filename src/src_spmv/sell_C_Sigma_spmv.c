@@ -205,12 +205,14 @@ void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
             int SigmaBlock = i * C_times;
 
             for (int j = 0; j < C_times; ++j) {
-                memset(cBlocks[j + SigmaBlock].Y, 0, size * cBlocks[j + SigmaBlock].C);
+                //memset(cBlocks[j + SigmaBlock].Y, 0, size * cBlocks[j + SigmaBlock].C);
+
                 packLine_product(cBlocks[j + SigmaBlock].ld, C, cBlocks[j + SigmaBlock].ValT,
                                  cBlocks[j + SigmaBlock].ColIndex,
                                  Vector_Val_X, cBlocks[j + SigmaBlock].Y, way
                 );
             }
+
             for(int j = 0 ; j < C_times ; ++j){
                 gather(cBlocks[j + SigmaBlock].C,
                        cBlocks[j + SigmaBlock].Y,

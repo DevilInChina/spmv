@@ -7,18 +7,6 @@
 #include "spmv_Defines.h"
 
 
-void basic_d_lineProduct(BASIC_INT_TYPE length, const double*Val, const BASIC_INT_TYPE* indx,
-                         const double *Vector_X, double *Vector_Y, VECTORIZED_WAY vectorizedWay);
-
-void basic_s_lineProduct(BASIC_INT_TYPE length, const float *Val, const BASIC_INT_TYPE* indx,
-                         const float *Vector_X, float *Vector_Y, VECTORIZED_WAY dotProductWay);
-
-void basic_d_lineProduct_set_zero(BASIC_INT_TYPE length, const double*Val, const BASIC_INT_TYPE* indx,
-                                  const double *Vector_X, double *Vector_Y, VECTORIZED_WAY dotProductWay);
-
-
-void basic_s_lineProduct_set_zero(BASIC_INT_TYPE length, const float *Val, const BASIC_INT_TYPE* indx,
-                                  const float *Vector_X, float *Vector_Y, VECTORIZED_WAY dotProductWay);
 
 void basic_s_gather(BASIC_INT_TYPE length, const void *Val, const BASIC_INT_TYPE*indx, void *Vector_Y, VECTORIZED_WAY vec);
 
@@ -48,7 +36,7 @@ typedef void (*line_product_function)(BASIC_INT_TYPE length, const void *Val, co
 typedef void (*packLine_product_function)(BASIC_INT_TYPE pack,BASIC_INT_TYPE length, const void *Val, const BASIC_INT_TYPE* indx,
                                       const void *Vector_X, void *Vector_Y, VECTORIZED_WAY vec);
 
-line_product_function inner_basic_GetLineProduct(BASIC_SIZE_TYPE types);
+
 
 gather_function inner_basic_GetGather(BASIC_SIZE_TYPE types);
 

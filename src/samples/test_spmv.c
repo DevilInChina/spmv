@@ -114,7 +114,7 @@ int main(int argc, char ** argv) {
      SPMV_METHODS d = Method_Total_Size;
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
     if(TEST_METHOD != Method_Total_Size) {
-        for (int i = TEST_METHOD * VECTOR_TOTAL_SIZE; i < (TEST_METHOD + 1) * VECTOR_TOTAL_SIZE; ++i) {
+        for (int i = TEST_METHOD * VECTOR_TOTAL_SIZE+VECTOR_AVX2; i < (TEST_METHOD ) * VECTOR_TOTAL_SIZE+VECTOR_AVX512; ++i) {
             testForFunctions(file, iter, nthreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                              i % VECTOR_TOTAL_SIZE, i / VECTOR_TOTAL_SIZE);
         }
