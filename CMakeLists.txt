@@ -9,7 +9,7 @@ SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -g")
 
 include_directories(include)
 
-add_compile_options(-mavx -mavx2 -march=native -Ofast)
+add_compile_options(-mavx -mavx2 -march=native )
 
 find_package(OpenMP REQUIRED)
 if (OPENMP_FOUND)
@@ -63,6 +63,11 @@ target_link_libraries(spmv mv)
 add_executable(sellCSigma_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
 target_compile_options(sellCSigma_spmv PRIVATE -D TEST_METHOD=4)
 target_link_libraries(sellCSigma_spmv mv)
+
+
+add_executable(csr5_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
+target_compile_options(csr5_spmv PRIVATE -D TEST_METHOD=5)
+target_link_libraries(csr5_spmv mv)
 
 add_executable(compare ${PROJECT_SOURCE_DIR}/src/samples/compare.c)
 target_link_libraries(compare mv)
