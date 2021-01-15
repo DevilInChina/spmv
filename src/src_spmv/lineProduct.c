@@ -3,42 +3,47 @@
 //
 #include <spmv.h>
 #include <string.h>
+
 #define LINE_S_PRODUCT_PARAMETERS_IN const float*Val,const BASIC_INT_TYPE* indx, const float *Vector_X,float *Vector_Y
 #define LINE_D_PRODUCT_PARAMETERS_IN const double*Val,const BASIC_INT_TYPE* indx, const double *Vector_X,double *Vector_Y
 #define LINE_PRODUCT_PARAMETERS_CALL(banner) Val+(banner),indx+(banner),Vector_X,Vector_Y+(banner)
 
 
 
-inline void basic_s_lineProduct_len(int len ,LINE_S_PRODUCT_PARAMETERS_IN){
-    for(int i = 0 ; i < len ; ++ i){
-        Vector_Y[i]+=Val[i]*Vector_X[indx[i]];
+
+void basic_s_lineProduct_len(int len, LINE_S_PRODUCT_PARAMETERS_IN) {
+    for (int i = 0; i < len; ++i) {
+        Vector_Y[i] += Val[i] * Vector_X[indx[i]];
     }
 }
 
 
-inline void basic_d_lineProduct_len(int len ,LINE_D_PRODUCT_PARAMETERS_IN){
-    for(int i = 0 ; i < len ; ++ i){
-        Vector_Y[i]+=Val[i]*Vector_X[indx[i]];
+void basic_d_lineProduct_len(int len, LINE_D_PRODUCT_PARAMETERS_IN) {
+    for (int i = 0; i < len; ++i) {
+        Vector_Y[i] += Val[i] * Vector_X[indx[i]];
     }
 }
 
-inline void basic_s_lineProduct_8_avx2(const float*Val, const BASIC_INT_TYPE* indx, const float *Vector_X, float *Vector_Y){
+void basic_s_lineProduct_8_avx2(int len, LINE_S_PRODUCT_PARAMETERS_IN) {
 #ifdef DOT_AVX2_CAN
 
 
     //__m256 vecx = _mm256_i32gather_ps(Vector_X, *((__m256i*)indx), sizeof(Vector_X[0]));
-
-    *(__m256_u *) (Vector_Y ) = _mm256_fmadd_ps(*(__m256_u *)(Val),
-                                                _mm256_i32gather_ps(Vector_X, *((__m256i*)indx), sizeof(Vector_X[0])),
-                                                *(__m256_u *) (Vector_Y ));
+    for (int i = 0; i < len; i += 8) {
+        *(__m256_u *) (Vector_Y + i) = _mm256_fmadd_ps(*(__m256_u *) (Val + i),
+                                                       _mm256_i32gather_ps(Vector_X,
+                                                                           *((__m256i *) (indx + i)),
+                                                                           sizeof(Vector_X[0])),
+                                                       *(__m256_u *) (Vector_Y + i));
+    }
 
 #else
-    basic_s_lineProduct_len(8,LINE_PRODUCT_PARAMETERS_CALL(0));
+    basic_s_lineProduct_len(len,LINE_PRODUCT_PARAMETERS_CALL(0));
 #endif
 }
 
 
-inline void basic_s_lineProduct_16_avx512(LINE_S_PRODUCT_PARAMETERS_IN){
+void basic_s_lineProduct_16_avx512(int len, LINE_S_PRODUCT_PARAMETERS_IN) {
 #ifdef DOT_AVX512_CAN
     /*
     __m512 vecv = _mm512_loadu_ps(&Val[0]);
@@ -53,31 +58,33 @@ inline void basic_s_lineProduct_16_avx512(LINE_S_PRODUCT_PARAMETERS_IN){
 
     _mm512_store_ps(Vector_Y,vecY);
 */
-    *(__m512_u*)(Vector_Y) = _mm512_fmadd_ps(*(__m512_u*)(Val),
-                    _mm512_i32gather_ps (_mm512_loadu_si512( (__m512i_u *)(indx)), Vector_X, sizeof(Vector_X[0])),
-                               *(__m512_u*)(Vector_Y));
-#else
-    for(int i = 0 ; i < 2 ; ++i){
-        basic_s_lineProduct_8_avx2(LINE_PRODUCT_PARAMETERS_CALL(i*8));
+    for(int i = 0 ; i < len ; i+=16){
+    *(__m512_u*)(Vector_Y + i) = _mm512_fmadd_ps(*(__m512_u*)(Val+i),
+                    _mm512_i32gather_ps (_mm512_loadu_si512( (__m512i_u *)(indx+i)), Vector_X, sizeof(Vector_X[0])),
+                               *(__m512_u*)(Vector_Y + i));
     }
+#else
+
+    basic_s_lineProduct_8_avx2(len, LINE_PRODUCT_PARAMETERS_CALL(0));
+
 #endif
 }
 
-inline void basic_d_lineProduct_4_avx2(int len,LINE_D_PRODUCT_PARAMETERS_IN){
+void basic_d_lineProduct_4_avx2(int len, LINE_D_PRODUCT_PARAMETERS_IN) {
 #ifdef DOT_AVX2_CAN
-    for(int i = 0 ; i < len ; i+=4)
-      *(__m256d_u *) (Vector_Y + i)  = _mm256_fmadd_pd(
-               *(__m256d_u*)(Val + i),
-               _mm256_i32gather_pd(Vector_X,_mm256_castsi256_si128(*(__m256i_u *) (indx + i)),
-                                   sizeof(Vector_X[0])),
-               *(__m256d_u *) (Vector_Y + i ));
+    for (int i = 0; i < len; i += 4)
+        *(__m256d_u *) (Vector_Y + i) = _mm256_fmadd_pd(
+                *(__m256d_u *) (Val + i),
+                _mm256_i32gather_pd(Vector_X, _mm256_castsi256_si128(*(__m256i_u *) (indx + i)),
+                                    sizeof(Vector_X[0])),
+                *(__m256d_u *) (Vector_Y + i));
 
 #else
     basic_d_lineProduct_len(len,LINE_PRODUCT_PARAMETERS_CALL(0));
 #endif
 }
 
-inline void basic_d_lineProduct_8_avx512(int len , LINE_D_PRODUCT_PARAMETERS_IN){
+void basic_d_lineProduct_8_avx512(int len, LINE_D_PRODUCT_PARAMETERS_IN) {
 #ifdef DOT_AVX512_CAN
     for(int i = 0 ; i < len ; i+=8)
     *((__m512d_u *)(Vector_Y + i)) = _mm512_fmadd_pd(*((__m512d_u *)(Val + i)),
@@ -85,97 +92,69 @@ inline void basic_d_lineProduct_8_avx512(int len , LINE_D_PRODUCT_PARAMETERS_IN)
             ,*((__m512d_u *)(Vector_Y + i)));
 
 #else
-    basic_d_lineProduct_4_avx2(len,LINE_PRODUCT_PARAMETERS_CALL(0));
+    basic_d_lineProduct_4_avx2(len, LINE_PRODUCT_PARAMETERS_CALL(0));
 #endif
 }
 
 
-
-
-void basic_s_gather(BASIC_INT_TYPE length, const void *Val, const BASIC_INT_TYPE*indx, void *Vector_Y, VECTORIZED_WAY vec){
-    for(int i = 0 ; i < length ; ++i){
-        *(CONVERT_FLOAT_T(Vector_Y)+indx[i]) = *(CONVERT_FLOAT_T(Val)+i);
+void
+basic_s_gather(BASIC_INT_TYPE length, const void *Val, const BASIC_INT_TYPE *indx, void *Vector_Y, VECTORIZED_WAY vec) {
+    for (int i = 0; i < length; ++i) {
+        *(CONVERT_FLOAT_T(Vector_Y) + indx[i]) = *(CONVERT_FLOAT_T(Val) + i);
     }
 }
 
-void basic_d_gather(BASIC_INT_TYPE length, const void *Val, const BASIC_INT_TYPE*indx, void *Vector_Y, VECTORIZED_WAY vec){
-    for(int i = 0 ; i < length ; ++i){
-        *(CONVERT_DOUBLE_T(Vector_Y)+indx[i]) = *(CONVERT_DOUBLE_T(Val)+i);
+void
+basic_d_gather(BASIC_INT_TYPE length, const void *Val, const BASIC_INT_TYPE *indx, void *Vector_Y, VECTORIZED_WAY vec) {
+    for (int i = 0; i < length; ++i) {
+        *(CONVERT_DOUBLE_T(Vector_Y) + indx[i]) = *(CONVERT_DOUBLE_T(Val) + i);
     }
 }
-gather_function inner_basic_GetGather(BASIC_SIZE_TYPE types){
+
+gather_function inner_basic_GetGather(BASIC_SIZE_TYPE types) {
     switch (types) {
-        case sizeof(double ):{
+        case sizeof(double): {
             return basic_d_gather;
-        }break;
-        case sizeof(float ):{
+        }
+            break;
+        case sizeof(float): {
             return basic_s_gather;
-        }break;
-        default:{
+        }
+            break;
+        default: {
             return NULL;
-        }break;
+        }
+            break;
     }
 }
 
-
-
-void basic_s_pack_lineProduct(BASIC_INT_TYPE pack_size,BASIC_INT_TYPE length, const float *Val, const BASIC_INT_TYPE* indx,
-                              const float *Vector_X, float *Vector_Y, VECTORIZED_WAY dotProductWay) {
-    memset(Vector_Y,0,sizeof (float )*length);
-    for (int i = 0; i < pack_size; ++i) {
-        basic_s_lineProduct_len(length, LINE_PRODUCT_PARAMETERS_CALL(i*length)-i*length);
-    }
-}
-
-
-inline void basic_d_pack_lineProduct(BASIC_INT_TYPE pack_size,BASIC_INT_TYPE length, const double *Val, const BASIC_INT_TYPE* indx,
-                              const double *Vector_X, double *Vector_Y, VECTORIZED_WAY dotProductWay) {
-    memset(Vector_Y,0,sizeof (double )*length);
-    switch (dotProductWay) {
-        case VECTOR_AVX512:{
-            for (int i = 0,banner = 0; i < pack_size; ++i,banner+=length) {
-                basic_d_lineProduct_8_avx512(length, Val+(banner),indx+(banner),Vector_X,Vector_Y);
-            }
-        }break;
-        case VECTOR_AVX2:{
-            for (int i = 0,banner = 0; i < pack_size; ++i,banner+=length) {
-                basic_d_lineProduct_4_avx2(length, Val+(banner),indx+(banner),Vector_X,Vector_Y);
-            }
-        }break;
-        default:{
-            for (int i = 0,banner = 0; i < pack_size; ++i,banner+=length) {
-                basic_d_lineProduct_len(length, Val+(banner),indx+(banner),Vector_X,Vector_Y);
-            }
-        }break;
-    }
-}
-
-
-void PackLine_Product_s_Selected(BASIC_INT_TYPE pack_size,
-        BASIC_INT_TYPE length, const void*Val, const BASIC_INT_TYPE* indx,
-        const void *Vector_X, void *Vector_Y, VECTORIZED_WAY dotProductWay
-){
-    basic_s_pack_lineProduct(pack_size,length, CONVERT_FLOAT_T(Val), indx,
-                        CONVERT_FLOAT_T(Vector_X), CONVERT_FLOAT_T(Vector_Y), dotProductWay);
-}
-void PackLine_Product_d_Selected(BASIC_INT_TYPE pack_size,
-        BASIC_INT_TYPE length, const void*Val, const BASIC_INT_TYPE* indx,
-        const void *Vector_X, void *Vector_Y, VECTORIZED_WAY dotProductWay
-){
-    basic_d_pack_lineProduct(pack_size,length, CONVERT_DOUBLE_T(Val), indx,
-                        CONVERT_DOUBLE_T(Vector_X), CONVERT_DOUBLE_T(Vector_Y), dotProductWay);
-}
-
-inline packLine_product_function inner_basic_GetPackLineProduct(BASIC_SIZE_TYPE types){
-    switch (types) {
+line_product_function inner_basic_GetLineProduct(BASIC_SIZE_TYPE size,VECTORIZED_WAY vec){
+    switch (size) {
         case sizeof(double ):{
-            return PackLine_Product_d_Selected;
-        }break;
+            switch (vec) {
+                case VECTOR_AVX2:{
+                    return (line_product_function)basic_d_lineProduct_4_avx2;
+                }
+                case VECTOR_AVX512:{
+                    return (line_product_function)basic_d_lineProduct_8_avx512;
+                }
+                default:{
+                    return (line_product_function)basic_d_lineProduct_len;
+                }
+            }
+        }
         case sizeof(float ):{
-            return PackLine_Product_s_Selected;
-        }break;
-        default:{
-            return NULL;
-        }break;
+            switch (vec) {
+                case VECTOR_AVX2:{
+                    return (line_product_function)basic_s_lineProduct_8_avx2;
+                }
+                case VECTOR_AVX512:{
+                    return (line_product_function)basic_s_lineProduct_16_avx512;
+                }
+                default:{
+                    return (line_product_function)basic_s_lineProduct_len;
+                }
+            }
+        };
     }
 }

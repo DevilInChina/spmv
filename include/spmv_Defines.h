@@ -41,14 +41,17 @@ typedef struct Row_Block {
     BASIC_INT_TYPE   rowNumber;
 }Row_Block,*Row_Block_t;
 
-typedef struct C_Block{
-    BASIC_INT_TYPE *ColIndex;
-    BASIC_INT_TYPE ld;
-    BASIC_INT_TYPE *RowIndex;
+
+typedef struct Sigma_Block{
     BASIC_INT_TYPE C;
+    BASIC_INT_TYPE times;
+    BASIC_INT_TYPE *ld;
+    BASIC_INT_TYPE *ColIndex;
+    BASIC_INT_TYPE *RowIndex;
+    BASIC_INT_TYPE total;
     void *ValT;
     void *Y;
-}C_Block,*C_Block_t;
+}Sigma_Block,*Sigma_Block_t;
 
 
 typedef struct spmv_Handle {
@@ -73,7 +76,7 @@ typedef struct spmv_Handle {
     ///---------sell C Sigma---------///
     BASIC_INT_TYPE Sigma,C;
     BASIC_INT_TYPE banner;
-    C_Block_t C_Blocks;
+    Sigma_Block_t sigmaBlock;
     ///---------sell C Sigma---------///
 
     ///---------csr  5  spmv ---------///

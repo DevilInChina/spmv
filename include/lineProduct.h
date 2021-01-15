@@ -31,14 +31,13 @@ typedef void (*line_s_product_function)(BASIC_INT_TYPE length, const float *Val,
                                         const float *Vector_X, float *Vector_Y);
 
 typedef void (*line_product_function)(BASIC_INT_TYPE length, const void *Val, const BASIC_INT_TYPE* indx,
-                                      const void *Vector_X, void *Vector_Y, VECTORIZED_WAY vec);
+                                      const void *Vector_X, void *Vector_Y);
 
-typedef void (*packLine_product_function)(BASIC_INT_TYPE pack,BASIC_INT_TYPE length, const void *Val, const BASIC_INT_TYPE* indx,
-                                      const void *Vector_X, void *Vector_Y, VECTORIZED_WAY vec);
 
 
 
 gather_function inner_basic_GetGather(BASIC_SIZE_TYPE types);
 
-packLine_product_function inner_basic_GetPackLineProduct(BASIC_SIZE_TYPE types);
+line_product_function inner_basic_GetLineProduct(BASIC_SIZE_TYPE types,VECTORIZED_WAY vec);
+
 #endif //GEMV_LINEPRODUCT_H

@@ -3,6 +3,7 @@
 #include <omp.h>
 #include "lineProduct.h"
 #include "dotProduct.h"
+#include "lineProductGather.h"
 #include <immintrin.h>
 
 #define ALIGENED_SIZE 32

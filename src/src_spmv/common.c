@@ -25,7 +25,7 @@ void init_sell_C_Sigma(spmv_Handle_t this_handle){
     this_handle->C = 0;
     this_handle->banner = 0;
 
-    this_handle->C_Blocks = NULL;
+    this_handle->sigmaBlock = NULL;
 }
 
 /**
@@ -43,19 +43,20 @@ void clear_Balance_Balance2(spmv_Handle_t this_handle){
     free(this_handle->Bpinter);
 }
 
-void C_Block_destory(C_Block_t this_block){
+void C_Block_destory(Sigma_Block_t this_block){
     free(this_block->RowIndex);
     free(this_block->ColIndex);
     free(this_block->ValT);
     free(this_block->Y);
+    free(this_block->ld);
 }
 
 void clear_Sell_C_Sigma(spmv_Handle_t this_handle) {
-    int siz = this_handle->banner / (this_handle->C ? this_handle->C : 1);
+    int siz = this_handle->banner / this_handle->Sigma;
     for (int i = 0; i < siz; ++i) {
-        C_Block_destory(this_handle->C_Blocks + i);
+        C_Block_destory(this_handle->sigmaBlock + i);
     }
-    free(this_handle->C_Blocks);
+    free(this_handle->sigmaBlock);
 }
 
 void gemv_Handle_init(spmv_Handle_t this_handle){
