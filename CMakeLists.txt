@@ -9,7 +9,7 @@ SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -g")
 
 include_directories(include)
 
-add_compile_options(-mavx512f -march=native -O3)
+add_compile_options(-mavx -mavx2 -march=native -Ofast)
 
 find_package(OpenMP REQUIRED)
 if (OPENMP_FOUND)
@@ -37,8 +37,8 @@ add_library(mv SHARED ${SPMVS} )
 target_include_directories(mv PRIVATE src/csr5_avx2)
 target_include_directories(mv PRIVATE src/csr5_avx2/avx2)
 
-#target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
-target_compile_definitions(mv PRIVATE DOT_AVX512_CAN )
+target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
+#target_compile_definitions(mv PRIVATE DOT_AVX512_CAN )
 
 add_executable(cg ${PROJECT_SOURCE_DIR}/src/samples/cg.c)
 
@@ -63,6 +63,10 @@ target_link_libraries(spmv mv)
 add_executable(sellCSigma_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
 target_compile_options(sellCSigma_spmv PRIVATE -D TEST_METHOD=4)
 target_link_libraries(sellCSigma_spmv mv)
+
+add_executable(compare ${PROJECT_SOURCE_DIR}/src/samples/compare.c)
+target_link_libraries(compare mv)
+
 #[[
 add_executable(serial_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
 target_compile_options(serial_spmv PRIVATE -D TEST_METHOD=0)
