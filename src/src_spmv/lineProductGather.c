@@ -45,9 +45,10 @@ void basic_d_lineProductGather_avx2(LINE_D_PRODUCTGather_PARAMETERS_IN){
                                         sizeof(Vector_X[0])),vecy
                     );
         }
-        _mm256_i32scatter_pd(Vector_Y,
-                             _mm256_castsi256_si128(*(__m256i_u *) (indy + i)),
-                             vecy,sizeof(Vector_Y[0]));
+        double *cur = (double*)(&vecy);
+        for(int j = 0 ; j < block ; ++j){
+            Vector_Y[indy[i+j]] = cur[j];
+        }
 
     }
 #else
