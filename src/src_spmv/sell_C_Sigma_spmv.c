@@ -9,57 +9,6 @@
 
 #define MAX(a, b) ((a)>(b)?(a):(b))
 
-/*
-void gemv_C_Block_init(C_Block_t this_block, int C,
-                       const BASIC_INT_TYPE *RowPtr, Row_Block_t *rowBlock,
-                       BASIC_SIZE_TYPE size,int *total,int *zero
-                       ) {
-    int maxs = 0;
-    for (int i = 0; i < C; ++i) {
-        maxs = MAX(maxs, RowPtr[rowBlock[i]->rowNumber + 1] - RowPtr[rowBlock[i]->rowNumber]);
-    }
-
-    this_block->C = C;
-    this_block->ld = maxs;
-    if (maxs == 0) {
-        this_block->ValT = NULL;
-        this_block->RowIndex = NULL;
-        this_block->ColIndex = NULL;
-        this_block->Y = NULL;
-        return;
-    }
-
-    this_block->ValT = aligned_alloc(ALIGENED_SIZE, size * C * maxs);
-    this_block->ColIndex = aligned_alloc(ALIGENED_SIZE, sizeof(BASIC_INT_TYPE) * C * maxs);
-    this_block->RowIndex = aligned_alloc(ALIGENED_SIZE, sizeof(BASIC_INT_TYPE) * C);
-    this_block->Y = aligned_alloc(ALIGENED_SIZE,size*C);
-
-    *total+=C*maxs;
-    for (int i = 0; i < C; ++i) {
-        int j = 0;
-        for (; j < RowPtr[rowBlock[i]->rowNumber + 1] - RowPtr[rowBlock[i]->rowNumber]; ++j) {
-            size==sizeof(double )?
-            (*(CONVERT_DOUBLE_T(this_block->ValT)+i + j * C)
-                            = *(CONVERT_DOUBLE_T(rowBlock[i]->valBegin)+j)):
-            (*(CONVERT_FLOAT_T(this_block->ValT)+i + j * C)
-                            = *(CONVERT_FLOAT_T(rowBlock[i]->valBegin)+j));
-
-            this_block->ColIndex[i + j * C] = rowBlock[i]->indxBegin[j];
-        }
-        for (; j < maxs; ++j) {
-
-            size==sizeof(double )?
-            (*(CONVERT_DOUBLE_T(this_block->ValT)+i + j * C)
-                     = 0):
-            (*(CONVERT_FLOAT_T(this_block->ValT)+i + j * C)
-                     = 0);
-            ++(*zero);
-            this_block->ColIndex[i + j * C] = 0;
-        }
-        this_block->RowIndex[i] = rowBlock[i]->rowNumber;
-    }
-}
-*/
 void spmv_Sigma_Blocks_init(Sigma_Block_t SigmaBeginner, int C, int Sigma,
                             const BASIC_INT_TYPE *RowPtr,
                             Row_Block_t *rowBlock,
@@ -255,26 +204,18 @@ void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
 
 #pragma omp parallel for
         for (int i = 0; i < length; ++i) {/// sigma
-            memset(SigmaBlocks[i].Y, 0, size * Sigma);
             for(int j = 0 ; j < C_times ; ++j){
-                for(int k = SigmaBlocks[i].ld[j] ; k < SigmaBlocks[i].ld[j+1] ; ++k){
-                    /*
-                    line_gatherFunction(C,(SigmaBlocks[i].ValT)+k*C*size,
-                                        SigmaBlocks[i].ColIndex+k*C,
-                                        Vector_Val_X,
-                                        SigmaBlocks[i].RowIndex + j*C,
-                                        Vector_Val_Y
-                                        );
-                    */
-                    line_product(C,(SigmaBlocks[i].ValT)+k*C*size,
-                                 SigmaBlocks[i].ColIndex+k*C,
-                                 Vector_Val_X,
-                                 (SigmaBlocks[i].Y) + j*C *size
-                    );
-                }
+
+                line_gatherFunction(SigmaBlocks[i].ld[j+1] - SigmaBlocks[i].ld[j],
+                                    C,
+                                    SigmaBlocks[i].ValT + SigmaBlocks[i].ld[j]*size*C,
+                                    SigmaBlocks[i].ColIndex + SigmaBlocks[i].ld[j]*C,
+                                    Vector_Val_X,
+                                    SigmaBlocks[i].RowIndex + j *C,
+                                    Vector_Val_Y
+                );
             }
 
-            gather(Sigma, SigmaBlocks[i].Y, SigmaBlocks[i].RowIndex, Vector_Val_Y, way);
         }
     }
 
