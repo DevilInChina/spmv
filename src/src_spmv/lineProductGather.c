@@ -28,7 +28,20 @@ void  basic_d_lineProductGather_len(LINE_D_PRODUCTGather_PARAMETERS_IN) {
 void basic_s_lineProductGather_avx2 (LINE_S_PRODUCTGather_PARAMETERS_IN){
 #ifdef DOT_AVX2_CAN
     const int block = 8;
-
+    for(int i = 0 ; i < length ; i+=block){
+        __m256_u vecy = _mm256_setzero_ps();
+        for(int j = 0 ; j < ld ; ++j){
+            vecy = _mm256_fmadd_ps(
+                    *(__m256_u *) (Val + j*length+i),
+                    _mm256_i32gather_ps(Vector_X, *(__m256i_u*)(indx+j*length+i),
+                                        sizeof(Vector_X[0])),vecy
+            );
+        }
+        float *cur = (float*)(&vecy);
+        for(int j = 0 ; j < block ; ++j){
+            Vector_Y[indy[i+j]] = cur[j];
+        }
+    }
 #else
     basic_s_lineProductGather_len(length,LINE_PRODUCTGather_PARAMETERS_CALL(0));
 #endif
@@ -49,7 +62,6 @@ void basic_d_lineProductGather_avx2(LINE_D_PRODUCTGather_PARAMETERS_IN){
         for(int j = 0 ; j < block ; ++j){
             Vector_Y[indy[i+j]] = cur[j];
         }
-
     }
 #else
 #endif
@@ -72,6 +84,9 @@ line_product_gather_function inner_basic_GetLineProductGather(BASIC_SIZE_TYPE ty
         }
         default: {
             switch (vec) {
+                case VECTOR_AVX2:{
+                    return (line_product_gather_function) basic_s_lineProductGather_avx2;
+                }
                 default: {
                     return (line_product_gather_function) basic_s_lineProductGather_len;
                 }

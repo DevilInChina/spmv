@@ -134,7 +134,7 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
 
     handle_init_common_parameters(*Handle,nthreads,Function,size,vectorizedWay);
     const int Sigma = 7744;
-    const int C = 4;
+    const int C = 8;
     const int Turn = 8;
     const int Times = m/nthreads/C;
     switch (Function) {
