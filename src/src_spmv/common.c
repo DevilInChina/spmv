@@ -52,9 +52,11 @@ void C_Block_destory(Sigma_Block_t this_block){
 }
 
 void clear_Sell_C_Sigma(spmv_Handle_t this_handle) {
-    int siz = this_handle->banner / this_handle->Sigma;
-    for (int i = 0; i < siz; ++i) {
-        C_Block_destory(this_handle->sigmaBlock + i);
+    if(this_handle->Sigma) {
+        int siz = this_handle->banner / this_handle->Sigma;
+        for (int i = 0; i < siz; ++i) {
+            C_Block_destory(this_handle->sigmaBlock + i);
+        }
     }
     free(this_handle->sigmaBlock);
 }
