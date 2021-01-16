@@ -96,7 +96,7 @@ void *spmv_numa(void *arg) {
     int *rpt = numaEnvironment->subrowptrA[me];
     int *col = numaEnvironment->subcolidxA[me];
     for (int u = start; u < end; u++) {
-        float sum = 0;
+        double sum = 0;
         for (int j = rpt[u]; j < rpt[u + 1]; j++) {
             int Xpos = col[j] / numaEnvironment->subX[0];
             int remainder = col[j] - numaEnvironment->subX_ex[Xpos];
@@ -123,11 +123,11 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
 
     const BASIC_INT_TYPE *rowptrA = RowPtr;
     const BASIC_INT_TYPE *colidxA = ColIdx;
-    const double *valA = Matrix_Val;
     int nthreads = handle->nthreads;
 
     int **subrowptrA;
     int **subcolidxA;
+    const double *valA = Matrix_Val;
     double **subvalA;
     double **X;
     double **Y;

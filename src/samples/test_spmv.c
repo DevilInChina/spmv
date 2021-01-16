@@ -35,7 +35,7 @@ void testForFunctions(const char *matrixName,
         omp_set_num_threads(thread);
 
         for (currentiter = 0; currentiter < 100; currentiter++) {
-            spmv(handle, m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
+//            spmv(handle, m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
         }
 
         gettimeofday(&t1, NULL);
