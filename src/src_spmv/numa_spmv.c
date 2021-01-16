@@ -6,6 +6,7 @@
 #include <numa.h>
 #include <math.h>
 #include <pthread.h>
+#include <stdio.h>
 
 
 typedef struct numa_spmv_parameter {
@@ -101,6 +102,7 @@ void *spmv_numa(void *arg) {
             int Xpos = col[j] / numaEnvironment->subX[0];
             int remainder = col[j] - numaEnvironment->subX_ex[Xpos];
             sum += val[j] * numaEnvironment->X[Xpos][remainder];
+            //printf("%f\n",numaEnvironment->X[Xpos][remainder]);
         }
         y[u] = sum;
         //if(me==7)
@@ -249,7 +251,7 @@ void spmv_numa_Selected(
     NumaEnvironment_t numasVal = handle->extraHandle;
     int numanodes = numasVal->numanodes;
     int eachnumacores = handle->nthreads / numasVal->numanodes;
-
+    memset(Vector_Val_Y,0,sizeof(handle->data_size)*m);
     for (int i = 0; i < numanodes; ++i) {
         for (int j = 0; j < eachnumacores; j++) {
             for (int k = 0; k < numasVal->subX[i]; k++) {
