@@ -46,12 +46,7 @@ void parallel_balanced_get_handle(
         boundary = boundary > nnzR ? nnzR : boundary;
         // binary search
         int spl = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
-        if(spl==csrSplitter[tid-1]){
-            spl = m>(spl+1)? (spl+1):m;
-            csrSplitter[tid] = spl;
-        }else{
-            csrSplitter[tid] = spl;
-        }
+        csrSplitter[tid] = spl;
     }
     (handle)->csrSplitter = csrSplitter;
 

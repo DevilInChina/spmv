@@ -4,11 +4,11 @@
 
 void csr5HandleDestory(spmv_Handle_t handle){
     if(handle){
-        if(handle->cppHandle){
-            anonymouslibHandle<int,  int, double>&A = *( (anonymouslibHandle<int,  int, double>*)handle->cppHandle );
+        if(handle->extraHandle && handle->spmvMethod==Method_CSR5SPMV){
+            anonymouslibHandle<int,  int, double>&A = *( (anonymouslibHandle<int,  int, double>*)handle->extraHandle );
             A.destroy();
-            free(handle->cppHandle);
-            handle->cppHandle = nullptr;
+            free(handle->extraHandle);
+            handle->extraHandle = nullptr;
         }
     }
 }
@@ -22,9 +22,9 @@ void csr5Spmv_get_handle_Selected(spmv_Handle_t handle,
 ) {
 
     //printf("begin handle\n");
-    handle->cppHandle = malloc(sizeof (anonymouslibHandle<int, int, double> ));
-    *( (anonymouslibHandle<int,  int, double>*)handle->cppHandle ) = anonymouslibHandle<int,  int, double>(m,n);
-    anonymouslibHandle<int,  int, double>&A = *( (anonymouslibHandle<int,  int, double>*)handle->cppHandle );
+    handle->extraHandle = malloc(sizeof (anonymouslibHandle<int, int, double> ));
+    *( (anonymouslibHandle<int,  int, double>*)handle->extraHandle ) = anonymouslibHandle<int,  int, double>(m, n);
+    anonymouslibHandle<int,  int, double>&A = *( (anonymouslibHandle<int,  int, double>*)handle->extraHandle );
 
     int sigma = ANONYMOUSLIB_CSR5_SIGMA; //nnzA/(8*ANONYMOUSLIB_CSR5_OMEGA);
     A.inputCSR(RowPtr[m]-RowPtr[0], RowPtr, ColIdx, (double*)Matrix_Val);
@@ -43,7 +43,7 @@ void spmv_csr5Spmv_Selected(const spmv_Handle_t handle,
                                 const void* Vector_Val_X,
                                 void*       Vector_Val_Y
 ){
-    anonymouslibHandle<int,  int, double>&A = *( (anonymouslibHandle<int,  int, double>*)handle->cppHandle );
+    anonymouslibHandle<int,  int, double>&A = *( (anonymouslibHandle<int,  int, double>*)handle->extraHandle );
 
     A.setX((double *)Vector_Val_X);
     memset(Vector_Val_Y,0,sizeof (double )*m);

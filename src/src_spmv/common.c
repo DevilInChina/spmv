@@ -64,7 +64,7 @@ void clear_Sell_C_Sigma(spmv_Handle_t this_handle) {
 void gemv_Handle_init(spmv_Handle_t this_handle){
     this_handle->spmvMethod = Method_Serial;
     this_handle->nthreads = 0;
-    this_handle->cppHandle = NULL;
+    this_handle->extraHandle = NULL;
 
     init_sell_C_Sigma(this_handle);
     init_Balance_Balance2(this_handle);
@@ -73,8 +73,13 @@ void gemv_Handle_init(spmv_Handle_t this_handle){
 
 void gemv_Handle_clear(spmv_Handle_t this_handle) {
     clear_Balance_Balance2(this_handle);
+
     clear_Sell_C_Sigma(this_handle);
+
     csr5HandleDestory(this_handle);
+
+    numaHandleDestory(this_handle);
+
     gemv_Handle_init(this_handle);
 }
 
@@ -156,6 +161,13 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
                                                  ,C,m,RowPtr,ColIdx,Matrix_Val);
             }
         }break;
+        case Method_Numa:{
+            int k = numa_spmv_get_handle_Selected(*Handle,4,m,n,(int *) RowPtr, (int *) ColIdx, Matrix_Val);
+            if(k==0){
+                parallel_balanced2_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
+                (*Handle)->spmvMethod = Method_Balanced2;
+            }
+        }
         default:{
 
             return;
@@ -187,7 +199,8 @@ VEC_STRING(Method_Parallel),\
 VEC_STRING(Method_Balanced),\
 VEC_STRING(Method_Balanced2),\
 VEC_STRING(Method_SellCSigma),\
-VEC_STRING(Method_Csr5Spmv)
+VEC_STRING(Method_Csr5Spmv),\
+VEC_STRING(Method_NumaSpmv)
 
 const char * funcNames[]= {
     ALL_FUNC_SRTING
@@ -198,7 +211,8 @@ const char*Methods_names[]={
         SINGLE(Method_Balanced),
         SINGLE(Method_Balanced2),
         SINGLE(Method_SellCSigma),
-        SINGLE(Method_Csr5Spmv)
+        SINGLE(Method_Csr5Spmv),
+        SINGLE(Method_NumaSpmv)
 };
 const char*Vectorized_names[]={
         SINGLE(VECTOR_NONE),

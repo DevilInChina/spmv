@@ -28,6 +28,7 @@ typedef enum SPMV_METHODS{
     Method_Balanced2,
     Method_SellCSigma,
     Method_CSR5SPMV,
+    Method_Numa,
     Method_Total_Size /// count total ways of methods
 }SPMV_METHODS;
 extern const char*Methods_names[];
@@ -81,7 +82,7 @@ typedef struct spmv_Handle {
 
     ///---------csr  5  spmv ---------///
 
-    void *cppHandle;
+    void *extraHandle;
 
 }spmv_Handle;
 

@@ -98,10 +98,20 @@ void spmv_parallel_Selected(const spmv_Handle_t handle,
                             const void* Vector_Val_X,
                             void*       Vector_Val_Y
 );
+
+int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
+                                  int PARTS,
+                                  BASIC_INT_TYPE m,BASIC_INT_TYPE n,
+                                  const BASIC_INT_TYPE *RowPtr,
+                                  const BASIC_INT_TYPE *ColIdx,
+                                  const void *Matrix_Val
+);
 #if defined(__cplusplus)
 extern "C" {
 #endif
 void csr5HandleDestory(spmv_Handle_t handle);
+
+void numaHandleDestory(spmv_Handle_t handle);
 
 void csr5Spmv_get_handle_Selected(spmv_Handle_t handle,
                                   BASIC_INT_TYPE m,
@@ -120,9 +130,11 @@ void spmv_csr5Spmv_Selected(const spmv_Handle_t handle,
                             void*       Vector_Val_Y
 );
 
+
 #if defined(__cplusplus)
 }
 #endif
+
 
 
 typedef void(*spmv_function) (const spmv_Handle_t handle,
@@ -133,6 +145,8 @@ typedef void(*spmv_function) (const spmv_Handle_t handle,
                       const void* Vector_Val_X,
                       void*       Vector_Val_Y
 );
+
+
 
 extern const spmv_function spmv_functions[];
 
