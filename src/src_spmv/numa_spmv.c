@@ -178,13 +178,13 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
             p[i * numanodes + j].m = subm[j];
         }
     }
-    subrowptrA = (int **) malloc(sizeof(int *) * nthreads);
-    subcolidxA = (int **) malloc(sizeof(int *) * nthreads);
-    subvalA = malloc(sizeof(void *) * nthreads);
-    X = malloc(sizeof(void *) * nthreads);
-    Y = malloc(sizeof(void *) * nthreads);
+    subrowptrA = (int **) malloc(sizeof(int *) * PARTS);
+    subcolidxA = (int **) malloc(sizeof(int *) * PARTS);
+    subvalA = malloc(sizeof(void *) * PARTS);
+    X = malloc(sizeof(void *) * PARTS);
+    Y = malloc(sizeof(void *) * PARTS);
 
-    for (i = 0; i < nthreads; i++) {
+    for (i = 0; i < PARTS; i++) {
         subrowptrA[i] = numa_alloc_onnode(sizeof(int) * (subm[p[i].alloc] + 1), p[i].alloc);
         subcolidxA[i] = numa_alloc_onnode(sizeof(int) * subnnz[p[i].alloc], p[i].alloc);
         subvalA[i] = numa_alloc_onnode(handle->data_size * subnnz[p[i].alloc], p[i].alloc);
@@ -251,13 +251,13 @@ void spmv_numa_Selected(
     NumaEnvironment_t numasVal = handle->extraHandle;
     int numanodes = numasVal->numanodes;
     int eachnumacores = handle->nthreads / numasVal->numanodes;
-    memset(Vector_Val_Y,0,sizeof(handle->data_size)*m);
+    memset(Vector_Val_Y, 0, sizeof(handle->data_size) * m);
     for (int i = 0; i < numanodes; ++i) {
         for (int j = 0; j < eachnumacores; j++) {
             for (int k = 0; k < numasVal->subX[i]; k++) {
                 int currentcore = i + j * eachnumacores;
                 if (currentcore < handle->nthreads) {
-                    numasVal->X[currentcore][k] = ((double *)Matrix_Val)[numasVal->subX_ex[i] + k];
+                    numasVal->X[currentcore][k] = ((double *) Matrix_Val)[numasVal->subX_ex[i] + k];
                 }
             }
         }
@@ -276,7 +276,7 @@ void spmv_numa_Selected(
 
     for (int i = 0; i < numasVal->PARTS; i++) {
         for (int j = 0; j < numasVal->subm[i]; j++) {
-            ((double*)Vector_Val_Y) [numasVal->subm_ex[i] + j] = numasVal->Y[i][j];
+            ((double *) Vector_Val_Y)[numasVal->subm_ex[i] + j] = numasVal->Y[i][j];
         }
 
     }
