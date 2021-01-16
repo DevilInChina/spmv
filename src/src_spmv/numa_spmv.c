@@ -275,11 +275,10 @@ void spmv_numa_Selected(
     }
 
     for (int i = 0; i < numasVal->PARTS; i++) {
-        memcpy(
-                Vector_Val_Y + numasVal->subm_ex[i] * handle->data_size,
-                numasVal->Y[i],
-                numasVal->subm[i] * handle->data_size
-        );
+        for (int j = 0; j < numasVal->subm[i]; j++) {
+            ((double*)Vector_Val_Y) [numasVal->subm_ex[i] + j] = numasVal->Y[i][j];
+        }
+
     }
 
     free(threads);
