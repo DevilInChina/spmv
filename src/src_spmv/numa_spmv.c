@@ -251,7 +251,7 @@ void spmv_numa_Selected(
     NumaEnvironment_t numasVal = handle->extraHandle;
     int numanodes = numasVal->numanodes;
     int eachnumacores = handle->nthreads / numasVal->numanodes;
-    memset(Vector_Val_Y, 0, sizeof(handle->data_size) * m);
+    memset(Vector_Val_Y, 0, handle->data_size * m);
     for (int i = 0; i < numanodes; ++i) {
         for (int j = 0; j < eachnumacores; j++) {
             for (int k = 0; k < numasVal->subX[i]; k++) {
