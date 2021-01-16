@@ -277,6 +277,10 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
               subrowptrA,subcolidxA,X,Y,subvalA,subm,subm_ex,subX,subX_ex,subnnz,subnnz_ex
     );
 
+    for(int i = 0 ; i < nthreads ; ++i){
+        p[i].handle = handle;
+    }
+
     numaVal->X = X;
     numaVal->Y = Y;
     numaVal->numanodes = numanodes;
