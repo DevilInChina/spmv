@@ -160,8 +160,8 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
             S += (cur - ave) * (cur - ave);
         }
         S = sqrt(S / len) / ave;
-        printf("Sigma,banner,m,C,zero,Average,s,res\n");
-        printf("%d,%d,%d,%d,%f,%f,%f,%f\n", Sigma, banner, m, C, zero * 1.0 / total, ave, S, (m - banner) * 1.0 / m);
+        //printf("Sigma,banner,m,C,zero,Average,s,res\n");
+        //printf("%d,%d,%d,%d,%f,%f,%f,%f\n", Sigma, banner, m, C, zero * 1.0 / total, ave, S, (m - banner) * 1.0 / m);
 
         free(rowBlock_ts);
         free(rowBlocks);

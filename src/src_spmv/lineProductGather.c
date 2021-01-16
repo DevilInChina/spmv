@@ -66,29 +66,29 @@ void basic_d_lineProductGather_avx2(LINE_D_PRODUCTGather_PARAMETERS_IN){
 #else
 #endif
 }
-void basic_s_lineProductGather_avx512 (LINE_S_PRODUCTGather_PARAMETERS_IN);
-void basic_d_lineProductGather_avx512(LINE_D_PRODUCTGather_PARAMETERS_IN);
+
+
 
 line_product_gather_function inner_basic_GetLineProductGather(BASIC_SIZE_TYPE types, VECTORIZED_WAY vec) {
 
     switch (types) {
         case sizeof(double): {
             switch (vec) {
-                case VECTOR_AVX2:{
-                    return (line_product_gather_function) basic_d_lineProductGather_avx2;
+                case VECTOR_NONE:{
+                    return (line_product_gather_function) basic_d_lineProductGather_len;
                 }
                 default: {
-                    return (line_product_gather_function) basic_d_lineProductGather_len;
+                    return (line_product_gather_function) basic_d_lineProductGather_avx2;
                 }
             }
         }
         default: {
             switch (vec) {
-                case VECTOR_AVX2:{
-                    return (line_product_gather_function) basic_s_lineProductGather_avx2;
+                case VECTOR_NONE:{
+                    return (line_product_gather_function) basic_s_lineProductGather_len;
                 }
                 default: {
-                    return (line_product_gather_function) basic_s_lineProductGather_len;
+                    return (line_product_gather_function) basic_s_lineProductGather_avx2;
                 }
             }
         }
