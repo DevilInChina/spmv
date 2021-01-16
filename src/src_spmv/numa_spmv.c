@@ -17,8 +17,6 @@ typedef struct NumaEnvironment {
     int **subrowptrA, **subcolidxA;
     void **subvalA, **X, **Y;
     numa_spmv_parameter_t p;
-    pthread_t *threads;
-    pthread_attr_t pthread_custom_attr;
     int numanodes;
     int *subm, *subm_ex, *subX_ex, *subX, *subnnz, *subnnz_ex;
     int PARTS;
@@ -70,8 +68,6 @@ void numaHandleDestory(spmv_Handle_t handle) {
             free(numasVal->subm_ex);
             free(numasVal->subnnz);
             free(numasVal->subnnz_ex);
-            free(numasVal->threads);
-            pthread_attr_destroy(&numasVal->pthread_custom_attr);
             free(handle->extraHandle);
             handle->extraHandle = NULL;
         }
@@ -184,9 +180,6 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
     }
     inner_exclusive_scan(subnnz_ex, PARTS + 1);
     numaspmv *p = (numaspmv *) malloc(nthreads * sizeof(numaspmv));
-    pthread_t *threads = (pthread_t *) malloc(nthreads * sizeof(pthread_t));
-    pthread_attr_t pthread_custom_attr;
-    pthread_attr_init(&pthread_custom_attr);
     for (i = 0; i < nthreads; i++) {
         p[i].alloc = i % numanodes;
         p[i].numanodes = numanodes;
@@ -248,8 +241,6 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
     numaVal->subrowptrA = subrowptrA;
     numaVal->subvalA = subvalA;
     numaVal->p = p;
-    numaVal->threads = threads;
-    numaVal->pthread_custom_attr = pthread_custom_attr;
     numaVal->PARTS = PARTS;
     numaVal->subnnz_ex = subnnz_ex;
     numaVal->subX_ex = subX_ex;
@@ -288,12 +279,17 @@ void spmv_numa_Selected(
             }
         }
     }
+    pthread_t *threads = (pthread_t *) malloc(handle->nthreads * sizeof(pthread_t));
+    pthread_attr_t pthread_custom_attr;
+    pthread_attr_init(&pthread_custom_attr);
+
     for (int i = 0; i < handle->nthreads; i++) {
-        pthread_create(numasVal->threads + i, &numasVal->pthread_custom_attr, spmv_numa,
+
+        pthread_create(threads + i, &pthread_custom_attr, spmv_numa,
                        (void *) (numasVal->p + i));
     }
     for (int i = 0; i < handle->nthreads; i++) {
-        pthread_join(numasVal->threads[i], NULL);
+        pthread_join(threads[i], NULL);
     }
 
     for (int i = 0; i < numasVal->PARTS; i++) {
@@ -303,4 +299,7 @@ void spmv_numa_Selected(
                 numasVal->subm[i] * handle->data_size
         );
     }
+
+    free(threads);
+    pthread_attr_destroy(&pthread_custom_attr);
 }
