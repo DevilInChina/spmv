@@ -104,7 +104,6 @@ void *spmv_numa(void *arg) {
             sum += val[j] * numaEnvironment->X[Xpos][remainder];
             //
         }
-        printf("%f\n",sum);
         y[u] = sum;
         //if(me==7)
         //printf("y[%d][%d]%.2f\n",me,u,sum);
@@ -268,7 +267,6 @@ void spmv_numa_Selected(
     pthread_attr_init(&pthread_custom_attr);
 
     for (int i = 0; i < handle->nthreads; i++) {
-
         pthread_create(threads + i, &pthread_custom_attr, spmv_numa,
                        (void *) (numasVal->p + i));
     }
