@@ -317,11 +317,12 @@ void spmv_numa_Selected(
 
     for (int i = 0; i < numanodes; ++i) {
         for (int j = 0; j < eachnumacores; j++) {
-            for (int k = 0; k < numasVal->subX[i]; k++) {
-                int currentcore = i + j * eachnumacores;
-                if (currentcore < handle->nthreads) {
-                    numasVal->X[currentcore][k] = vector[numasVal->subX_ex[i] + k];
-                }
+            int currentcore = i + j * eachnumacores;
+            if(currentcore<handle->nthreads){
+                memcpy(numasVal->X[currentcore],
+                       Vector_Val_X+numasVal->subX_ex[i]*handle->data_size,
+                       numasVal->subX[i]*handle->data_size
+                );
             }
         }
     }
@@ -336,16 +337,10 @@ void spmv_numa_Selected(
     for (int i = 0; i < handle->nthreads; i++) {
         pthread_join(threads[i], NULL);
     }
-    double *Y_gather = Vector_Val_Y;
     for (int i = 0; i < numanodes; i++) {
         memcpy(Vector_Val_Y+numasVal-> subm_ex[i]*handle->data_size,
                numasVal->Y[i],
                numasVal-> subm[i]*handle->data_size);
-        /*
-        for (int j = 0; j < numasVal-> subm[i]; j++) {
-            Y_gather[numasVal-> subm_ex[i] + j] = numasVal->Y[i][j];
-        }*/
-
     }
 
     free(threads);
