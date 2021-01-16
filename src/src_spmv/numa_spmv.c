@@ -102,8 +102,9 @@ void *spmv_numa(void *arg) {
             int Xpos = col[j] / numaEnvironment->subX[0];
             int remainder = col[j] - numaEnvironment->subX_ex[Xpos];
             sum += val[j] * numaEnvironment->X[Xpos][remainder];
-            //printf("%f\n",numaEnvironment->X[Xpos][remainder]);
+            //
         }
+        printf("%f\n",sum);
         y[u] = sum;
         //if(me==7)
         //printf("y[%d][%d]%.2f\n",me,u,sum);
