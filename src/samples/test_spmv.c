@@ -52,9 +52,9 @@ void testForFunctions(const char *matrixName,
         for(int ind = 0 ; ind < m ; ++ind){
             s+=(Vector_Val_Y[ind]-Y_golden[ind])/m*
                     (Vector_Val_Y[ind]-Y_golden[ind])/m;
-            if(fabs(Vector_Val_Y[ind]-Y_golden[ind])>0.001){
-                //printf("%d %f %f\n",ind,Vector_Val_Y[ind],Y_golden[ind]);
-            }
+            //if(fabs(Vector_Val_Y[ind]-Y_golden[ind])>0.001){
+                printf("%d %f %f\n",ind,Vector_Val_Y[ind],Y_golden[ind]);
+            //}
         }
         s = sqrt(s);
         printf("Matrix,Methods,Vectorized,threads,error,Gflops\n");
