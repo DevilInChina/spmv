@@ -82,6 +82,57 @@ void numaHandleDestory(spmv_Handle_t handle){
     }
 }
 
+
+void *spmv_numa(void *arg){
+    numa_spmv_parameter *pn = (numa_spmv_parameter*)arg;
+    NumaEnvironment_t numasVal = pn->handle->extraHandle;
+    int me = pn->alloc;
+    numa_run_on_node(me);
+    int m = pn->m;
+    int nthreads = pn->nthreads;
+    int numanodes = pn->numanodes;
+    int coreidx = pn->coreidx;
+    int eachnumathreads = nthreads/numanodes;
+    int task = (m+eachnumathreads-1)/eachnumathreads;//ceil((double)m/(double)eachnumathreads);
+    int start = coreidx*task;
+    int end = (coreidx+1)*task>m?m:(coreidx+1)*task;
+    //printf("numanode %d, coreindex %d, m %d, nthreads %d, eachnumathreads %d, start %d, end %d\n",pn->alloc,coreidx,pn->m,nthreads,eachnumathreads,start,end);
+    if(pn->handle->data_size == sizeof(double )) {
+        double *val = numasVal->subvalA[me];
+        //VALUE_TYPE *x = X[me];
+        double *y = numasVal->Y[me];
+        int *rpt = numasVal->subrowptrA[me];
+        int *col = numasVal->subcolidxA[me];
+        for (int u = start; u < end; u++) {
+            y[u] = 0;
+            for (int j = rpt[u]; j < rpt[u + 1]; j++) {
+                int Xpos = col[j] / numasVal->subX[0];
+                int remainder = col[j] - numasVal->subX_ex[Xpos];
+                y[u] += val[j] * ((double **)(numasVal->X))[Xpos][remainder];
+            }
+            //if(me==7)
+            //printf("y[%d][%d]%.2f\n",me,u,sum);
+        }
+    }else{
+        float *val = numasVal->subvalA[me];
+        //VALUE_TYPE *x = X[me];
+        float *y = numasVal->Y[me];
+        int *rpt = numasVal->subrowptrA[me];
+        int *col = numasVal->subcolidxA[me];
+        for (int u = start; u < end; u++) {
+            y[u] = 0;
+            for (int j = rpt[u]; j < rpt[u + 1]; j++) {
+                int Xpos = col[j] / numasVal->subX[0];
+                int remainder = col[j] - numasVal->subX_ex[Xpos];
+                y[u] += val[j] * ((float **)(numasVal->X))[Xpos][remainder];
+            }
+            //if(me==7)
+            //printf("y[%d][%d]%.2f\n",me,u,sum);
+        }
+    }
+
+}
+
 int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
                                       int PARTS,
                                       BASIC_INT_TYPE m,BASIC_INT_TYPE n,
@@ -208,58 +259,18 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
             }
         }
     }
+
+    for (i = 0; i < handle->nthreads; i++) {
+        if (i % numanodes != 0) {
+            int temprpt = numaVal->subrowptrA[i][0];
+            for ( j = 0; j <= numaVal->subm[i % numanodes]; j++) {
+                numaVal->subrowptrA[i][j] -= temprpt;
+            }
+        }
+    }
     return numanodes;
 }
 
-void *spmv_numa(void *arg){
-    numa_spmv_parameter *pn = (numa_spmv_parameter*)arg;
-    NumaEnvironment_t numasVal = pn->handle->extraHandle;
-    int me = pn->alloc;
-    numa_run_on_node(me);
-    int m = pn->m;
-    int nthreads = pn->nthreads;
-    int numanodes = pn->numanodes;
-    int coreidx = pn->coreidx;
-    int eachnumathreads = nthreads/numanodes;
-    int task = (m+eachnumathreads-1)/eachnumathreads;//ceil((double)m/(double)eachnumathreads);
-    int start = coreidx*task;
-    int end = (coreidx+1)*task>m?m:(coreidx+1)*task;
-    //printf("numanode %d, coreindex %d, m %d, nthreads %d, eachnumathreads %d, start %d, end %d\n",pn->alloc,coreidx,pn->m,nthreads,eachnumathreads,start,end);
-    if(pn->handle->data_size == sizeof(double )) {
-        double *val = numasVal->subvalA[me];
-        //VALUE_TYPE *x = X[me];
-        double *y = numasVal->Y[me];
-        int *rpt = numasVal->subrowptrA[me];
-        int *col = numasVal->subcolidxA[me];
-        for (int u = start; u < end; u++) {
-            y[u] = 0;
-            for (int j = rpt[u]; j < rpt[u + 1]; j++) {
-                int Xpos = col[j] / numasVal->subX[0];
-                int remainder = col[j] - numasVal->subX_ex[Xpos];
-                y[u] += val[j] * ((double **)(numasVal->X))[Xpos][remainder];
-            }
-            //if(me==7)
-            //printf("y[%d][%d]%.2f\n",me,u,sum);
-        }
-    }else{
-        float *val = numasVal->subvalA[me];
-        //VALUE_TYPE *x = X[me];
-        float *y = numasVal->Y[me];
-        int *rpt = numasVal->subrowptrA[me];
-        int *col = numasVal->subcolidxA[me];
-        for (int u = start; u < end; u++) {
-            y[u] = 0;
-            for (int j = rpt[u]; j < rpt[u + 1]; j++) {
-                int Xpos = col[j] / numasVal->subX[0];
-                int remainder = col[j] - numasVal->subX_ex[Xpos];
-                y[u] += val[j] * ((float **)(numasVal->X))[Xpos][remainder];
-            }
-            //if(me==7)
-            //printf("y[%d][%d]%.2f\n",me,u,sum);
-        }
-    }
-
-}
 
 void spmv_numa_Selected(
         const spmv_Handle_t handle,
@@ -284,14 +295,6 @@ void spmv_numa_Selected(
                        numasVal->subX[i]*handle->data_size
                        );
 
-            }
-        }
-    }
-    for (int i = 0; i < handle->nthreads; i++) {
-        if (i % numanodes != 0) {
-            int temprpt = numasVal->subrowptrA[i][0];
-            for (int j = 0; j <= numasVal->subm[i % numanodes]; j++) {
-                numasVal->subrowptrA[i][j] -= temprpt;
             }
         }
     }
