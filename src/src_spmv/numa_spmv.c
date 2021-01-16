@@ -338,9 +338,13 @@ void spmv_numa_Selected(
     }
     double *Y_gather = Vector_Val_Y;
     for (int i = 0; i < numanodes; i++) {
+        memcpy(Vector_Val_Y+numasVal-> subm_ex[i]*handle->data_size,
+               numasVal->Y[i],
+               numasVal-> subm[i]*handle->data_size);
+        /*
         for (int j = 0; j < numasVal-> subm[i]; j++) {
             Y_gather[numasVal-> subm_ex[i] + j] = numasVal->Y[i][j];
-        }
+        }*/
 
     }
 
