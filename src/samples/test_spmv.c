@@ -89,9 +89,9 @@ void LoadMtx_And_GetGolden(char *filePath,
     memset(*Y, 0, sizeof(VALUE_TYPE) * (*m));
     memset(*Y_Golden, 0, sizeof(VALUE_TYPE) * (*m));
     srand(*m);
-    //for(int i = 0 ; i < *nnzR ; ++i)(*Val)[i] = 1;
+    for(int i = 0 ; i < *nnzR ; ++i)(*Val)[i] = 1;
     for (int i = 0; i < *n; i++)
-        (*X)[i] = rand()%8*0.125;
+        (*X)[i] = 1;//rand()%8*0.125;;
 
     for (int i = 0; i < *m; i++)
         for (int j = (*RowPtr)[i]; j < (*RowPtr)[i + 1]; j++)
