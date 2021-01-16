@@ -177,21 +177,15 @@ void partition(const int m,const int n,const int PARTS,
     }
     int currentcore = 0;
     for (i = 0; i < numanodes; i++) {
+
         for (j = 0; j < eachnumacores; j++) {
             currentcore = i + j * eachnumacores;
             if (currentcore < nthreads) {
-                memcpy(subrowptrA[currentcore],rowptrA+subrowpos[i],subm[i]*sizeof(int));
-            }
-        }
-        for (j = 0; j < eachnumacores; j++) {
-            currentcore = i + j * eachnumacores;
-            if (currentcore < nthreads) {
+                memcpy(subrowptrA[currentcore],rowptrA+subrowpos[i],(1+subm[i])*sizeof(int));
                 memcpy(subcolidxA[currentcore], colidxA + subnnz_ex[i], subnnz[i] * sizeof(int));
                 memcpy(subvalA[currentcore], valA + subnnz_ex[i] * type_size, subnnz[i] * type_size);
             }
         }
-
-
     }
     for (i = 0; i < nthreads; i++) {
         if (i % numanodes != 0) {
