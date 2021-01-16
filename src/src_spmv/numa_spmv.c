@@ -224,7 +224,6 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
     numaVal->subvalA = subvalA;
     numaVal->subcolidxA = subcolidxA;
     numaVal->subrowptrA = subrowptrA;
-    numaVal->subvalA = subvalA;
     numaVal->p = p;
     numaVal->PARTS = PARTS;
     numaVal->subnnz_ex = subnnz_ex;
