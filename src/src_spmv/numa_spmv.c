@@ -110,40 +110,30 @@ void *spmv_numa(void *arg) {
     }
 
 }
-
-int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
-                                  BASIC_INT_TYPE m, BASIC_INT_TYPE n,
-                                  const BASIC_INT_TYPE *RowPtr,
-                                  const BASIC_INT_TYPE *ColIdx,
-                                  const void *Matrix_Val
-) {
-    int numanodes = numa_max_node() + 1;
-    int PARTS = numanodes;
-    //if(numanodes==1)return 0;
-    handle->extraHandle = malloc(sizeof(NumaEnvironment));
-    NumaEnvironment_t numaVal = handle->extraHandle;
-
-    const BASIC_INT_TYPE *rowptrA = RowPtr;
-    const BASIC_INT_TYPE *colidxA = ColIdx;
-    int nthreads = handle->nthreads;
-
-    int **subrowptrA;
-    int **subcolidxA;
-    const double *valA = Matrix_Val;
-    double **subvalA;
-    double **X;
-    double **Y;
-
+void partition(const int m,const int n,const int PARTS,
+               const int nthreads,const int numanodes,
+               const int *rowptrA,const int *colidxA,
+               const double*valA,numa_spmv_parameter_t p,BASIC_SIZE_TYPE type_size,
+               int **subrowptrA,int **subcolidxA,double **X,double **Y,double **subvalA,
+               int *subm,
+               int *subm_ex,
+               int *subX,
+               int *subX_ex,
+               int *subnnz,
+               int *subnnz_ex
+               ){
     int eachnumacores = nthreads / numanodes;
+    int i,j,k;
 
     int *subrowpos = (int *) malloc(sizeof(int) * (PARTS + 1));
+/*
     int *subm = (int *) malloc(sizeof(int) * PARTS);
     int *subm_ex = (int *) malloc(sizeof(int) * (PARTS + 1));
     int *subX = (int *) malloc(sizeof(int) * PARTS);
     int *subX_ex = (int *) malloc(sizeof(int) * (PARTS + 1));
     int *subnnz = (int *) malloc(sizeof(int) * PARTS);
     int *subnnz_ex = (int *) malloc(sizeof(int) * (PARTS + 1));
-    int i, j, k;
+*/
     for (i = 0; i < PARTS; i++)
         subrowpos[i] = (ceil((double) m / (double) PARTS)) * i > m ? m : ((ceil((double) m / (double) PARTS)) * i);
     subrowpos[PARTS] = m;
@@ -165,12 +155,10 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
         subnnz_ex[i] = subnnz[i];
     }
     inner_exclusive_scan(subnnz_ex, PARTS + 1);
-    numaspmv *p = (numaspmv *) malloc(nthreads * sizeof(numaspmv));
     for (i = 0; i < nthreads; i++) {
         p[i].alloc = i % numanodes;
         p[i].numanodes = numanodes;
         p[i].nthreads = nthreads;
-        p[i].handle = handle;
     }
     for (i = 0; i < eachnumacores; i++) {
         for (j = 0; j < numanodes; j++) {
@@ -178,19 +166,41 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
             p[i * numanodes + j].m = subm[j];
         }
     }
-    subrowptrA = (int **) malloc(sizeof(int *) * nthreads);
-    subcolidxA = (int **) malloc(sizeof(int *) * nthreads);
-    subvalA = malloc(sizeof(void *) * nthreads);
-    X = malloc(sizeof(void *) * nthreads);
-    Y = malloc(sizeof(void *) * nthreads);
+
 
     for (i = 0; i < nthreads; i++) {
         subrowptrA[i] = numa_alloc_onnode(sizeof(int) * (subm[p[i].alloc] + 1), p[i].alloc);
         subcolidxA[i] = numa_alloc_onnode(sizeof(int) * subnnz[p[i].alloc], p[i].alloc);
-        subvalA[i] = numa_alloc_onnode(handle->data_size * subnnz[p[i].alloc], p[i].alloc);
-        X[i] = numa_alloc_onnode(handle->data_size * subX[p[i].alloc], p[i].alloc);
-        Y[i] = numa_alloc_onnode(handle->data_size * subm[p[i].alloc], p[i].alloc);
+        subvalA[i] = numa_alloc_onnode(type_size * subnnz[p[i].alloc], p[i].alloc);
+        X[i] = numa_alloc_onnode(type_size * subX[p[i].alloc], p[i].alloc);
+        Y[i] = numa_alloc_onnode(type_size * subm[p[i].alloc], p[i].alloc);
     }
+    /*for(i = 0; i < numanodes; i++)
+    {
+        for(j = 0; j < eachnumacores; j++)
+        {
+            for (k = 0; k <= subm[i]; k++)
+            {
+                subrowptrA[i+j*eachnumacores][k] = rowptrA[subrowpos[i]+k];
+            }
+        }
+        for(j = 0; j < eachnumacores; j++)
+        {
+            for (k = 0; k < subnnz[i]; k++)
+            {
+                subcolidxA[i+j*eachnumacores][k] = colidxA[subnnz_ex[i]+k];
+                subvalA[i+j*eachnumacores][k] = valA[subnnz_ex[i]+k];
+            }
+        }
+        for(j = 0; j < eachnumacores; j++)
+        {
+            for (k = 0; k < subX[i]; k++)
+            {
+                X[i+j*eachnumacores][k] = vector[subX_ex[i]+k];
+            }
+        }
+
+    }*/
     int currentcore = 0;
     for (i = 0; i < numanodes; i++) {
         for (j = 0; j < eachnumacores; j++) {
@@ -211,6 +221,7 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
             }
         }
 
+
     }
     for (i = 0; i < nthreads; i++) {
         if (i % numanodes != 0) {
@@ -220,6 +231,52 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
             }
         }
     }
+    free(subrowpos);
+}
+int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
+                                  BASIC_INT_TYPE m, BASIC_INT_TYPE n,
+                                  const BASIC_INT_TYPE *RowPtr,
+                                  const BASIC_INT_TYPE *ColIdx,
+                                  const void *Matrix_Val
+) {
+    int numanodes = numa_max_node() + 1;
+    int PARTS = numanodes;
+    //if(numanodes==1)return 0;
+    handle->extraHandle = malloc(sizeof(NumaEnvironment));
+    NumaEnvironment_t numaVal = handle->extraHandle;
+
+    const BASIC_INT_TYPE *rowptrA = RowPtr;
+    const BASIC_INT_TYPE *colidxA = ColIdx;
+    int nthreads = handle->nthreads;
+
+
+    int **subrowptrA;
+    int **subcolidxA;
+    const double *valA = Matrix_Val;
+    double **subvalA;
+    double **X;
+    double **Y;
+    subrowptrA = (int **) malloc(sizeof(int *) * nthreads);
+    subcolidxA = (int **) malloc(sizeof(int *) * nthreads);
+    subvalA =  malloc(sizeof(double *) * nthreads);
+    X =  malloc(sizeof(double *) * nthreads);
+    Y =  malloc(sizeof(double *) * nthreads);
+    int eachnumacores = nthreads / numanodes;
+
+
+    int *subm = (int *) malloc(sizeof(int) * PARTS);
+    int *subm_ex = (int *) malloc(sizeof(int) * (PARTS + 1));
+    int *subX = (int *) malloc(sizeof(int) * PARTS);
+    int *subX_ex = (int *) malloc(sizeof(int) * (PARTS + 1));
+    int *subnnz = (int *) malloc(sizeof(int) * PARTS);
+    int *subnnz_ex = (int *) malloc(sizeof(int) * (PARTS + 1));
+    numaspmv *p = (numaspmv *) malloc(nthreads * sizeof(numaspmv));
+
+
+    partition(m,n,PARTS,nthreads,numanodes,RowPtr,ColIdx,Matrix_Val,p,handle->data_size,
+              subrowptrA,subcolidxA,X,Y,subvalA,subm,subm_ex,subX,subX_ex,subnnz,subnnz_ex
+    );
+
     numaVal->X = X;
     numaVal->Y = Y;
     numaVal->numanodes = numanodes;
@@ -229,10 +286,10 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
     numaVal->p = p;
     numaVal->PARTS = PARTS;
     numaVal->subnnz_ex = subnnz_ex;
-    numaVal->subX_ex = subX_ex;
-    numaVal->subm_ex = subm_ex;
     numaVal->subnnz = subnnz;
+    numaVal->subX_ex = subX_ex;
     numaVal->subX = subX;
+    numaVal->subm_ex = subm_ex;
     numaVal->subm = subm;
 
     return numanodes;
