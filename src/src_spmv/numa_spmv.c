@@ -145,7 +145,7 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
     {
         numaVal->p[i].alloc = i%numanodes;
         numaVal->p[i].numanodes = numanodes;
-        numaVal->p[i].nthreads = handle->nthreads;
+        numaVal->p[i].nthreads = nthreads;
         numaVal->p[i].handle = handle;
     }
     for(i = 0; i < eachnumacores; i++)
@@ -164,11 +164,16 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
 
     for(i = 0; i < nthreads; i++)
     {
-        numaVal->subrowptrA[i] = numa_alloc_onnode(sizeof(int)*(subm[numaVal->p[i].alloc]+1), i);
-        numaVal->subcolidxA[i] = numa_alloc_onnode(sizeof(int)*subnnz[numaVal->p[i].alloc], i);
-        numaVal->subvalA[i] = numa_alloc_onnode(handle->data_size*subnnz[numaVal->p[i].alloc], i);
-        numaVal->X[i] = numa_alloc_onnode(handle->data_size*subX[numaVal->p[i].alloc], i);
-        numaVal->Y[i] = numa_alloc_onnode(handle->data_size*subm[numaVal->p[i].alloc], i);
+        numaVal->subrowptrA[i] = numa_alloc_onnode(sizeof(int)*(subm[numaVal->p[i].alloc]+1), numaVal->p[i].alloc);
+
+        numaVal->subcolidxA[i] = numa_alloc_onnode(sizeof(int)*subnnz[numaVal->p[i].alloc], numaVal->p[i].alloc);
+
+        numaVal->subvalA[i] = numa_alloc_onnode(handle->data_size*subnnz[numaVal->p[i].alloc], numaVal->p[i].alloc);
+
+        numaVal->X[i] = numa_alloc_onnode(handle->data_size*subX[numaVal->p[i].alloc], numaVal->p[i].alloc);
+
+        numaVal->Y[i] = numa_alloc_onnode(handle->data_size*subm[numaVal->p[i].alloc], numaVal->p[i].alloc);
+
     }
     int currentcore = 0;
     int k;
