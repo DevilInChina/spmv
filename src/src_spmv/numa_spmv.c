@@ -181,7 +181,6 @@ void partition(const int m,const int n,const int PARTS,
             currentcore = i + j * eachnumacores;
             if (currentcore < nthreads) {
                 memcpy(subrowptrA[currentcore],rowptrA+subrowpos[i],subm[i]*sizeof(int));
-                subrowptrA[currentcore][k] = rowptrA[subrowpos[i] + k];
             }
         }
         for (j = 0; j < eachnumacores; j++) {
