@@ -178,13 +178,13 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
             p[i * numanodes + j].m = subm[j];
         }
     }
-    subrowptrA = (int **) malloc(sizeof(int *) * PARTS);
-    subcolidxA = (int **) malloc(sizeof(int *) * PARTS);
-    subvalA = malloc(sizeof(void *) * PARTS);
-    X = malloc(sizeof(void *) * PARTS);
-    Y = malloc(sizeof(void *) * PARTS);
+    subrowptrA = (int **) malloc(sizeof(int *) * nthreads);
+    subcolidxA = (int **) malloc(sizeof(int *) * nthreads);
+    subvalA = malloc(sizeof(void *) * nthreads);
+    X = malloc(sizeof(void *) * nthreads);
+    Y = malloc(sizeof(void *) * nthreads);
 
-    for (i = 0; i < PARTS; i++) {
+    for (i = 0; i < nthreads; i++) {
         subrowptrA[i] = numa_alloc_onnode(sizeof(int) * (subm[p[i].alloc] + 1), p[i].alloc);
         subcolidxA[i] = numa_alloc_onnode(sizeof(int) * subnnz[p[i].alloc], p[i].alloc);
         subvalA[i] = numa_alloc_onnode(handle->data_size * subnnz[p[i].alloc], p[i].alloc);
