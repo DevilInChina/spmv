@@ -35,7 +35,7 @@ void testForFunctions(const char *matrixName,
         omp_set_num_threads(thread);
 
         for (currentiter = 0; currentiter < 100; currentiter++) {
-//            spmv(handle, m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
+            spmv(handle, m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
         }
 
         gettimeofday(&t1, NULL);
@@ -53,7 +53,7 @@ void testForFunctions(const char *matrixName,
             s+=(Vector_Val_Y[ind]-Y_golden[ind])/m*
                     (Vector_Val_Y[ind]-Y_golden[ind])/m;
             if(fabs(Vector_Val_Y[ind]-Y_golden[ind])>0.001){
-                printf("%d %f %f\n",ind,Vector_Val_Y[ind],Y_golden[ind]);
+                //printf("%d %f %f\n",ind,Vector_Val_Y[ind],Y_golden[ind]);
             }
         }
         s = sqrt(s);
@@ -89,9 +89,9 @@ void LoadMtx_And_GetGolden(char *filePath,
     memset(*Y, 0, sizeof(VALUE_TYPE) * (*m));
     memset(*Y_Golden, 0, sizeof(VALUE_TYPE) * (*m));
     srand(*m);
-    for(int i = 0 ; i < *nnzR ; ++i)(*Val)[i] = 1;
+    //for(int i = 0 ; i < *nnzR ; ++i)(*Val)[i] = 1;
     for (int i = 0; i < *n; i++)
-        (*X)[i] = 1;
+        (*X)[i] = rand()%8*0.125;
 
     for (int i = 0; i < *m; i++)
         for (int j = (*RowPtr)[i]; j < (*RowPtr)[i + 1]; j++)

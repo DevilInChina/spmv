@@ -112,13 +112,13 @@ void *spmv_numa(void *arg) {
 }
 
 int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
-                                  int PARTS,
                                   BASIC_INT_TYPE m, BASIC_INT_TYPE n,
                                   const BASIC_INT_TYPE *RowPtr,
                                   const BASIC_INT_TYPE *ColIdx,
                                   const void *Matrix_Val
 ) {
     int numanodes = numa_max_node() + 1;
+    int PARTS = numanodes;
     //if(numanodes==1)return 0;
     handle->extraHandle = malloc(sizeof(NumaEnvironment));
     NumaEnvironment_t numaVal = handle->extraHandle;

@@ -163,7 +163,7 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
             }
         }break;
         case Method_Numa:{
-            int k = numa_spmv_get_handle_Selected(*Handle,4,m,n,(int *) RowPtr, (int *) ColIdx, Matrix_Val);
+            int k = numa_spmv_get_handle_Selected(*Handle,m,n,(int *) RowPtr, (int *) ColIdx, Matrix_Val);
             if(k==0){
                 parallel_balanced2_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
                 (*Handle)->spmvMethod = Method_Balanced2;
