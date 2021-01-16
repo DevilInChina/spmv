@@ -120,7 +120,8 @@ const spmv_function spmv_functions[] = {
         spmv_parallel_balanced_Selected,
         spmv_parallel_balanced2_Selected,
         spmv_sell_C_Sigma_Selected,
-        spmv_csr5Spmv_Selected
+        spmv_csr5Spmv_Selected,
+        spmv_numa_Selected
 };
 
 void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,

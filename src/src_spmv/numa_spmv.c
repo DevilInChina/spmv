@@ -90,7 +90,7 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
                                       const void *Matrix_Val
 ){
     int numanodes = numa_max_node()+1;
-    if(numanodes==1)return 0;
+    //if(numanodes==1)return 0;
     handle->extraHandle = malloc(sizeof(NumaEnvironment));
     NumaEnvironment_t numaVal = handle->extraHandle;
     numaVal->numanodes = numanodes;
@@ -293,7 +293,7 @@ void spmv_numa_Selected(
     for (int i = 0; i < handle->nthreads; i++)
     {
         pthread_create(numasVal->threads+i, &numasVal->pthread_custom_attr, spmv_numa,
-                       (void *)(numasVal+i));
+                       (void *)(numasVal->p+i));
     }
     for (int i = 0; i < handle->nthreads; i++)
     {

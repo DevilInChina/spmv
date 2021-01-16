@@ -130,6 +130,15 @@ void spmv_csr5Spmv_Selected(const spmv_Handle_t handle,
                             void*       Vector_Val_Y
 );
 
+void spmv_numa_Selected(
+        const spmv_Handle_t handle,
+        BASIC_INT_TYPE m,
+        const BASIC_INT_TYPE* RowPtr,
+        const BASIC_INT_TYPE* ColIdx,
+        const void* Matrix_Val,
+        const void* Vector_Val_X,
+        void*       Vector_Val_Y
+);
 
 #if defined(__cplusplus)
 }

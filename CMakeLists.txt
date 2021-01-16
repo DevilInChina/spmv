@@ -72,6 +72,10 @@ add_executable(csr5_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
 target_compile_options(csr5_spmv PRIVATE -D TEST_METHOD=5)
 target_link_libraries(csr5_spmv mv)
 
+add_executable(numa_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
+target_compile_options(numa_spmv PRIVATE -D TEST_METHOD=6)
+target_link_libraries(numa_spmv mv)
+
 add_executable(compare ${PROJECT_SOURCE_DIR}/src/samples/compare.c)
 target_link_libraries(compare mv)
 
