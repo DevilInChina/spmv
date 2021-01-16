@@ -113,8 +113,8 @@ void *spmv_numa(void *arg) {
 void partition(const int m,const int n,const int PARTS,
                const int nthreads,const int numanodes,
                const int *rowptrA,const int *colidxA,
-               const double*valA,numa_spmv_parameter_t p,BASIC_SIZE_TYPE type_size,
-               int **subrowptrA,int **subcolidxA,double **X,double **Y,double **subvalA,
+               const void*valA,numa_spmv_parameter_t p,BASIC_SIZE_TYPE type_size,
+               int **subrowptrA,int **subcolidxA,void **X,void **Y,void **subvalA,
                int *subm,
                int *subm_ex,
                int *subX,
@@ -175,32 +175,6 @@ void partition(const int m,const int n,const int PARTS,
         X[i] = numa_alloc_onnode(type_size * subX[p[i].alloc], p[i].alloc);
         Y[i] = numa_alloc_onnode(type_size * subm[p[i].alloc], p[i].alloc);
     }
-    /*for(i = 0; i < numanodes; i++)
-    {
-        for(j = 0; j < eachnumacores; j++)
-        {
-            for (k = 0; k <= subm[i]; k++)
-            {
-                subrowptrA[i+j*eachnumacores][k] = rowptrA[subrowpos[i]+k];
-            }
-        }
-        for(j = 0; j < eachnumacores; j++)
-        {
-            for (k = 0; k < subnnz[i]; k++)
-            {
-                subcolidxA[i+j*eachnumacores][k] = colidxA[subnnz_ex[i]+k];
-                subvalA[i+j*eachnumacores][k] = valA[subnnz_ex[i]+k];
-            }
-        }
-        for(j = 0; j < eachnumacores; j++)
-        {
-            for (k = 0; k < subX[i]; k++)
-            {
-                X[i+j*eachnumacores][k] = vector[subX_ex[i]+k];
-            }
-        }
-
-    }*/
     int currentcore = 0;
     for (i = 0; i < numanodes; i++) {
         for (j = 0; j < eachnumacores; j++) {
@@ -212,13 +186,9 @@ void partition(const int m,const int n,const int PARTS,
             }
         }
         for (j = 0; j < eachnumacores; j++) {
-            for (k = 0; k < subnnz[i]; k++) {
-                currentcore = i + j * eachnumacores;
-                if (currentcore < nthreads) {
-                    subcolidxA[currentcore][k] = colidxA[subnnz_ex[i] + k];
-                    subvalA[currentcore][k] = valA[subnnz_ex[i] + k];
-                }
-            }
+            currentcore = i + j * eachnumacores;
+            memcpy(subcolidxA[currentcore],colidxA+subnnz_ex[i],subnnz[i]*sizeof(int));
+            memcpy(subvalA[currentcore],valA + subnnz_ex[i]*type_size , subnnz[i]*type_size);
         }
 
 
