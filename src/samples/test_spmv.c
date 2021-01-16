@@ -53,7 +53,7 @@ void testForFunctions(const char *matrixName,
             s+=(Vector_Val_Y[ind]-Y_golden[ind])/m*
                     (Vector_Val_Y[ind]-Y_golden[ind])/m;
             //if(fabs(Vector_Val_Y[ind]-Y_golden[ind])>0.001){
-                printf("%d %f %f\n",ind,Vector_Val_Y[ind],Y_golden[ind]);
+                //printf("%d %f %f\n",ind,Vector_Val_Y[ind],Y_golden[ind]);
             //}
         }
         s = sqrt(s);
@@ -91,7 +91,7 @@ void LoadMtx_And_GetGolden(char *filePath,
     srand(*m);
     //for(int i = 0 ; i < *nnzR ; ++i)(*Val)[i] = 1;
     for (int i = 0; i < *n; i++)
-        (*X)[i] = 1;//rand()%8*0.125;;
+        (*X)[i] = rand()%8*0.125;;
 
     for (int i = 0; i < *m; i++)
         for (int j = (*RowPtr)[i]; j < (*RowPtr)[i + 1]; j++)
@@ -115,7 +115,7 @@ int main(int argc, char ** argv) {
     //printf("#iter is %i \n", iter);
     LoadMtx_And_GetGolden(file,&m,&n,&nnzR,&isS,&RowPtr,&ColIdx,&Val,&X,&Y_golden,&Y);
     struct timeval t1, t2;
-     SPMV_METHODS d = Method_Total_Size;
+    SPMV_METHODS d = Method_Total_Size;
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
     if(TEST_METHOD != Method_Total_Size) {
         for (int i = TEST_METHOD * VECTOR_TOTAL_SIZE+VECTOR_AVX2; i < (TEST_METHOD ) * VECTOR_TOTAL_SIZE+VECTOR_AVX512; ++i) {

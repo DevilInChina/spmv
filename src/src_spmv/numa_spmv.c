@@ -16,7 +16,7 @@ typedef struct numa_spmv_parameter {
 
 typedef struct NumaEnvironment {
     int **subrowptrA, **subcolidxA;
-    double **subvalA, **X, **Y;
+    void **subvalA, **X, **Y;
     numa_spmv_parameter_t p;
     int numanodes;
     int *subm, *subm_ex, *subX_ex, *subX, *subnnz, *subnnz_ex;
@@ -96,17 +96,33 @@ void *spmv_numa(void *arg) {
     double *y = numaEnvironment->Y[me];
     int *rpt = numaEnvironment->subrowptrA[me];
     int *col = numaEnvironment->subcolidxA[me];
-    for (int u = start; u < end; u++) {
-        double sum = 0;
-        for (int j = rpt[u]; j < rpt[u + 1]; j++) {
-            int Xpos = col[j] / numaEnvironment->subX[0];
-            int remainder = col[j] - numaEnvironment->subX_ex[Xpos];
-            sum += val[j] * numaEnvironment->X[Xpos][remainder];
-            //
+    if(pn->handle->data_size==sizeof(double )) {
+
+        for (int u = start; u < end; u++) {
+            double sum = 0;
+            for (int j = rpt[u]; j < rpt[u + 1]; j++) {
+                int Xpos = col[j] / numaEnvironment->subX[0];
+                int remainder = col[j] - numaEnvironment->subX_ex[Xpos];
+                sum += ((double *)val)[j] * ((double **)numaEnvironment->X)[Xpos][remainder];
+                //
+            }
+            y[u] = sum;
+            //if(me==7)
+            //printf("y[%d][%d]%.2f\n",me,u,sum);
         }
-        y[u] = sum;
-        //if(me==7)
-        //printf("y[%d][%d]%.2f\n",me,u,sum);
+    }else{
+        for (int u = start; u < end; u++) {
+            float sum = 0;
+            for (int j = rpt[u]; j < rpt[u + 1]; j++) {
+                int Xpos = col[j] / numaEnvironment->subX[0];
+                int remainder = col[j] - numaEnvironment->subX_ex[Xpos];
+                sum += ((float *)val)[j] * ((float **)numaEnvironment->X)[Xpos][remainder];
+                //
+            }
+            y[u] = sum;
+            //if(me==7)
+            //printf("y[%d][%d]%.2f\n",me,u,sum);
+        }
     }
 
 }
