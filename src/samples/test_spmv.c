@@ -11,8 +11,8 @@
 
 // sum up 8 single-precision numbers
 void testForFunctions(const char *matrixName,
-                      int iter, int nthreads,
-                          const VALUE_TYPE *Y_golden,
+                      int threads_begin, int threads_end,
+                      const VALUE_TYPE *Y_golden,
                       BASIC_INT_TYPE m,
                       BASIC_INT_TYPE n,
                       const BASIC_INT_TYPE*RowPtr,
@@ -23,21 +23,34 @@ void testForFunctions(const char *matrixName,
                       VECTORIZED_WAY PRODUCT_WAY,
                       SPMV_METHODS FUNC_WAY
 ) {
-    if(FUNC_WAY==Method_Serial)nthreads = 1;
+    if(FUNC_WAY==Method_Serial) {
+        threads_begin = 1;
+        threads_end = 1;
+    }
     int nnzR = RowPtr[m] - RowPtr[0];
     struct timeval t1, t2;
     int currentiter = 0;
     spmv_Handle_t handle = NULL;
-    spmv_create_handle_all_in_one(&handle,m,n,RowPtr,ColIdx,Matrix_Val,
-                                  nthreads,FUNC_WAY,sizeof(VALUE_TYPE),PRODUCT_WAY);
 
-    for(BASIC_SIZE_TYPE thread = nthreads; thread <= nthreads ; thread<<=1u) {
+
+
+    for(BASIC_SIZE_TYPE thread = threads_begin; thread <= threads_end ; thread<<=1u) {
         omp_set_num_threads(thread);
+        gettimeofday(&t1, NULL);
+        spmv_create_handle_all_in_one(&handle, m, n, RowPtr, ColIdx, Matrix_Val,
+                                      threads_end, FUNC_WAY, sizeof(VALUE_TYPE), PRODUCT_WAY);
+        gettimeofday(&t2, NULL);
+        double time =((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) ;
 
+
+        gettimeofday(&t1, NULL);
         for (currentiter = 0; currentiter < 100; currentiter++) {
             spmv(handle, m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
         }
 
+        gettimeofday(&t2, NULL);
+        int iter = 100 +
+                10000/(((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0));
         gettimeofday(&t1, NULL);
 
         for (currentiter = 0; currentiter < iter; currentiter++) {
@@ -46,9 +59,10 @@ void testForFunctions(const char *matrixName,
 
         gettimeofday(&t2, NULL);
 
-        VALUE_TYPE time_overall_serial = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / iter;
-        VALUE_TYPE GFlops_serial = 2 * nnzR / time_overall_serial / pow(10, 6);
-        VALUE_TYPE s = 0;
+        double time_overall_serial =
+                ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / iter;
+        double GFlops_serial = 2 * nnzR / time_overall_serial / pow(10, 6);
+        double s = 0;
         for(int ind = 0 ; ind < m ; ++ind){
             s+=(Vector_Val_Y[ind]-Y_golden[ind])/m*
                     (Vector_Val_Y[ind]-Y_golden[ind])/m;
@@ -57,13 +71,14 @@ void testForFunctions(const char *matrixName,
             //}
         }
         s = sqrt(s);
-        printf("Matrix,Methods,Vectorized,threads,error,Gflops\n");
-        printf("%s,%s,%s,%lu,%16.10f,%.10f\n",matrixName,
-               Methods_names[FUNC_WAY], Vectorized_names[PRODUCT_WAY], thread, s, GFlops_serial);
-    }
-    if (handle)
-        spmv_destory_handle(handle);
+       // printf("Matrix,Methods,Vectorized,threads,error,predeal-time,time,Gflops\n");
+        printf("%s,%s,%s,%lu,%16.10f,%.10f,%.10f,%.10f\n",matrixName,
+               Methods_names[FUNC_WAY], Vectorized_names[PRODUCT_WAY], thread, s,
+               time,time_overall_serial, GFlops_serial);
 
+        if (handle)
+            spmv_destory_handle(handle);
+    }
 }
 
 void LoadMtx_And_GetGolden(char *filePath,
@@ -105,8 +120,8 @@ void LoadMtx_And_GetGolden(char *filePath,
 int main(int argc, char ** argv) {
 
     char *file = argv[1];
-    int nthreads = atoi(argv[2]);
-    int iter = atoi(argv[3]);
+    int threads_bregin = atoi(argv[2]);
+    int threads_end = atoi(argv[3]);
 
     BASIC_INT_TYPE m,n,nnzR,isS;
     BASIC_INT_TYPE *RowPtr,*ColIdx;
@@ -117,17 +132,17 @@ int main(int argc, char ** argv) {
     struct timeval t1, t2;
     SPMV_METHODS d = Method_Total_Size;
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
-    if(TEST_METHOD != Method_Total_Size) {
-        for (int i = TEST_METHOD * VECTOR_TOTAL_SIZE+VECTOR_AVX2; i < (TEST_METHOD ) * VECTOR_TOTAL_SIZE+VECTOR_AVX512; ++i) {
-            testForFunctions(file, iter, nthreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
-                             i % VECTOR_TOTAL_SIZE, i / VECTOR_TOTAL_SIZE);
-        }
-    }else{
-        for (int i = Method_Serial * VECTOR_TOTAL_SIZE; i < Method_Total_Size * VECTOR_TOTAL_SIZE; ++i) {
-            testForFunctions(file, iter, nthreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
-                             i % VECTOR_TOTAL_SIZE, i / VECTOR_TOTAL_SIZE);
-        }
-    }
+    testForFunctions(file, threads_bregin, threads_end , Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
+                     VECTOR_AVX2, Method_Parallel );
+    testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
+                     VECTOR_AVX2, Method_Balanced );
+    testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
+                     VECTOR_AVX2, Method_Balanced2 );
+    testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
+                     VECTOR_AVX2, Method_SellCSigma );
+    testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
+                     VECTOR_AVX2, Method_CSR5SPMV );
+
     free(Val);
     free(RowPtr);
     free(ColIdx);
