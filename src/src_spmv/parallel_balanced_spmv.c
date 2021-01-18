@@ -7,13 +7,15 @@
 
 int binary_search_right_boundary_kernel(const int *row_pointer,
                                         const int  key_input,
-                                        const int  size) {
+                                        const int  size)
+{
     int start = 0;
-    int stop = size - 1;
+    int stop  = size - 1;
     int median;
     int key_median;
 
-    while (stop >= start) {
+    while (stop >= start)
+    {
         median = (stop + start) / 2;
 
         key_median = row_pointer[median];
@@ -38,15 +40,15 @@ void parallel_balanced_get_handle(
     //int *csrSplitter_normal = (int *)malloc((nthreads+1) * sizeof(int));
 
     int stridennz = (nnzR+nthreads-1) /  nthreads;
-    csrSplitter[0] = 0;
-    for (int tid = 1; tid <= nthreads; tid++) {
+
+#pragma omp parallel for
+    for (int tid = 0; tid <= nthreads; tid++) {
         // compute partition boundaries by partition of size stride
         int boundary = tid * stridennz;
         // clamp partition boundaries to [0, nnzR]
         boundary = boundary > nnzR ? nnzR : boundary;
         // binary search
-        int spl = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
-        csrSplitter[tid] = spl;
+        csrSplitter[tid] = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
     }
     (handle)->csrSplitter = csrSplitter;
 
@@ -62,7 +64,7 @@ void spmv_parallel_balanced_Selected(
         const void* Vector_Val_X,
         void*       Vector_Val_Y
 ) {
-    BASIC_SIZE_TYPE size = handle->data_size ;
+    BASIC_SIZE_TYPE size = handle->data_size;
     VECTORIZED_WAY way = handle->vectorizedWay;
     dot_product_function dotProductFunction = inner_basic_GetDotProduct(size);
 
@@ -78,6 +80,5 @@ void spmv_parallel_balanced_Selected(
         }
     }
 }
-
 
 
