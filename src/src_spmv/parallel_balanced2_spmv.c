@@ -167,7 +167,7 @@ void spmv_parallel_balanced2_Selected(
 
     for (int tid = 0; tid < nthreads; tid++) {
         if(Yid[tid]!=-1) {
-            CONVERT_EQU(Vector_Val_Y+Yid[tid],size,0);
+            CONVERT_EQU(Vector_Val_Y+Yid[tid]*size,size,0);
         }
     }
 
