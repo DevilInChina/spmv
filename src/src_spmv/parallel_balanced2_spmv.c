@@ -9,7 +9,7 @@ void parallel_balanced2_get_handle(
         BASIC_INT_TYPE m,
         const BASIC_INT_TYPE*RowPtr,
         BASIC_INT_TYPE nnzR
-        ) {
+) {
 
     parallel_balanced_get_handle(handle, m, RowPtr, nnzR);
     int *csrSplitter = (handle)->csrSplitter;
@@ -171,6 +171,8 @@ void spmv_parallel_balanced2_Selected(
         }
     }
 
+    void *Ysum = malloc(size * nthreads);
+    void *Ypartialsum = malloc(size * nthreads);
 #pragma omp parallel for
     for (int tid = 0; tid < nthreads; tid++) {
         if (Yid[tid] == -1) {
@@ -188,12 +190,20 @@ void spmv_parallel_balanced2_Selected(
             }
         }
         if (Yid[tid] != -1 && Apinter[tid] <= 1) {
+            CONVERT_EQU(Ysum+tid*size,size,0);
             dotProductFunction(End2[tid] - Start2[tid],
                                ColIdx + Start2[tid], Matrix_Val + Start2[tid]*size, Vector_Val_X,
-                               Vector_Val_Y+Yid[tid]*size,way
-                               );
+                               Ypartialsum+tid*size,way
+            );
+
+            CONVERT_ADDEQU(Ysum+tid*size,size,Ypartialsum+tid*size);
+
+            CONVERT_ADDEQU(Vector_Val_Y+Yid[tid]*size,size,Ysum+tid*size);
         }
     }
+    free(Ysum);
+    free(Ypartialsum);
 }
+
 
 
