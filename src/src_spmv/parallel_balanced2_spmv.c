@@ -191,6 +191,7 @@ void spmv_parallel_balanced2_Selected(
         }
         if (Yid[tid] != -1 && Apinter[tid] <= 1) {
             CONVERT_EQU(Ysum+tid*size,size,0);
+            CONVERT_EQU(Ypartialsum+tid*size,size,0);
             dotProductFunction(End2[tid] - Start2[tid],
                                ColIdx + Start2[tid], Matrix_Val + Start2[tid]*size, Vector_Val_X,
                                Ypartialsum+tid*size,way
