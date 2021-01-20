@@ -132,10 +132,10 @@ int main(int argc, char ** argv) {
     struct timeval t1, t2;
     SPMV_METHODS d = Method_Total_Size;
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
-    testForFunctions(file, threads_bregin, threads_end , Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
-                     VECTOR_AVX2, Method_Parallel );
     testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                      VECTOR_AVX2, Method_Balanced2 );
+    testForFunctions(file, threads_bregin, threads_end , Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
+                     VECTOR_AVX2, Method_Parallel );
     testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                      VECTOR_AVX2, Method_Balanced );
     testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
