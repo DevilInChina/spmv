@@ -171,9 +171,6 @@ void spmv_parallel_balanced2_Selected(
             //CONVERT_EQU(Vector_Val_Y+Yid[tid]*size,size,0);
         }
     }
-
-    void *Ysum = malloc(size * nthreads);
-    void *Ypartialsum = malloc(size * nthreads);
 #pragma omp parallel for
     for (int tid = 0; tid < nthreads; tid++) {
         if (Yid[tid] == -1) {
@@ -191,22 +188,15 @@ void spmv_parallel_balanced2_Selected(
             }
         }
         if (Yid[tid] != -1 && Apinter[tid] <= 1) {
-
-            ((double *)Ysum)[tid] = 0;
-            ((double *)Ypartialsum)[tid] = 0;
             dotProductFunction(End2[tid] - Start2[tid],
                                ColIdx + Start2[tid], Matrix_Val + Start2[tid]*size, Vector_Val_X,
-                               Ypartialsum+tid*size,way
+                               Vector_Val_Y+Yid[tid]*size,way
             );
-            ((double *)Ysum)[tid] += ((double *)Ypartialsum)[tid];
-            ((double *)Vector_Val_Y)[Yid[tid]] += ((double *)Ysum)[tid];
             //CONVERT_ADDEQU(Ysum+tid*size,size,Ypartialsum+tid*size);
 
             //CONVERT_ADDEQU(Vector_Val_Y+Yid[tid]*size,size,Ysum+tid*size);
         }
     }
-    free(Ysum);
-    free(Ypartialsum);
 }
 
 
