@@ -165,15 +165,17 @@ void spmv_parallel_balanced2_Selected(
     VECTORIZED_WAY way = handle->vectorizedWay;
     dot_product_function dotProductFunction = inner_basic_GetDotProduct(size);
 
+
+
+    void *Ysum = malloc(size * nthreads);
+    void *Ypartialsum = malloc(size * nthreads);
     for (int tid = 0; tid < nthreads; tid++) {
         if(Yid[tid]!=-1) {
+            ((double *)Ysum)[tid] = 0;
             ((double *)Vector_Val_Y)[Yid[tid]]=0;
             //CONVERT_EQU(Vector_Val_Y+Yid[tid]*size,size,0);
         }
     }
-
-    void *Ysum = malloc(size * nthreads);
-    void *Ypartialsum = malloc(size * nthreads);
 #pragma omp parallel for
     for (int tid = 0; tid < nthreads; tid++) {
         if (Yid[tid] == -1) {
@@ -192,11 +194,10 @@ void spmv_parallel_balanced2_Selected(
         }
         if (Yid[tid] != -1 && Apinter[tid] <= 1) {
 
-            ((double *)Ysum)[tid] = 0;
             ((double *)Ypartialsum)[tid] = 0;
             dotProductFunction(End2[tid] - Start2[tid],
                                ColIdx + Start2[tid], Matrix_Val + Start2[tid]*size, Vector_Val_X,
-                               Vector_Val_Y+Yid[tid]*size,way
+                               Ypartialsum+tid*size,way
             );
             ((double *)Ysum)[tid] += ((double *)Ypartialsum)[tid];
             //CONVERT_ADDEQU(Ysum+tid*size,size,Ypartialsum+tid*size);
