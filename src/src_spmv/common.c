@@ -9,16 +9,7 @@
  * @brief init parameters used in balanced and balanced2
  * @param this_handle
  */
-void init_Balance_Balance2(spmv_Handle_t this_handle){
-    this_handle->csrSplitter = NULL;
-    this_handle->Yid = NULL;
-    this_handle->Apinter = NULL;
-    this_handle->Start1 = NULL;
-    this_handle->End1 = NULL;
-    this_handle->Start2 = NULL;
-    this_handle->End2 = NULL;
-    this_handle->Bpinter = NULL;
-}
+
 
 void init_sell_C_Sigma(spmv_Handle_t this_handle){
     this_handle->Sigma = 0;
@@ -32,16 +23,7 @@ void init_sell_C_Sigma(spmv_Handle_t this_handle){
  * @brief free parameters used in balanced and balanced2
  * @param this_handle
  */
-void clear_Balance_Balance2(spmv_Handle_t this_handle){
-    free(this_handle->csrSplitter);
-    free(this_handle->Yid);
-    free(this_handle->Apinter);
-    free(this_handle->Start1);
-    free(this_handle->End1);
-    free(this_handle->Start2);
-    free(this_handle->End2);
-    free(this_handle->Bpinter);
-}
+
 
 void C_Block_destory(Sigma_Block_t this_block){
     free(this_block->RowIndex);
@@ -67,12 +49,14 @@ void gemv_Handle_init(spmv_Handle_t this_handle){
     this_handle->extraHandle = NULL;
 
     init_sell_C_Sigma(this_handle);
-    init_Balance_Balance2(this_handle);
 
 }
 
 void gemv_Handle_clear(spmv_Handle_t this_handle) {
-    clear_Balance_Balance2(this_handle);
+
+    balancedHandleDestroy(this_handle);
+
+    balanced2HandleDestroy(this_handle);
 
     clear_Sell_C_Sigma(this_handle);
 
@@ -158,15 +142,15 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
                 csr5Spmv_get_handle_Selected(*Handle, m, n, (int *) RowPtr, (int *) ColIdx, Matrix_Val);
             }else{
                 (*Handle)->spmvMethod = Method_SellCSigma;
-                sell_C_Sigma_get_handle_Selected(*Handle,m/nthreads/Turn/C
+                sell_C_Sigma_get_handle_Selected(*Handle,Times
                                                  ,C,m,RowPtr,ColIdx,Matrix_Val);
             }
         }break;
         case Method_Numa:{
             int k = numa_spmv_get_handle_Selected(*Handle,m,n,(int *) RowPtr, (int *) ColIdx, Matrix_Val);
             if(k==0){
-                parallel_balanced2_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
                 (*Handle)->spmvMethod = Method_Balanced2;
+                parallel_balanced2_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
             }
         }
         default:{

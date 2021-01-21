@@ -6,6 +6,34 @@
 #include <string.h>
 #include <stdio.h>
 
+typedef struct balancedEnv {
+    BASIC_INT_TYPE* csrSplitter;
+    BASIC_INT_TYPE* Yid;
+    BASIC_INT_TYPE* Apinter;
+    BASIC_INT_TYPE* Start1;
+    BASIC_INT_TYPE* End1;
+    BASIC_INT_TYPE* Start2;
+    BASIC_INT_TYPE* End2;
+    BASIC_INT_TYPE* Bpinter;
+    BASIC_INT_TYPE* label;
+}balancedEnv,*balancedEnv_t;
+
+void balanced2HandleDestroy(spmv_Handle_t this_handle){
+    if(this_handle){
+        if(this_handle->extraHandle && this_handle->spmvMethod==Method_Balanced2){
+            balancedEnv_t exh = this_handle->extraHandle;
+            free(exh->csrSplitter);
+            free(exh->Yid);
+            free(exh->Apinter);
+            free(exh->Start1);
+            free(exh->End1);
+            free(exh->Start2);
+            free(exh->End2);
+            free(exh->Bpinter);
+            free(exh->label);
+        }
+    }
+}
 void init_csrSplitter_balanced2(int nthreads,int nnzR,
                                 int m,const BASIC_INT_TYPE*RowPtr,BASIC_INT_TYPE *csrSplitter){
     int stridennz = (nnzR+nthreads-1) /  nthreads;
@@ -26,11 +54,12 @@ void parallel_balanced2_get_handle(
         const BASIC_INT_TYPE *RowPtr,
         BASIC_INT_TYPE nnzR
 ) {
+    handle->extraHandle = malloc(sizeof(balancedEnv));
+    balancedEnv_t Env=handle->extraHandle;
+    (Env)->csrSplitter = malloc(sizeof(int) * (handle->nthreads + 1));
+    init_csrSplitter_balanced2((int) (handle->nthreads), nnzR, m, RowPtr, Env->csrSplitter);
 
-    (handle)->csrSplitter = malloc(sizeof(int) * (handle->nthreads + 1));
-    init_csrSplitter_balanced2((int) (handle->nthreads), nnzR, m, RowPtr, handle->csrSplitter);
-
-    int *csrSplitter = (handle)->csrSplitter;
+    int *csrSplitter = (Env)->csrSplitter;
     BASIC_SIZE_TYPE nthreads = handle->nthreads;
 
     int *Apinter = (int *) malloc(nthreads * sizeof(int));
@@ -160,14 +189,15 @@ void parallel_balanced2_get_handle(
             search2 = 0;
         }
     }
-    (handle)->Bpinter = Bpinter;
-    (handle)->Apinter = Apinter;
-    (handle)->Yid = Yid;
-    (handle)->Start1 = Start1;
-    (handle)->Start2 = Start2;
-    (handle)->Yid = Yid;
-    (handle)->End1 = End1;
-    (handle)->End2 = End2;
+    (Env)->Bpinter = Bpinter;
+    (Env)->Apinter = Apinter;
+    (Env)->Yid = Yid;
+    (Env)->Start1 = Start1;
+    (Env)->Start2 = Start2;
+    (Env)->Yid = Yid;
+    (Env)->End1 = End1;
+    (Env)->End2 = End2;
+    (Env)->label = label;
 }
 
 
@@ -181,13 +211,15 @@ void spmv_parallel_balanced2_Selected(
         void *Vector_Val_Y
 ) {
     int nthreads = handle->nthreads;
-    int *Yid = handle->Yid;
-    int *csrSplitter = handle->csrSplitter;
-    int *Apinter = handle->Apinter;
-    int *Start1 = handle->Start1;
-    int *Start2 = handle->Start2;
-    int *End2 = handle->End2;
-    int *End1 = handle->End1;
+    balancedEnv_t Env = handle->extraHandle;
+    int *Yid = Env->Yid;
+    int *csrSplitter = Env->csrSplitter;
+    int *Apinter = Env->Apinter;
+    int *Start1 = Env->Start1;
+    int *Start2 = Env->Start2;
+    int *End2 = Env->End2;
+    int *End1 = Env->End1;
+    int *label = Env->label;
     BASIC_SIZE_TYPE size = handle->data_size;
     VECTORIZED_WAY way = handle->vectorizedWay;
     dot_product_function dotProductFunction = inner_basic_GetDotProduct(size);
@@ -212,7 +244,7 @@ void spmv_parallel_balanced2_Selected(
                                    Matrix_Val + RowPtr[u]*size, Vector_Val_X,Vector_Val_Y+u*size,way);
             }
         }
-        else if (Yid[tid] != -1 && Apinter[tid] > 1) {
+        else if (label[tid] != 0)  {
             for (int u = Start1[tid]; u < End1[tid]; u++) {
                 dotProductFunction(
                         RowPtr[u + 1] - RowPtr[u],
@@ -220,7 +252,7 @@ void spmv_parallel_balanced2_Selected(
                         Matrix_Val + RowPtr[u]*size, Vector_Val_X,Vector_Val_Y+u*size,way);
             }
         }
-        else if (Yid[tid] != -1 && Apinter[tid] <= 1) {
+        else if (Yid[tid] != -1 && label[tid] == 0) {
 
             dotProductFunction(
                     End2[tid] - Start2[tid],

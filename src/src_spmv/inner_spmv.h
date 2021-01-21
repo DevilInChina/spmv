@@ -114,9 +114,15 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
                                   const BASIC_INT_TYPE *ColIdx,
                                   const void *Matrix_Val
 );
+
+void balancedHandleDestroy(spmv_Handle_t this_handle);
+
+void balanced2HandleDestroy(spmv_Handle_t this_handle);
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
 void csr5HandleDestory(spmv_Handle_t handle);
 
 void numaHandleDestory(spmv_Handle_t handle);

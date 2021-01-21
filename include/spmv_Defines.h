@@ -63,14 +63,7 @@ typedef struct spmv_Handle {
 
 
     ///------balanced balanced2------///
-    BASIC_INT_TYPE* csrSplitter;
-    BASIC_INT_TYPE* Yid;
-    BASIC_INT_TYPE* Apinter;
-    BASIC_INT_TYPE* Start1;
-    BASIC_INT_TYPE* End1;
-    BASIC_INT_TYPE* Start2;
-    BASIC_INT_TYPE* End2;
-    BASIC_INT_TYPE* Bpinter;
+
     ///------balanced balanced2------///
 
 

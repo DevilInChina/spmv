@@ -5,6 +5,16 @@
 #include "inner_spmv.h"
 #include <math.h>
 
+void balancedHandleDestroy(spmv_Handle_t this_handle){
+    if(this_handle){
+        if(this_handle->extraHandle && this_handle->spmvMethod==Method_Balanced){
+            free(this_handle->extraHandle);
+            this_handle->extraHandle = NULL;
+        }
+    }
+
+}
+
 int binary_search_right_boundary_kernel(const int *row_pointer,
                                         const int  key_input,
                                         const int  size)
@@ -62,7 +72,7 @@ void parallel_balanced_get_handle(
     //int *csrSplitter_normal = (int *)malloc((nthreads+1) * sizeof(int));
     init_csrSplitter_balanced((int)nthreads,nnzR,m,RowPtr,csrSplitter);
 
-    (handle)->csrSplitter = csrSplitter;
+    (handle)->extraHandle = csrSplitter;
 
 }
 
@@ -80,7 +90,7 @@ void spmv_parallel_balanced_Selected(
     VECTORIZED_WAY way = handle->vectorizedWay;
     dot_product_function dotProductFunction = inner_basic_GetDotProduct(size);
 
-    const int *csrSplitter = handle->csrSplitter;
+    const int *csrSplitter = handle->extraHandle;
     const BASIC_SIZE_TYPE nthreads = handle->nthreads;
     {
 #pragma omp parallel for
