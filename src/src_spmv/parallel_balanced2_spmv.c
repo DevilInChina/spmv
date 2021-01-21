@@ -6,24 +6,17 @@
 #include <string.h>
 #include <stdio.h>
 
-void init_csrSplitter_balanced2(int nthreads, int nnzR,
-                                int m, const BASIC_INT_TYPE *RowPtr, BASIC_INT_TYPE *csrSplitter) {
-    int stridennz = (nnzR + nthreads - 1) / nthreads;
+void init_csrSplitter_balanced2(int nthreads,int nnzR,
+                                int m,const BASIC_INT_TYPE*RowPtr,BASIC_INT_TYPE *csrSplitter){
+    int stridennz = (nnzR+nthreads-1) /  nthreads;
 
-    csrSplitter[0] = 0;
-    for (int tid = 1; tid <= nthreads; tid++) {
+    for (int tid = 0; tid <= nthreads; tid++) {
         // compute partition boundaries by partition of size stride
         int boundary = tid * stridennz;
         // clamp partition boundaries to [0, nnzR]
         boundary = boundary > nnzR ? nnzR : boundary;
         // binary search
-        int spl = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
-        if (spl == csrSplitter[tid - 1]) {
-            spl = m > (spl + 1) ? (spl + 1) : m;
-            csrSplitter[tid] = spl;
-        } else {
-            csrSplitter[tid] = spl;
-        }
+        csrSplitter[tid] = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
     }
 }
 
@@ -81,11 +74,14 @@ void parallel_balanced2_get_handle(
     }
 
     //行平均用在多行上
-    int sto = nthreads > nnzR ? nthreads : nnzR;
-    int *Start1 = (int *) malloc(sizeof(int) * sto);
-    memset(Start1, 0, sizeof(int) * sto);
-    int *End1 = (int *) malloc(sizeof(int) * sto);
-    memset(End1, 0, sizeof(int) * sto);
+    //int sto = nthreads > nnzR ? nthreads : nnzR;
+    int *Start1 = (int *) malloc(sizeof(int) * nthreads);
+    memset(Start1, 0, sizeof(int) * nthreads);
+    int *End1 = (int *) malloc(sizeof(int) * nthreads);
+    memset(End1, 0, sizeof(int) * nthreads);
+    int *label = (int *) malloc(sizeof(int) * nthreads);
+    memset(label, 0, sizeof(int) * nthreads);
+
     int start1, search1 = 0;
     for (int tid = 0; tid < nthreads; tid++) {
         if (Apinter[tid] == 0) {
@@ -95,36 +91,41 @@ void parallel_balanced2_get_handle(
             }
         }
         if (search1 == 1 && Apinter[tid] != 0) {
-            int nntz = ceil((double) Apinter[tid] / (double) (tid - start1 + 1));
+            int nntz = floor((double ) Apinter[tid] / (double) (tid - start1 + 1));
+            if (nntz != 0) {
+                for (int i = start1; i <= tid; i++) {
+                    label[i] = i;
+                }
+            }
             int mntz = Apinter[tid] - (nntz * (tid - start1));
             //start and end
-            int cur = start1;
-            Start1[cur] = csrSplitter[tid];
-            End1[cur] = Start1[cur] + nntz;
+            int n = start1;
+            Start1[n] = csrSplitter[tid];
+            End1[n] = Start1[n] + nntz;
             //printf("start1a[%d] = %d, end1a[%d] = %d\n",n,Start1[n],n, End1[n]);
-            for (cur = start1 + 1; cur < tid; cur++) {
-                Start1[cur] = End1[cur - 1];
-                End1[cur] = Start1[cur] + nntz;
+            for (int p = start1 + 1; p <= tid; p++) {
+                if (p == tid) {
+                    Start1[p] = End1[p - 1];
+                    End1[p] = Start1[p] + mntz;
+                } else {
+                    Start1[p] = End1[p - 1];
+                    End1[p] = Start1[p] + nntz;
+                }
                 //printf("start1b[%d] = %d, end1b[%d] = %d\n",n,Start1[n],n, End1[n]);
             }
-            if (cur == tid) {
-                Start1[cur] = End1[cur - 1];
-                End1[cur] = Start1[cur] + mntz;
-                //printf("start1c[%d] = %d, end1c[%d] = %d\n",n,Start1[n],n, End1[n]);
-            }
-            //printf("start1c[%d] = %d, end1c[%d] = %d\n",n,Start1[n],n, End1[n]);
-            for (int j = start1; j <= tid - 1; j++) {
-                Apinter[j] = nntz;
-            }
-            Apinter[tid] = mntz;
             search1 = 0;
         }
     }
 
-    int *Start2 = (int *) malloc(sizeof(int) * sto);
-    memset(Start2, 0, sizeof(int) * sto);
-    int *End2 = (int *) malloc(sizeof(int) * sto);
-    memset(End2, 0, sizeof(int) * sto);
+    //非零元平均用在一行
+    float *Ypartialsum = (float *) malloc(sizeof(float) * nthreads);
+    memset(Ypartialsum, 0, sizeof(float) * nthreads);
+    float *Ysum = (float *) malloc(sizeof(float) * nthreads);
+    memset(Ysum, 0, sizeof(float) * nthreads);
+    int *Start2 = (int *) malloc(sizeof(int) * nthreads);
+    memset(Start2, 0, sizeof(int) * nthreads);
+    int *End2 = (int *) malloc(sizeof(int) * nthreads);
+    memset(End2, 0, sizeof(int) * nthreads);
     int start2, search2 = 0;
     for (int tid = 0; tid < nthreads; tid++) {
         if (Bpinter[tid] == 0) {
@@ -134,7 +135,7 @@ void parallel_balanced2_get_handle(
             }
         }
         if (search2 == 1 && Bpinter[tid] != 0) {
-            int nntz2 = ceil((double) Bpinter[tid] / (double) (tid - start2 + 1));
+            int nntz2 = ceil((float) Bpinter[tid] / (float) (tid - start2 + 1));
             int mntz2 = Bpinter[tid] - (nntz2 * (tid - start2));
             //start and end
             int n = start2;

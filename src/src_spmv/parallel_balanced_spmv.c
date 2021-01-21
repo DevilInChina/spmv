@@ -28,19 +28,28 @@ int binary_search_right_boundary_kernel(const int *row_pointer,
 
     return start;
 }
-void init_csrSplitter_balanced(int nthreads,int nnzR,
-                      int m,const BASIC_INT_TYPE*RowPtr,BASIC_INT_TYPE *csrSplitter){
-    int stridennz = (nnzR+nthreads-1) /  nthreads;
 
-    for (int tid = 0; tid <= nthreads; tid++) {
+void init_csrSplitter_balanced(int nthreads, int nnzR,
+                               int m, const BASIC_INT_TYPE *RowPtr, BASIC_INT_TYPE *csrSplitter) {
+    int stridennz = (nnzR + nthreads - 1) / nthreads;
+
+    csrSplitter[0] = 0;
+    for (int tid = 1; tid <= nthreads; tid++) {
         // compute partition boundaries by partition of size stride
         int boundary = tid * stridennz;
         // clamp partition boundaries to [0, nnzR]
         boundary = boundary > nnzR ? nnzR : boundary;
         // binary search
-        csrSplitter[tid] = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
+        int spl = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
+        if (spl == csrSplitter[tid - 1]) {
+            spl = m > (spl + 1) ? (spl + 1) : m;
+            csrSplitter[tid] = spl;
+        } else {
+            csrSplitter[tid] = spl;
+        }
     }
 }
+
 void parallel_balanced_get_handle(
         spmv_Handle_t handle,
         BASIC_INT_TYPE m,

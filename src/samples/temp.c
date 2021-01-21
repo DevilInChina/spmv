@@ -41,27 +41,27 @@ int main(int argc, char **argv) {
     mmio_info(&m, &n, &nnzR, &isSymmetric, filename);
     int *RowPtr = (int *) malloc((m + 1) * sizeof(int));
     int *ColIdx = (int *) malloc(nnzR * sizeof(int));
-    float *Matrix_Val = (float *) malloc(nnzR * sizeof(float));
-    mmio_data(RowPtr, ColIdx, Matrix_Val, filename);
-    //for (int i = 0; i < nnzR; i++)
-    //  Matrix_Val[i] = 1;
+    float *Val = (float *) malloc(nnzR * sizeof(float));
+    mmio_data(RowPtr, ColIdx, Val, filename);
+    for (int i = 0; i < nnzR; i++)
+        Val[i] = 1;
     printf("The order of the rating matrix R is %i by %i, #nonzeros = %i\n", m, n, nnzR);
 
     //create X, Y,Y_golden
-    float *Vector_Val_X = (float *) malloc(sizeof(float) * (n + 1));
-    float *Vector_Val_Y = (float *) malloc(sizeof(float) * (m + 1));
+    float *X = (float *) malloc(sizeof(float) * (n + 1));
+    float *Y = (float *) malloc(sizeof(float) * (m + 1));
     float *Y_golden = (float *) malloc(sizeof(float) * (m + 1));
 
-    memset(Vector_Val_X, 0, sizeof(float) * (n + 1));
-    memset(Vector_Val_Y, 0, sizeof(float) * (m + 1));
+    memset(X, 0, sizeof(float) * (n + 1));
+    memset(Y, 0, sizeof(float) * (m + 1));
     memset(Y_golden, 0, sizeof(float) * (m + 1));
 
     for (int i = 0; i < n; i++)
-        Vector_Val_X[i] = rand() % 8 * 0.125;
+        X[i] = 1;
 
     for (int i = 0; i < m; i++)
         for (int j = RowPtr[i]; j < RowPtr[i + 1]; j++)
-            Y_golden[i] += Matrix_Val[j] * Vector_Val_X[ColIdx[j]];
+            Y_golden[i] += Val[j] * X[ColIdx[j]];
 
     int nthreads = atoi(argv[2]);
     omp_set_num_threads(nthreads);
@@ -72,34 +72,19 @@ int main(int argc, char **argv) {
 
     // find balanced points
     int *csrSplitter = (int *) malloc((nthreads + 1) * sizeof(int));
-    int stridennz = ceil((double) nnzR / (double) nthreads);
+    int stridennz = ceil((float) nnzR / (float) nthreads);
 
+#pragma omp parallel for
     for (int tid = 0; tid <= nthreads; tid++) {
         // compute partition boundaries by partition of size stride
-        int boundary = tid * stridennz;
+        int boundary_yid = tid * stridennz;
         // clamp partition boundaries to [0, nnzR]
-        boundary = boundary > nnzR ? nnzR : boundary;
+        boundary_yid = boundary_yid > nnzR ? nnzR : boundary_yid;
         // binary search
-        csrSplitter[tid] = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
+        csrSplitter[tid] = binary_search_right_boundary_kernel(RowPtr, boundary_yid, m + 1) - 1;
+        //printf("csrSplitter[%d] is %d\n", tid, csrSplitter[tid]);
 
     }
-    csrSplitter[0] = 0;
-    for (int tid = 1; tid <= nthreads; tid++) {
-        // compute partition boundaries by partition of size stride
-        int boundary = tid * stridennz;
-        // clamp partition boundaries to [0, nnzR]
-        boundary = boundary > nnzR ? nnzR : boundary;
-        // binary search
-        int spl = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
-        if (spl == csrSplitter[tid - 1]) {
-            spl = m > (spl + 1) ? (spl + 1) : m;
-            csrSplitter[tid] = spl;
-        } else {
-            csrSplitter[tid] = spl;
-        }
-    }
-
-
 
     int *Apinter = (int *) malloc(nthreads * sizeof(int));
     memset(Apinter, 0, nthreads * sizeof(int));
@@ -142,11 +127,14 @@ int main(int argc, char **argv) {
     }
 
     //行平均用在多行上
-    int sto = nthreads > nnzR ? nthreads : nnzR;
-    int *Start1 = (int *) malloc(sizeof(int) * sto);
-    memset(Start1, 0, sizeof(int) * sto);
-    int *End1 = (int *) malloc(sizeof(int) * sto);
-    memset(End1, 0, sizeof(int) * sto);
+    //int sto = nthreads > nnzR ? nthreads : nnzR;
+    int *Start1 = (int *) malloc(sizeof(int) * nthreads);
+    memset(Start1, 0, sizeof(int) * nthreads);
+    int *End1 = (int *) malloc(sizeof(int) * nthreads);
+    memset(End1, 0, sizeof(int) * nthreads);
+    int *label = (int *) malloc(sizeof(int) * nthreads);
+    memset(label, 0, sizeof(int) * nthreads);
+
     int start1, search1 = 0;
     for (int tid = 0; tid < nthreads; tid++) {
         if (Apinter[tid] == 0) {
@@ -156,40 +144,41 @@ int main(int argc, char **argv) {
             }
         }
         if (search1 == 1 && Apinter[tid] != 0) {
-            int nntz = ceil((double) Apinter[tid] / (double) (tid - start1 + 1));
+            int nntz = floor((float) Apinter[tid] / (float) (tid - start1 + 1));
+            if (nntz != 0) {
+                for (int i = start1; i <= tid; i++) {
+                    label[i] = i;
+                }
+            }
             int mntz = Apinter[tid] - (nntz * (tid - start1));
             //start and end
-            int cur = start1;
-            Start1[cur] = csrSplitter[tid];
-            End1[cur] = Start1[cur] + nntz;
+            int n = start1;
+            Start1[n] = csrSplitter[tid];
+            End1[n] = Start1[n] + nntz;
             //printf("start1a[%d] = %d, end1a[%d] = %d\n",n,Start1[n],n, End1[n]);
-            for (cur = start1 + 1; cur < tid; cur++) {
-                Start1[cur] = End1[cur - 1];
-                End1[cur] = Start1[cur] + nntz;
+            for (int p = start1 + 1; p <= tid; p++) {
+                if (p == tid) {
+                    Start1[p] = End1[p - 1];
+                    End1[p] = Start1[p] + mntz;
+                } else {
+                    Start1[p] = End1[p - 1];
+                    End1[p] = Start1[p] + nntz;
+                }
                 //printf("start1b[%d] = %d, end1b[%d] = %d\n",n,Start1[n],n, End1[n]);
             }
-            if (cur == tid) {
-                Start1[cur] = End1[cur - 1];
-                End1[cur] = Start1[cur] + mntz;
-                //printf("start1c[%d] = %d, end1c[%d] = %d\n",n,Start1[n],n, End1[n]);
-            }
-            //printf("start1c[%d] = %d, end1c[%d] = %d\n",n,Start1[n],n, End1[n]);
-            for (int j = start1; j <= tid - 1; j++) {
-                Apinter[j] = nntz;
-            }
-            Apinter[tid] = mntz;
             search1 = 0;
         }
     }
+
     //非零元平均用在一行
     float *Ypartialsum = (float *) malloc(sizeof(float) * nthreads);
     memset(Ypartialsum, 0, sizeof(float) * nthreads);
     float *Ysum = (float *) malloc(sizeof(float) * nthreads);
     memset(Ysum, 0, sizeof(float) * nthreads);
-    int *Start2 = (int *) malloc(sizeof(int) * sto);
-    memset(Start2, 0, sizeof(int) * sto);
-    int *End2 = (int *) malloc(sizeof(int) * sto);
-    memset(End2, 0, sizeof(int) * sto);
+    int *Start2 = (int *) malloc(sizeof(int) * nthreads);
+    memset(Start2, 0, sizeof(int) * nthreads);
+    int *End2 = (int *) malloc(sizeof(int) * nthreads);
+    memset(End2, 0, sizeof(int) * nthreads);
     int start2, search2 = 0;
     for (int tid = 0; tid < nthreads; tid++) {
         if (Bpinter[tid] == 0) {
@@ -199,7 +188,7 @@ int main(int argc, char **argv) {
             }
         }
         if (search2 == 1 && Bpinter[tid] != 0) {
-            int nntz2 = ceil((double) Bpinter[tid] / (double) (tid - start2 + 1));
+            int nntz2 = ceil((float) Bpinter[tid] / (float) (tid - start2 + 1));
             int mntz2 = Bpinter[tid] - (nntz2 * (tid - start2));
             //start and end
             int n = start2;
@@ -227,50 +216,39 @@ int main(int argc, char **argv) {
 
     struct timeval t1, t2;
     int currentiter = 0;
-
-
-    dot_product_function dotProductFunction = inner_basic_GetDotProduct(sizeof(VALUE_TYPE));
-    VECTORIZED_WAY way = VECTOR_AVX2;
-//-----------------------------------parallel_omp_balanced_Yid-------------------------------------
     gettimeofday(&t1, NULL);
     for (currentiter = 0; currentiter < iter; currentiter++) {
-
-        for (int tid = 0; tid < nthreads; tid++) {
-            if (Yid[tid] != -1) {
-                Vector_Val_Y[Yid[tid]] = 0;
-                Ysum[tid] = 0;
-            }
-        }
+#pragma omp parallel for
+        for (int tid = 0; tid < nthreads; tid++)
+            Y[Yid[tid]] = 0;
 #pragma omp parallel for
         for (int tid = 0; tid < nthreads; tid++) {
             if (Yid[tid] == -1) {
                 for (int u = csrSplitter[tid]; u < csrSplitter[tid + 1]; u++) {
-                    dotProductFunction(
-                            RowPtr[u + 1] - RowPtr[u],
-                            ColIdx + RowPtr[u],
-                            Matrix_Val + RowPtr[u], Vector_Val_X, Vector_Val_Y + u, way
-                    );
+                    float sum = 0;
+                    for (int j = RowPtr[u]; j < RowPtr[u + 1]; j++) {
+                        sum += Val[j] * X[ColIdx[j]];
+                    }
+                    Y[u] = sum;
                 }
-            } else if (Yid[tid] != -1 && Apinter[tid] > 1) {
-                for (int u = Start1[tid]; u < End1[tid]; u++) {
-                    dotProductFunction(
-                            RowPtr[u + 1] - RowPtr[u],
-                            ColIdx + RowPtr[u],
-                            Matrix_Val + RowPtr[u], Vector_Val_X, Vector_Val_Y + u, way
-                    );
-                }
-            } else if (Yid[tid] != -1 && Apinter[tid] <= 1) {
-                dotProductFunction(
-                        End2[tid] - Start2[tid],
-                        ColIdx + Start2[tid],
-                        Matrix_Val + Start2[tid], Vector_Val_X, Ypartialsum + tid, way
-                );
-                Ysum[tid] += Ypartialsum[tid];
             }
-        }
-        for (int tid = 0; tid < nthreads; tid++) {
-            if (Yid[tid] != -1) {
-                Vector_Val_Y[Yid[tid]] += Ysum[tid];
+            if (label[tid] != 0) {
+                for (int u = Start1[tid]; u < End1[tid]; u++) {
+                    float sum = 0;
+                    for (int j = RowPtr[u]; j < RowPtr[u + 1]; j++) {
+                        sum += Val[j] * X[ColIdx[j]];
+                    }
+                    Y[u] = sum;
+                }
+            }
+            if (Yid[tid] != -1 && label[tid] == 0) {
+                Ysum[tid] = 0;
+                Ypartialsum[tid] = 0;
+                for (int j = Start2[tid]; j < End2[tid]; j++) {
+                    Ypartialsum[tid] += Val[j] * X[ColIdx[j]];
+                }
+                Ysum[tid] += Ypartialsum[tid];
+                Y[Yid[tid]] += Ysum[tid];
             }
         }
     }
@@ -280,8 +258,11 @@ int main(int argc, char **argv) {
     float GFlops_parallel_omp_balanced_Yid = 2 * nnzR / time_overall_parallel_omp_balanced_Yid / pow(10, 6);
     int errorcount_parallel_omp_balanced_Yid = 0;
     for (int i = 0; i < m; i++)
-        if (Vector_Val_Y[i] != Y_golden[i])
+        if (Y[i] != Y_golden[i]) {
+            printf("Y[%d] = %f\n", i, Y[i]);
+            printf("Y_golden[%d] = %f\n", i, Y_golden[i]);
             errorcount_parallel_omp_balanced_Yid++;
+        }
 
     //printf("-=-=-=-=-=-=-=-=-=-=-=-=-parallel_omp-=-=-=--=-=-=-=-=-=-=-=-\n");
     //printf("time_overall_parallel = %f\n", time_overall_parallel);
@@ -289,5 +270,4 @@ int main(int argc, char **argv) {
     printf("GFlops_parallel_omp_balanced_Yid = %f\n", GFlops_parallel_omp_balanced_Yid);
     //printf("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n\n");
     //free(Y);//加一
-//-----------------------------------------------------------------------
 }

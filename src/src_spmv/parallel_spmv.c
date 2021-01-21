@@ -17,7 +17,10 @@ void spmv_parallel_Selected(const spmv_Handle_t handle,
 #pragma omp parallel for
     for (int i = 0; i < m; i++) {
         dotProductFunction(RowPtr[i + 1] - RowPtr[i],
-                           ColIdx + RowPtr[i], Matrix_Val + RowPtr[i] * size, Vector_Val_X, Vector_Val_Y + i * size,
+                           ColIdx + RowPtr[i],
+                           Matrix_Val + RowPtr[i] * size,
+                           Vector_Val_X,
+                           Vector_Val_Y + i * size,
                            vectorizedWay);
     }
 }
