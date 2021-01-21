@@ -5,52 +5,59 @@
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
-void init_csrSplitter_balanced2(int nthreads,int nnzR,
-                               int m,const BASIC_INT_TYPE*RowPtr,BASIC_INT_TYPE *csrSplitter){
-    int stridennz = (nnzR+nthreads-1) /  nthreads;
 
-    for (int tid = 0; tid <= nthreads; tid++) {
+void init_csrSplitter_balanced2(int nthreads, int nnzR,
+                                int m, const BASIC_INT_TYPE *RowPtr, BASIC_INT_TYPE *csrSplitter) {
+    int stridennz = (nnzR + nthreads - 1) / nthreads;
+
+    csrSplitter[0] = 0;
+    for (int tid = 1; tid <= nthreads; tid++) {
         // compute partition boundaries by partition of size stride
         int boundary = tid * stridennz;
         // clamp partition boundaries to [0, nnzR]
         boundary = boundary > nnzR ? nnzR : boundary;
         // binary search
-        csrSplitter[tid] = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
+        int spl = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
+        if (spl == csrSplitter[tid - 1]) {
+            spl = m > (spl + 1) ? (spl + 1) : m;
+            csrSplitter[tid] = spl;
+        } else {
+            csrSplitter[tid] = spl;
+        }
     }
 }
+
 void parallel_balanced2_get_handle(
         spmv_Handle_t handle,
         BASIC_INT_TYPE m,
-        const BASIC_INT_TYPE*RowPtr,
+        const BASIC_INT_TYPE *RowPtr,
         BASIC_INT_TYPE nnzR
 ) {
 
-    (handle)->csrSplitter = malloc(sizeof(int )*(handle->nthreads+1));
-    init_csrSplitter_balanced2((int)(handle->nthreads),nnzR,m,RowPtr,handle->csrSplitter);
+    (handle)->csrSplitter = malloc(sizeof(int) * (handle->nthreads + 1));
+    init_csrSplitter_balanced2((int) (handle->nthreads), nnzR, m, RowPtr, handle->csrSplitter);
 
     int *csrSplitter = (handle)->csrSplitter;
     BASIC_SIZE_TYPE nthreads = handle->nthreads;
 
     int *Apinter = (int *) malloc(nthreads * sizeof(int));
     memset(Apinter, 0, nthreads * sizeof(int));
+    //每个线程执行行数
+    for (int tid = 0; tid < nthreads; tid++) {
+        Apinter[tid] = csrSplitter[tid + 1] - csrSplitter[tid];
+        //printf("A[%d] is %d\n", tid, Apinter[tid]);
+    }
 
     int *Bpinter = (int *) malloc(nthreads * sizeof(int));
     memset(Bpinter, 0, nthreads * sizeof(int));
     //每个线程执行非零元数
-
-    //每个线程执行行数
-    for (int tid = 0; tid < nthreads; tid++) {
-        Apinter[tid] = csrSplitter[tid + 1] - csrSplitter[tid];
-        printf("A[%d] is %d\n", tid, Apinter[tid]);
-    }
-
     for (int tid = 0; tid < nthreads; tid++) {
         int num = 0;
         for (int u = csrSplitter[tid]; u < csrSplitter[tid + 1]; u++) {
             num += RowPtr[u + 1] - RowPtr[u];
         }
         Bpinter[tid] = num;
-        printf("B [%d]is %d\n",tid, Bpinter[tid]);
+        //printf("B [%d]is %d\n",tid, Bpinter[tid]);
     }
 
     int *Yid = (int *) malloc(sizeof(int) * nthreads);
@@ -74,7 +81,7 @@ void parallel_balanced2_get_handle(
     }
 
     //行平均用在多行上
-    BASIC_SIZE_TYPE sto = nthreads > nnzR ? nthreads : nnzR;
+    int sto = nthreads > nnzR ? nthreads : nnzR;
     int *Start1 = (int *) malloc(sizeof(int) * sto);
     memset(Start1, 0, sizeof(int) * sto);
     int *End1 = (int *) malloc(sizeof(int) * sto);
@@ -91,18 +98,18 @@ void parallel_balanced2_get_handle(
             int nntz = ceil((double) Apinter[tid] / (double) (tid - start1 + 1));
             int mntz = Apinter[tid] - (nntz * (tid - start1));
             //start and end
-            int n = start1;
-            Start1[n] = csrSplitter[tid];
-            End1[n] = Start1[n] + nntz;
+            int cur = start1;
+            Start1[cur] = csrSplitter[tid];
+            End1[cur] = Start1[cur] + nntz;
             //printf("start1a[%d] = %d, end1a[%d] = %d\n",n,Start1[n],n, End1[n]);
-            for (n = start1 + 1; n < tid; n++) {
-                Start1[n] = End1[n - 1];
-                End1[n] = Start1[n] + nntz;
+            for (cur = start1 + 1; cur < tid; cur++) {
+                Start1[cur] = End1[cur - 1];
+                End1[cur] = Start1[cur] + nntz;
                 //printf("start1b[%d] = %d, end1b[%d] = %d\n",n,Start1[n],n, End1[n]);
             }
-            if (n == tid) {
-                Start1[n] = End1[n - 1];
-                End1[n] = Start1[n] + mntz;
+            if (cur == tid) {
+                Start1[cur] = End1[cur - 1];
+                End1[cur] = Start1[cur] + mntz;
                 //printf("start1c[%d] = %d, end1c[%d] = %d\n",n,Start1[n],n, End1[n]);
             }
             //printf("start1c[%d] = %d, end1c[%d] = %d\n",n,Start1[n],n, End1[n]);
@@ -166,11 +173,11 @@ void parallel_balanced2_get_handle(
 void spmv_parallel_balanced2_Selected(
         const spmv_Handle_t handle,
         BASIC_INT_TYPE m,
-        const BASIC_INT_TYPE* RowPtr,
-        const BASIC_INT_TYPE* ColIdx,
-        const void* Matrix_Val,
-        const void* Vector_Val_X,
-        void*       Vector_Val_Y
+        const BASIC_INT_TYPE *RowPtr,
+        const BASIC_INT_TYPE *ColIdx,
+        const void *Matrix_Val,
+        const void *Vector_Val_X,
+        void *Vector_Val_Y
 ) {
     int nthreads = handle->nthreads;
     int *Yid = handle->Yid;
@@ -188,11 +195,11 @@ void spmv_parallel_balanced2_Selected(
 
     void *Ysum = malloc(size * nthreads);
     void *Ypartialsum = malloc(size * nthreads);
+    memset(Ysum,0,size*nthreads);
+    memset(Ypartialsum,0,size*nthreads);
     for (int tid = 0; tid < nthreads; tid++) {
         if(Yid[tid]!=-1) {
-            CONVERT_EQU(Ysum+tid*size,size,0);
             CONVERT_EQU(Vector_Val_Y+Yid[tid]*size,size,0);
-            //CONVERT_EQU(Vector_Val_Y+Yid[tid]*size,size,0);
         }
     }
 #pragma omp parallel for
@@ -204,18 +211,20 @@ void spmv_parallel_balanced2_Selected(
                                    Matrix_Val + RowPtr[u]*size, Vector_Val_X,Vector_Val_Y+u*size,way);
             }
         }
-        else if (Yid[tid] != -1 && Apinter[tid] > 1) {/// not in usage
+        else if (Yid[tid] != -1 && Apinter[tid] > 1) {
             for (int u = Start1[tid]; u < End1[tid]; u++) {
-                dotProductFunction(RowPtr[u + 1] - RowPtr[u],
-                                   ColIdx + RowPtr[u],
-                                   Matrix_Val + RowPtr[u]*size, Vector_Val_X,Vector_Val_Y+u*size,way);
+                dotProductFunction(
+                        RowPtr[u + 1] - RowPtr[u],
+                        ColIdx + RowPtr[u],
+                        Matrix_Val + RowPtr[u]*size, Vector_Val_X,Vector_Val_Y+u*size,way);
             }
         }
         else if (Yid[tid] != -1 && Apinter[tid] <= 1) {
 
-            dotProductFunction(End2[tid] - Start2[tid],
-                               ColIdx + Start2[tid], Matrix_Val + Start2[tid]*size, Vector_Val_X,
-                               Ypartialsum+tid*size,way
+            dotProductFunction(
+                    End2[tid] - Start2[tid],
+                    ColIdx + Start2[tid], Matrix_Val + Start2[tid]*size, Vector_Val_X,
+                    Ypartialsum+tid*size,way
             );
             //((double *)Ysum)[tid] += ((double *)Ypartialsum)[tid];
             CONVERT_ADDEQU(Ysum+tid*size,size,Ypartialsum+tid*size);
@@ -228,6 +237,8 @@ void spmv_parallel_balanced2_Selected(
             CONVERT_ADDEQU(Vector_Val_Y+Yid[tid]*size,size,Ysum+tid*size);
         }
     }
+
+
     free(Ysum);
     free(Ypartialsum);
 }

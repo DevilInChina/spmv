@@ -69,6 +69,7 @@ target_link_libraries(compare mv)
 
 add_executable(temp ${PROJECT_SOURCE_DIR}/src/samples/temp.c)
 target_compile_definitions(temp PRIVATE VALUE_TYPE=float)
+target_link_libraries(temp mv)
 #[[
 add_executable(serial_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
 target_compile_options(serial_spmv PRIVATE -D TEST_METHOD=0)

@@ -2,7 +2,7 @@
 #define _MMIO_HIGHLEVEL_
 
 #ifndef VALUE_TYPE
-#define VALUE_TYPE double
+#define VALUE_TYPE float
 #endif
 
 #ifndef MAT_PTR_TYPE

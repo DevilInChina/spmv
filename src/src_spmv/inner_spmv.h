@@ -50,6 +50,11 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
 int binary_search_right_boundary_kernel(const int *row_pointer,
                                         const int  key_input,
                                         const int  size);
+void init_csrSplitter_balanced2(int nthreads, int nnzR,
+                                int m, const BASIC_INT_TYPE *RowPtr, BASIC_INT_TYPE *csrSplitter);
+
+void init_csrSplitter_balanced(int nthreads, int nnzR,
+                                int m, const BASIC_INT_TYPE *RowPtr, BASIC_INT_TYPE *csrSplitter);
 
 void handle_init_common_parameters(spmv_Handle_t this_handle,
                                    BASIC_SIZE_TYPE nthreads,
