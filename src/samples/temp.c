@@ -169,12 +169,13 @@ int main(int argc, char **argv) {
             search1 = 0;
         }
     }
-
+    dot_product_function dotProductFunction = inner_basic_GetDotProduct(sizeof(VALUE_TYPE));
     //非零元平均用在一行
-    float *Ypartialsum = (float *) malloc(sizeof(float) * nthreads);
-    memset(Ypartialsum, 0, sizeof(float) * nthreads);
-    float *Ysum = (float *) malloc(sizeof(float) * nthreads);
-    memset(Ysum, 0, sizeof(float) * nthreads);
+    VALUE_TYPE *Ypartialsum = (VALUE_TYPE *) malloc(sizeof(VALUE_TYPE) * nthreads);
+    memset(Ypartialsum, 0, sizeof(VALUE_TYPE) * nthreads);
+    VALUE_TYPE *Ysum = (VALUE_TYPE *) malloc(sizeof(VALUE_TYPE) * nthreads);
+    memset(Ysum, 0, sizeof(VALUE_TYPE) * nthreads);
+
     int *Start2 = (int *) malloc(sizeof(int) * nthreads);
     memset(Start2, 0, sizeof(int) * nthreads);
     int *End2 = (int *) malloc(sizeof(int) * nthreads);
@@ -188,7 +189,7 @@ int main(int argc, char **argv) {
             }
         }
         if (search2 == 1 && Bpinter[tid] != 0) {
-            int nntz2 = ceil((float) Bpinter[tid] / (float) (tid - start2 + 1));
+            int nntz2 = ceil((double ) Bpinter[tid] / (double ) (tid - start2 + 1));
             int mntz2 = Bpinter[tid] - (nntz2 * (tid - start2));
             //start and end
             int n = start2;
@@ -217,38 +218,51 @@ int main(int argc, char **argv) {
     struct timeval t1, t2;
     int currentiter = 0;
     gettimeofday(&t1, NULL);
+    const int way = VECTOR_NONE;
     for (currentiter = 0; currentiter < iter; currentiter++) {
-#pragma omp parallel for
-        for (int tid = 0; tid < nthreads; tid++)
-            Y[Yid[tid]] = 0;
+
+        for (int tid = 0; tid < nthreads; tid++) {
+            if (Yid[tid] != 0)
+                Y[Yid[tid]] = 0;
+            Ysum[tid] = 0;
+        }
 #pragma omp parallel for
         for (int tid = 0; tid < nthreads; tid++) {
             if (Yid[tid] == -1) {
                 for (int u = csrSplitter[tid]; u < csrSplitter[tid + 1]; u++) {
-                    float sum = 0;
-                    for (int j = RowPtr[u]; j < RowPtr[u + 1]; j++) {
-                        sum += Val[j] * X[ColIdx[j]];
-                    }
-                    Y[u] = sum;
+                    dotProductFunction(
+                            RowPtr[u + 1]- RowPtr[u],
+                            ColIdx+ RowPtr[u],
+                            Val+RowPtr[u],
+                            X,Y+u,way
+                    );
                 }
             }
-            if (label[tid] != 0) {
+            else if (label[tid] != 0) {
                 for (int u = Start1[tid]; u < End1[tid]; u++) {
-                    float sum = 0;
-                    for (int j = RowPtr[u]; j < RowPtr[u + 1]; j++) {
-                        sum += Val[j] * X[ColIdx[j]];
-                    }
-                    Y[u] = sum;
+
+                    dotProductFunction(
+                            RowPtr[u + 1]- RowPtr[u],
+                            ColIdx+ RowPtr[u],
+                            Val+RowPtr[u],
+                            X,Y+u,way
+                    );
                 }
             }
-            if (Yid[tid] != -1 && label[tid] == 0) {
-                Ysum[tid] = 0;
-                Ypartialsum[tid] = 0;
-                for (int j = Start2[tid]; j < End2[tid]; j++) {
-                    Ypartialsum[tid] += Val[j] * X[ColIdx[j]];
-                }
-                Ysum[tid] += Ypartialsum[tid];
-                Y[Yid[tid]] += Ysum[tid];
+            else if (Yid[tid] != -1 && label[tid] == 0) {
+                //Ysum[tid] = 0;
+                dotProductFunction(
+                        End2[tid] - Start2[tid],
+                        ColIdx + Start2[tid], Val + Start2[tid], X,
+                        Ypartialsum+tid,way
+                );
+                //((double *)Ysum)[tid] += ((double *)Ypartialsum)[tid];
+                Ysum[tid]+=Ypartialsum[tid];
+            }
+        }
+        for(int tid = 0 ; tid < nthreads ; ++tid){
+            if(Yid[tid]!=-1) {
+                Y[Yid[tid]]+=Ysum[tid];
             }
         }
     }
