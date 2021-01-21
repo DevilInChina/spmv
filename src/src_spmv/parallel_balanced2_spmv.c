@@ -5,7 +5,21 @@
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
+void init_csrSplitter_balanced2(int nthreads,int nnzR,
+                               int m,const BASIC_INT_TYPE*RowPtr,BASIC_INT_TYPE *csrSplitter){
+    int stridennz = (nnzR+nthreads-1) /  nthreads;
 
+    for (int tid = 0; tid <= nthreads; tid++) {
+        // compute partition boundaries by partition of size stride
+        int boundary = tid * stridennz;
+        // clamp partition boundaries to [0, nnzR]
+        boundary = boundary > nnzR ? nnzR : boundary;
+        // binary search
+        csrSplitter[tid] = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
+
+        printf("%d %d\n",nnzR,boundary);
+    }
+}
 void parallel_balanced2_get_handle(
         spmv_Handle_t handle,
         BASIC_INT_TYPE m,
@@ -13,20 +27,25 @@ void parallel_balanced2_get_handle(
         BASIC_INT_TYPE nnzR
 ) {
 
-    parallel_balanced_get_handle(handle, m, RowPtr, nnzR);
+    (handle)->csrSplitter = malloc(sizeof(int )*(handle->nthreads+1));
+    init_csrSplitter_balanced2((int)(handle->nthreads),nnzR,m,RowPtr,handle->csrSplitter);
+
     int *csrSplitter = (handle)->csrSplitter;
     BASIC_SIZE_TYPE nthreads = handle->nthreads;
+
     int *Apinter = (int *) malloc(nthreads * sizeof(int));
     memset(Apinter, 0, nthreads * sizeof(int));
+
+    int *Bpinter = (int *) malloc(nthreads * sizeof(int));
+    memset(Bpinter, 0, nthreads * sizeof(int));
+    //每个线程执行非零元数
+
     //每个线程执行行数
     for (int tid = 0; tid < nthreads; tid++) {
         Apinter[tid] = csrSplitter[tid + 1] - csrSplitter[tid];
         //printf("A[%d] is %d\n", tid, Apinter[tid]);
     }
 
-    int *Bpinter = (int *) malloc(nthreads * sizeof(int));
-    memset(Bpinter, 0, nthreads * sizeof(int));
-    //每个线程执行非零元数
     for (int tid = 0; tid < nthreads; tid++) {
         int num = 0;
         for (int u = csrSplitter[tid]; u < csrSplitter[tid + 1]; u++) {

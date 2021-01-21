@@ -47,6 +47,10 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
                                       const void*Matrix_Val
 ) ;
 
+int binary_search_right_boundary_kernel(const int *row_pointer,
+                                        const int  key_input,
+                                        const int  size);
+
 void handle_init_common_parameters(spmv_Handle_t this_handle,
                                    BASIC_SIZE_TYPE nthreads,
                                    SPMV_METHODS function,

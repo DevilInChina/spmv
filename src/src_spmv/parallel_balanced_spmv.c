@@ -28,20 +28,10 @@ int binary_search_right_boundary_kernel(const int *row_pointer,
 
     return start;
 }
-
-void parallel_balanced_get_handle(
-        spmv_Handle_t handle,
-        BASIC_INT_TYPE m,
-        const BASIC_INT_TYPE*RowPtr,
-        BASIC_INT_TYPE nnzR
-        ) {
-    BASIC_SIZE_TYPE nthreads = handle->nthreads;
-    int *csrSplitter = (int *) malloc((nthreads + 1) * sizeof(int));
-    //int *csrSplitter_normal = (int *)malloc((nthreads+1) * sizeof(int));
-
+void init_csrSplitter_balanced(int nthreads,int nnzR,
+                      int m,const BASIC_INT_TYPE*RowPtr,BASIC_INT_TYPE *csrSplitter){
     int stridennz = (nnzR+nthreads-1) /  nthreads;
 
-#pragma omp parallel for
     for (int tid = 0; tid <= nthreads; tid++) {
         // compute partition boundaries by partition of size stride
         int boundary = tid * stridennz;
@@ -50,6 +40,19 @@ void parallel_balanced_get_handle(
         // binary search
         csrSplitter[tid] = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
     }
+}
+void parallel_balanced_get_handle(
+        spmv_Handle_t handle,
+        BASIC_INT_TYPE m,
+        const BASIC_INT_TYPE*RowPtr,
+        BASIC_INT_TYPE nnzR
+        ) {
+    BASIC_SIZE_TYPE nthreads = handle->nthreads;
+
+    int *csrSplitter = (int *) malloc((nthreads + 1) * sizeof(int));
+    //int *csrSplitter_normal = (int *)malloc((nthreads+1) * sizeof(int));
+    init_csrSplitter_balanced((int)nthreads,nnzR,m,RowPtr,csrSplitter);
+
     (handle)->csrSplitter = csrSplitter;
 
 }
