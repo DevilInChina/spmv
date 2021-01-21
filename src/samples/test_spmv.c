@@ -38,7 +38,7 @@ void testForFunctions(const char *matrixName,
         omp_set_num_threads(thread);
         gettimeofday(&t1, NULL);
         spmv_create_handle_all_in_one(&handle, m, n, RowPtr, ColIdx, Matrix_Val,
-                                      threads_end, FUNC_WAY, sizeof(VALUE_TYPE), PRODUCT_WAY);
+                                      thread, FUNC_WAY, sizeof(VALUE_TYPE), PRODUCT_WAY);
         gettimeofday(&t2, NULL);
         double time =((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) ;
 
