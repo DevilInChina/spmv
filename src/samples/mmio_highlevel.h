@@ -489,6 +489,44 @@ int mmio_allinone(int *m, int *n, int *nnz, int *isSymmetric,
 
     return 0;
 }
+void matrix_transposition(const int           m,
+                          const int           n,
+                          const MAT_PTR_TYPE     nnz,
+                          const MAT_PTR_TYPE    *csrRowPtr,
+                          const int          *csrColIdx,
+                          const MAT_VAL_TYPE *csrVal,
+                          int          *cscRowIdx,
+                          MAT_PTR_TYPE    *cscColPtr,
+                          MAT_VAL_TYPE *cscVal)
+{
+    // histogram in column pointer
+    memset (cscColPtr, 0, sizeof(MAT_PTR_TYPE) * (n+1));
+    for (MAT_PTR_TYPE i = 0; i < nnz; i++)
+    {
+        cscColPtr[csrColIdx[i]]++;
+    }
+
+    // prefix-sum scan to get the column pointer
+    exclusive_scan(cscColPtr, n + 1);
+
+    MAT_PTR_TYPE *cscColIncr = (MAT_PTR_TYPE *)malloc(sizeof(MAT_PTR_TYPE) * (n+1));
+    memcpy (cscColIncr, cscColPtr, sizeof(MAT_PTR_TYPE) * (n+1));
+
+    // insert nnz to csc
+    for (int row = 0; row < m; row++)
+    {
+        for (MAT_PTR_TYPE j = csrRowPtr[row]; j < csrRowPtr[row+1]; j++)
+        {
+            int col = csrColIdx[j];
+
+            cscRowIdx[cscColIncr[col]] = row;
+            cscVal[cscColIncr[col]] = csrVal[j];
+            cscColIncr[col]++;
+        }
+    }
+
+    free (cscColIncr);
+}
 
 
 #endif

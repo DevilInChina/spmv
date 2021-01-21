@@ -177,6 +177,100 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
 
 }
 
+void inner_exclusive_scan(BASIC_INT_TYPE *input, int length) {
+    if (length == 0 || length == 1)
+        return;
+
+    BASIC_INT_TYPE old_val, new_val;
+
+    old_val = input[0];
+    input[0] = 0;
+    for (int i = 1; i < length; i++) {
+        new_val = input[i];
+        input[i] = old_val + input[i - 1];
+        old_val = new_val;
+    }
+}
+
+void inner_matrix_transposition_d(const int           m,
+                          const int           n,
+                          const BASIC_INT_TYPE     nnz,
+                          const BASIC_INT_TYPE    *csrRowPtr,
+                          const int          *csrColIdx,
+                          const double *csrVal,
+                          int          *cscRowIdx,
+                                BASIC_INT_TYPE    *cscColPtr,
+                          double *cscVal)
+{
+    // histogram in column pointer
+    memset (cscColPtr, 0, sizeof(BASIC_INT_TYPE) * (n+1));
+    for (BASIC_INT_TYPE i = 0; i < nnz; i++)
+    {
+        cscColPtr[csrColIdx[i]]++;
+    }
+
+    // prefix-sum scan to get the column pointer
+    inner_exclusive_scan(cscColPtr, n + 1);
+
+    BASIC_INT_TYPE *cscColIncr = (BASIC_INT_TYPE *)malloc(sizeof(BASIC_INT_TYPE) * (n+1));
+    memcpy (cscColIncr, cscColPtr, sizeof(BASIC_INT_TYPE) * (n+1));
+
+    // insert nnz to csc
+    for (int row = 0; row < m; row++)
+    {
+        for (BASIC_INT_TYPE j = csrRowPtr[row]; j < csrRowPtr[row+1]; j++)
+        {
+            int col = csrColIdx[j];
+
+            cscRowIdx[cscColIncr[col]] = row;
+            cscVal[cscColIncr[col]] = csrVal[j];
+            cscColIncr[col]++;
+        }
+    }
+
+    free (cscColIncr);
+}
+
+
+void inner_matrix_transposition_s(const int           m,
+                                  const int           n,
+                                  const BASIC_INT_TYPE     nnz,
+                                  const BASIC_INT_TYPE    *csrRowPtr,
+                                  const int          *csrColIdx,
+                                  const float *csrVal,
+                                  int          *cscRowIdx,
+                                  BASIC_INT_TYPE    *cscColPtr,
+                                  float *cscVal)
+{
+    // histogram in column pointer
+    memset (cscColPtr, 0, sizeof(BASIC_INT_TYPE) * (n+1));
+    for (BASIC_INT_TYPE i = 0; i < nnz; i++)
+    {
+        cscColPtr[csrColIdx[i]]++;
+    }
+
+    // prefix-sum scan to get the column pointer
+    inner_exclusive_scan(cscColPtr, n + 1);
+
+    BASIC_INT_TYPE *cscColIncr = (BASIC_INT_TYPE *)malloc(sizeof(BASIC_INT_TYPE) * (n+1));
+    memcpy (cscColIncr, cscColPtr, sizeof(BASIC_INT_TYPE) * (n+1));
+
+    // insert nnz to csc
+    for (int row = 0; row < m; row++)
+    {
+        for (BASIC_INT_TYPE j = csrRowPtr[row]; j < csrRowPtr[row+1]; j++)
+        {
+            int col = csrColIdx[j];
+
+            cscRowIdx[cscColIncr[col]] = row;
+            cscVal[cscColIncr[col]] = csrVal[j];
+            cscColIncr[col]++;
+        }
+    }
+
+    free (cscColIncr);
+}
+
 void spmv(const spmv_Handle_t handle,
           BASIC_INT_TYPE m,
           const BASIC_INT_TYPE* RowPtr,

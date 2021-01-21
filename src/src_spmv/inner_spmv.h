@@ -171,4 +171,33 @@ int lower_bound(const int *first,const int *last,int key);
 
 int upper_bound(const int *first,const int *last,int key);
 
+
+void inner_exclusive_scan(BASIC_INT_TYPE *input, int length);
+
+void inner_matrix_transposition_d(const int           m,
+                                  const int           n,
+                                  const BASIC_INT_TYPE     nnz,
+                                  const BASIC_INT_TYPE    *csrRowPtr,
+                                  const int          *csrColIdx,
+                                  const double *csrVal,
+                                  int          *cscRowIdx,
+                                  BASIC_INT_TYPE    *cscColPtr,
+                                  double *cscVal);
+
+void inner_matrix_transposition_s(const int           m,
+                                  const int           n,
+                                  const BASIC_INT_TYPE     nnz,
+                                  const BASIC_INT_TYPE    *csrRowPtr,
+                                  const int          *csrColIdx,
+                                  const float *csrVal,
+                                  int          *cscRowIdx,
+                                  BASIC_INT_TYPE    *cscColPtr,
+                                  float *cscVal);
+
+void metis_partitioning(
+        int n, int m, int nnz,
+        int nParts,
+        int *csrRowPtrA,
+        int *csrColIdxA,
+        void *val,BASIC_SIZE_TYPE size);
 #endif //GEMV_INNER_SPMV_H

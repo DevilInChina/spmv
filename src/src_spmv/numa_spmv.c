@@ -21,23 +21,12 @@ typedef struct NumaEnvironment {
     int numanodes;
     int *subm, *subm_ex, *subX_ex, *subX, *subnnz, *subnnz_ex;
     int PARTS;
+    int *RowPtr;
+    int *ColIdx;
+    void *Val;
 } NumaEnvironment, *NumaEnvironment_t;
 
 
-void inner_exclusive_scan(BASIC_INT_TYPE *input, int length) {
-    if (length == 0 || length == 1)
-        return;
-
-    BASIC_INT_TYPE old_val, new_val;
-
-    old_val = input[0];
-    input[0] = 0;
-    for (int i = 1; i < length; i++) {
-        new_val = input[i];
-        input[i] = old_val + input[i - 1];
-        old_val = new_val;
-    }
-}
 
 void numaHandleDestory(spmv_Handle_t handle) {
     if (handle) {
@@ -69,6 +58,9 @@ void numaHandleDestory(spmv_Handle_t handle) {
             free(numasVal->subm_ex);
             free(numasVal->subnnz);
             free(numasVal->subnnz_ex);
+            free(numasVal->RowPtr);
+            free(numasVal->ColIdx);
+            free(numasVal->Val);
             free(handle->extraHandle);
             handle->extraHandle = NULL;
         }
@@ -218,9 +210,21 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
     handle->extraHandle = malloc(sizeof(NumaEnvironment));
     NumaEnvironment_t numaVal = handle->extraHandle;
 
-    const BASIC_INT_TYPE *rowptrA = RowPtr;
-    const BASIC_INT_TYPE *colidxA = ColIdx;
+
     int nthreads = handle->nthreads;
+    int nnz = RowPtr[m] - RowPtr[0];
+
+    int *RowPtrCpy = malloc(sizeof(int )*(m+1));
+    int *ColIdxCpy = malloc(sizeof(int )*(nnz));
+    void *ValCpy = malloc(handle->data_size*nnz);
+
+    memcpy(RowPtrCpy,RowPtr,sizeof(int )*(m+1));
+    memcpy(ColIdxCpy,ColIdx,sizeof(int )*(nnz));
+    memcpy(ValCpy,Matrix_Val,handle->data_size*(nnz));
+
+
+    metis_partitioning(n, m, nnz, PARTS, RowPtrCpy, ColIdxCpy, ValCpy,handle->data_size);
+
 
 
     int **subrowptrA;
@@ -245,7 +249,7 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
     numaspmv *p = (numaspmv *) malloc(nthreads * sizeof(numaspmv));
 
 
-    partition(m,n,PARTS,nthreads,numanodes,RowPtr,ColIdx,Matrix_Val,p,handle->data_size,
+    partition(m,n,PARTS,nthreads,numanodes,RowPtrCpy,ColIdxCpy,ValCpy,p,handle->data_size,
               subrowptrA,subcolidxA,X,Y,subvalA,subm,subm_ex,subX,subX_ex,subnnz,subnnz_ex
     );
 
