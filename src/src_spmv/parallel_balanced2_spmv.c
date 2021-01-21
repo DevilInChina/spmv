@@ -4,6 +4,8 @@
 #include "inner_spmv.h"
 #include <math.h>
 #include <string.h>
+#include <stdio.h>
+
 void parallel_balanced2_get_handle(
         spmv_Handle_t handle,
         BASIC_INT_TYPE m,
@@ -185,14 +187,14 @@ void spmv_parallel_balanced2_Selected(
                                    Matrix_Val + RowPtr[u]*size, Vector_Val_X,Vector_Val_Y+u*size,way);
             }
         }
-        if (Yid[tid] != -1 && Apinter[tid] > 1) {/// not in usage
+        else if (Yid[tid] != -1 && Apinter[tid] > 1) {/// not in usage
             for (int u = Start1[tid]; u < End1[tid]; u++) {
                 dotProductFunction(RowPtr[u + 1] - RowPtr[u],
                                    ColIdx + RowPtr[u],
                                    Matrix_Val + RowPtr[u]*size, Vector_Val_X,Vector_Val_Y+u*size,way);
             }
         }
-        if (Yid[tid] != -1 && Apinter[tid] <= 1) {
+        else if (Yid[tid] != -1 && Apinter[tid] <= 1) {
 
             dotProductFunction(End2[tid] - Start2[tid],
                                ColIdx + Start2[tid], Matrix_Val + Start2[tid]*size, Vector_Val_X,
@@ -202,6 +204,8 @@ void spmv_parallel_balanced2_Selected(
             CONVERT_ADDEQU(Ysum+tid*size,size,Ypartialsum+tid*size);
 
             //CONVERT_ADDEQU(Vector_Val_Y+Yid[tid]*size,size,Ysum+tid*size);
+        }else{
+            printf("error");
         }
     }
     for(int tid = 0 ; tid < nthreads ; ++tid){
