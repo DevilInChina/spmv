@@ -16,8 +16,8 @@ void init_csrSplitter_balanced2(int nthreads,int nnzR,
         boundary = boundary > nnzR ? nnzR : boundary;
         // binary search
         csrSplitter[tid] = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
-
-        printf("%d %d\n",nnzR,boundary);
+        if(tid)
+        printf("%d %d\n",nnzR,csrSplitter[tid]-csrSplitter[tid-1]);
     }
 }
 void parallel_balanced2_get_handle(
