@@ -16,8 +16,6 @@ void init_csrSplitter_balanced2(int nthreads,int nnzR,
         boundary = boundary > nnzR ? nnzR : boundary;
         // binary search
         csrSplitter[tid] = binary_search_right_boundary_kernel(RowPtr, boundary, m + 1) - 1;
-        if(tid)
-        printf("%d %d\n",nnzR,csrSplitter[tid]-csrSplitter[tid-1]);
     }
 }
 void parallel_balanced2_get_handle(
@@ -43,7 +41,7 @@ void parallel_balanced2_get_handle(
     //每个线程执行行数
     for (int tid = 0; tid < nthreads; tid++) {
         Apinter[tid] = csrSplitter[tid + 1] - csrSplitter[tid];
-        //printf("A[%d] is %d\n", tid, Apinter[tid]);
+        printf("A[%d] is %d\n", tid, Apinter[tid]);
     }
 
     for (int tid = 0; tid < nthreads; tid++) {
@@ -52,7 +50,7 @@ void parallel_balanced2_get_handle(
             num += RowPtr[u + 1] - RowPtr[u];
         }
         Bpinter[tid] = num;
-        //printf("B [%d]is %d\n",tid, Bpinter[tid]);
+        printf("B [%d]is %d\n",tid, Bpinter[tid]);
     }
 
     int *Yid = (int *) malloc(sizeof(int) * nthreads);
