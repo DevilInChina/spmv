@@ -204,13 +204,11 @@ void spmv_parallel_balanced2_Selected(
             CONVERT_ADDEQU(Ysum+tid*size,size,Ypartialsum+tid*size);
 
             //CONVERT_ADDEQU(Vector_Val_Y+Yid[tid]*size,size,Ysum+tid*size);
-        }else{
-            printf("error");
         }
     }
     for(int tid = 0 ; tid < nthreads ; ++tid){
         if(Yid[tid]!=-1) {
-            ((double *) Vector_Val_Y)[Yid[tid]] += ((double *) Ysum)[tid];
+            CONVERT_ADDEQU(Vector_Val_Y+Yid[tid]*size,size,Ysum+tid*size);
         }
     }
     free(Ysum);
