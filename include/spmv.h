@@ -6,7 +6,7 @@
 #include "lineProductGather.h"
 #include <immintrin.h>
 
-#define ALIGENED_SIZE 32
+#define ALIGENED_SIZE 64
 
 /**
  * @brief destroy handle, null with doing nothing
