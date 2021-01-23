@@ -72,7 +72,7 @@ void testForFunctions(const char *matrixName,
         //qsort(Vector_Val_Y,m,sizeof(VALUE_TYPE),cmp_s);
         for(int ind = 0 ; ind < m ; ++ind){
             s+=(Vector_Val_Y[ind]-Y_golden[ind])/m*
-                    (Vector_Val_Y[ind]-Y_golden[ind])/m;
+                    (Vector_Val_Y[ind]-Y_golden[ind]);
             //if(fabs(Vector_Val_Y[ind]-Y_golden[ind])>0.001){
                 //printf("%d %f %f\n",ind,Vector_Val_Y[ind],Y_golden[ind]);
             //}
@@ -111,7 +111,7 @@ void LoadMtx_And_GetGolden(char *filePath,
     memset(*Y, 0, sizeof(VALUE_TYPE) * (*m));
     memset(*Y_Golden, 0, sizeof(VALUE_TYPE) * (*m));
     srand(*m);
-    //for(int i = 0 ; i < *nnzR ; ++i)(*Val)[i] = 1;
+    for(int i = 0 ; i < *nnzR ; ++i)(*Val)[i] = rand()%8*0.125;
     for (int i = 0; i < *n; i++)
         (*X)[i] = rand()%8*0.125;;
 
@@ -142,7 +142,7 @@ int main(int argc, char ** argv) {
 
     testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                      VECTOR_AVX2, Method_CSR5SPMV );
-    /*
+
     testForFunctions(file, threads_bregin, threads_end , Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                      VECTOR_AVX2, Method_Parallel );
     testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
@@ -151,7 +151,7 @@ int main(int argc, char ** argv) {
                      VECTOR_AVX2, Method_Balanced2 );
     testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                      VECTOR_AVX2, Method_SellCSigma );
-*/
+
     free(Val);
     free(RowPtr);
     free(ColIdx);
