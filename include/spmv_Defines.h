@@ -28,8 +28,8 @@ typedef enum SPMV_METHODS{
     Method_Balanced2,
     Method_SellCSigma,
     Method_CSR5SPMV,
-    Method_Numa,
-    Method_Total_Size /// count total ways of methods
+    Method_Total_Size ,
+    Method_Numa ///count total ways of methods
 }SPMV_METHODS;
 extern const char*Methods_names[];
 
@@ -80,19 +80,6 @@ typedef struct spmv_Handle {
 }spmv_Handle;
 
 typedef spmv_Handle*  spmv_Handle_t;
-
-typedef enum LINE_PRODUCT_WAY{
-    GEMV_LINE_PRODUCT_4,
-    GEMV_LINE_PRODUCT_4_AVX2,
-    GEMV_LINE_PRODUCT_4_AVX512,
-    GEMV_LINE_PRODUCT_8,
-    GEMV_LINE_PRODUCT_8_AVX2,
-    GEMV_LINE_PRODUCT_8_AVX512,
-    GEMV_LINE_PRODUCT_16,
-    GEMV_LINE_PRODUCT_16_AVX2,
-    GEMV_LINE_PRODUCT_16_AVX512,
-}LINE_PRODUCT_WAY;
-
 
 
 #define CONVERT_FLOAT(pointer) *((float*)(pointer))

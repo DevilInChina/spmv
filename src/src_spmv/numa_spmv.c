@@ -2,7 +2,6 @@
 // Created by kouushou on 2021/1/9.
 //
 #include "inner_spmv.h"
-
 #include <numa.h>
 #include <math.h>
 #include <pthread.h>
@@ -223,7 +222,7 @@ int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
     memcpy(ValCpy,Matrix_Val,handle->data_size*(nnz));
 
 
-    metis_partitioning(n, m, nnz, PARTS, RowPtrCpy, ColIdxCpy, ValCpy,handle->data_size);
+    //metis_partitioning(n, m, nnz, PARTS, RowPtrCpy, ColIdxCpy, ValCpy,handle->data_size);
 
 
 

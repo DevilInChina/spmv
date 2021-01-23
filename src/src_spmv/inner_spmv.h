@@ -205,5 +205,6 @@ void metis_partitioning(
         int nParts,
         int *csrRowPtrA,
         int *csrColIdxA,
+        int *index,
         void *val,BASIC_SIZE_TYPE size);
 #endif //GEMV_INNER_SPMV_H

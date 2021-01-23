@@ -4,13 +4,16 @@
 #include <stdlib.h>
 #include "inner_spmv.h"
 #include <metis.h>
+#include <stdlib.h>
+#include <string.h>
 
 void metis_partitioning(
         int n, int m, int nnz,
         int nParts,
         int *csrRowPtrA,
         int *csrColIdxA,
-        void *val,BASIC_SIZE_TYPE size) {
+        int *index,
+        void *val, BASIC_SIZE_TYPE size) {
     //int nn=n;
     //int nParts=2;
     int nn = n;
@@ -34,11 +37,10 @@ void metis_partitioning(
                                   NULL, NULL, &objval, part);
 
     int *outtxt = (int *) malloc(sizeof(int) * nn);
-    for (int part_i = 0; part_i < nn; part_i++) {
-        // printf("%d %ld\n",part_i,part[part_i]);
-        outtxt[part_i] = part[part_i];
-        //printf("%ld\n",outtxt[part_i]);
-    }
+
+
+    memcpy(outtxt, part, sizeof(int) * nn);
+
     int colIdx_RSlen = 0;
     int *colIdx_RS = (int *) malloc(sizeof(int) * nnz);
     int *rowPtr_RS = (int *) malloc(sizeof(int) * (n + 1));
@@ -65,10 +67,10 @@ void metis_partitioning(
     int *rowIdx_RS = (int *) malloc(sizeof(int) * nnz);
     int *colPtr_RS = (int *) malloc(sizeof(int) * (n + 1));
     void *val_RS = malloc(size * nnz);
-    if(size==sizeof(double )){
+    if (size == sizeof(double)) {
         inner_matrix_transposition_d(n, n, nnz, rowPtr_RS, colIdx_RS, val,
                                      rowIdx_RS, colPtr_RS, val_RS);
-    }else{
+    } else {
         inner_matrix_transposition_s(n, n, nnz, rowPtr_RS, colIdx_RS, val,
                                      rowIdx_RS, colPtr_RS, val_RS);
     }
@@ -87,13 +89,10 @@ void metis_partitioning(
             }
         }
     }
-    for (int i = 0; i < m + 1; i++) {
-        csrRowPtrA[i] = rowPtr_RS[i];
-    }
 
-    for (int j = 0; j < nnz; j++) {
-        csrColIdxA[j] = colIdx_RS_CS[j];
-    }
+    memcpy(csrRowPtrA, rowPtr_RS, (m + 1) * sizeof(int));
+    memcpy(csrColIdxA, colIdx_RS_CS, (nnz) * sizeof(int));
+    memcpy(index, outtxt, sizeof(int) * nn);
     free(part);
     free(csrColIdxAAA);
     free(csrRowPtrAAA);

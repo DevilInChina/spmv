@@ -125,6 +125,10 @@ void parallel_balanced2_get_handle(
                 for (int i = start1; i <= tid; i++) {
                     label[i] = i;
                 }
+            } else if ((tid - start1 + 1) >= Apinter[tid] && Apinter[tid] != 0) {
+                for (int i = start1; i <= tid; i++) {
+                    label[i] = i;
+                }
             }
             int mntz = Apinter[tid] - (nntz * (tid - start1));
             //start and end
@@ -146,11 +150,6 @@ void parallel_balanced2_get_handle(
         }
     }
 
-    //非零元平均用在一行
-    float *Ypartialsum = (float *) malloc(sizeof(float) * nthreads);
-    memset(Ypartialsum, 0, sizeof(float) * nthreads);
-    float *Ysum = (float *) malloc(sizeof(float) * nthreads);
-    memset(Ysum, 0, sizeof(float) * nthreads);
     int *Start2 = (int *) malloc(sizeof(int) * nthreads);
     memset(Start2, 0, sizeof(int) * nthreads);
     int *End2 = (int *) malloc(sizeof(int) * nthreads);
@@ -164,7 +163,7 @@ void parallel_balanced2_get_handle(
             }
         }
         if (search2 == 1 && Bpinter[tid] != 0) {
-            int nntz2 = ceil((float) Bpinter[tid] / (float) (tid - start2 + 1));
+            int nntz2 = floor((double ) Bpinter[tid] / (double) (tid - start2 + 1));
             int mntz2 = Bpinter[tid] - (nntz2 * (tid - start2));
             //start and end
             int n = start2;
@@ -227,9 +226,7 @@ void spmv_parallel_balanced2_Selected(
 
 
     void *Ysum = malloc(size * nthreads);
-    void *Ypartialsum = malloc(size * nthreads);
     memset(Ysum,0,size*nthreads);
-    memset(Ypartialsum,0,size*nthreads);
     for (int tid = 0; tid < nthreads; tid++) {
         if(Yid[tid]!=-1) {
             CONVERT_EQU(Vector_Val_Y+Yid[tid]*size,size,0);
@@ -252,16 +249,14 @@ void spmv_parallel_balanced2_Selected(
                         Matrix_Val + RowPtr[u]*size, Vector_Val_X,Vector_Val_Y+u*size,way);
             }
         }
-        else if (Yid[tid] != -1 && label[tid] == 0) {
+        else{
 
             dotProductFunction(
                     End2[tid] - Start2[tid],
                     ColIdx + Start2[tid], Matrix_Val + Start2[tid]*size, Vector_Val_X,
-                    Ypartialsum+tid*size,way
+                    Ysum+tid*size,way
             );
             //((double *)Ysum)[tid] += ((double *)Ypartialsum)[tid];
-            CONVERT_ADDEQU(Ysum+tid*size,size,Ypartialsum+tid*size);
-
             //CONVERT_ADDEQU(Vector_Val_Y+Yid[tid]*size,size,Ysum+tid*size);
         }
     }
@@ -273,7 +268,6 @@ void spmv_parallel_balanced2_Selected(
 
 
     free(Ysum);
-    free(Ypartialsum);
 }
 
 

@@ -280,8 +280,8 @@ VEC_STRING(Method_Parallel),\
 VEC_STRING(Method_Balanced),\
 VEC_STRING(Method_Balanced2),\
 VEC_STRING(Method_SellCSigma),\
-VEC_STRING(Method_Csr5Spmv),\
-VEC_STRING(Method_NumaSpmv)
+VEC_STRING(Method_Csr5Spmv)//,\
+//VEC_STRING(Method_NumaSpmv)
 
 const char * funcNames[]= {
     ALL_FUNC_SRTING
@@ -292,8 +292,8 @@ const char*Methods_names[]={
         SINGLE(Method_Balanced),
         SINGLE(Method_Balanced2),
         SINGLE(Method_SellCSigma),
-        SINGLE(Method_Csr5Spmv),
-        SINGLE(Method_NumaSpmv)
+        SINGLE(Method_Csr5Spmv)
+        //,SINGLE(Method_NumaSpmv)
 };
 const char*Vectorized_names[]={
         SINGLE(VECTOR_NONE),

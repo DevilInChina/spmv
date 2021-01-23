@@ -149,6 +149,10 @@ int main(int argc, char **argv) {
                 for (int i = start1; i <= tid; i++) {
                     label[i] = i;
                 }
+            } else if ((tid - start1 + 1) >= Apinter[tid] && Apinter[tid] != 0) {
+                for (int i = start1; i <= tid; i++) {
+                    label[i] = i;
+                }
             }
             int mntz = Apinter[tid] - (nntz * (tid - start1));
             //start and end
@@ -222,7 +226,7 @@ int main(int argc, char **argv) {
     for (currentiter = 0; currentiter < iter; currentiter++) {
 
         for (int tid = 0; tid < nthreads; tid++) {
-            if (Yid[tid] != 0)
+            if (Yid[tid] != -1)
                 Y[Yid[tid]] = 0;
             Ysum[tid] = 0;
         }
