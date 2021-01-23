@@ -141,6 +141,9 @@ int main(int argc, char ** argv) {
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
 
     testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
+                     VECTOR_AVX2, Method_SellCSigma );
+    /*
+    testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                      VECTOR_AVX2, Method_CSR5SPMV );
 
     testForFunctions(file, threads_bregin, threads_end , Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
@@ -149,9 +152,7 @@ int main(int argc, char ** argv) {
                      VECTOR_AVX2, Method_Balanced );
     testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                      VECTOR_AVX2, Method_Balanced2 );
-    testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
-                     VECTOR_AVX2, Method_SellCSigma );
-
+*/
     free(Val);
     free(RowPtr);
     free(ColIdx);
