@@ -47,7 +47,7 @@ void spmv_csr5Spmv_Selected(const spmv_Handle_t handle,
     anonymouslibHandle<int, unsigned int, double> &A = *((anonymouslibHandle<int, unsigned int, double> *) handle->extraHandle);
 
     A.setX((double *) Vector_Val_X);
-    memset(Vector_Val_Y, 0, sizeof(double) * m);
+    //memset(Vector_Val_Y, 0, sizeof(double) * m);
     A.spmv(1, (double *) Vector_Val_Y);
 }
 
