@@ -8,11 +8,17 @@
 #include <spmv.h>
 #include <zconf.h>
 #include <wait.h>
-
+int cmp_s(const void*a,const void *b){
+    double *s = a;
+    double *ss = b;
+    if(*s>*ss)return 1;
+    else if(*ss>*s)return -1;
+    else return 0;
+}
 // sum up 8 single-precision numbers
 void testForFunctions(const char *matrixName,
                       int threads_begin, int threads_end,
-                      const VALUE_TYPE *Y_golden,
+                      VALUE_TYPE *Y_golden,
                       BASIC_INT_TYPE m,
                       BASIC_INT_TYPE n,
                       const BASIC_INT_TYPE*RowPtr,
@@ -33,7 +39,7 @@ void testForFunctions(const char *matrixName,
     spmv_Handle_t handle = NULL;
 
 
-
+    //qsort(Y_golden,m,sizeof(VALUE_TYPE),cmp_s);
     for(BASIC_SIZE_TYPE thread = threads_begin; thread <= threads_end ; thread<<=1u) {
         omp_set_num_threads(thread);
         gettimeofday(&t1, NULL);
@@ -63,6 +69,7 @@ void testForFunctions(const char *matrixName,
                 ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / iter;
         double GFlops_serial = 2 * nnzR / time_overall_serial / pow(10, 6);
         double s = 0;
+        //qsort(Vector_Val_Y,m,sizeof(VALUE_TYPE),cmp_s);
         for(int ind = 0 ; ind < m ; ++ind){
             s+=(Vector_Val_Y[ind]-Y_golden[ind])/m*
                     (Vector_Val_Y[ind]-Y_golden[ind])/m;
@@ -108,10 +115,10 @@ void LoadMtx_And_GetGolden(char *filePath,
     for (int i = 0; i < *n; i++)
         (*X)[i] = rand()%8*0.125;;
 
-    for (int i = 0; i < *m; i++)
+    for (int i = 0; i < *m; i++) {
         for (int j = (*RowPtr)[i]; j < (*RowPtr)[i + 1]; j++)
             (*Y_Golden)[i] += (*Val)[j] * (*X)[(*ColIdx)[j]];
-
+    }
 
 }
 #ifndef TEST_METHOD
@@ -132,6 +139,7 @@ int main(int argc, char ** argv) {
     struct timeval t1, t2;
     SPMV_METHODS d = Method_Total_Size;
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
+
     testForFunctions(file, threads_bregin, threads_end , Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                      VECTOR_AVX2, Method_Parallel );
     testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,

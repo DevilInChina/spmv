@@ -201,10 +201,13 @@ void inner_matrix_transposition_s(const int           m,
                                   float *cscVal);
 
 void metis_partitioning(
-        int n, int m, int nnz,
+        int m, int nnz,
         int nParts,
-        int *csrRowPtrA,
-        int *csrColIdxA,
-        int *index,
+        int *RowPtr,
+        int *ColIdx,
+        int *part,
         void *val,BASIC_SIZE_TYPE size);
+
+void ReGather(void *true_val,const void*val ,int *index,BASIC_SIZE_TYPE size,int len);
+
 #endif //GEMV_INNER_SPMV_H

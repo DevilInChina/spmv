@@ -5,6 +5,8 @@
 #include "inner_spmv.h"
 #include <math.h>
 #include <string.h>
+#include <stdio.h>
+
 /**
  * @brief init parameters used in balanced and balanced2
  * @param this_handle
@@ -49,7 +51,11 @@ void gemv_Handle_init(spmv_Handle_t this_handle){
     this_handle->spmvMethod = Method_Serial;
     this_handle->nthreads = 0;
     this_handle->extraHandle = NULL;
-
+    this_handle->RowPtr = NULL;
+    this_handle->ColIdx = NULL;
+    this_handle->Matrix_Val = NULL;
+    this_handle->Y_temp = NULL;
+    this_handle->Level_3_opt_used = 0;
     init_sell_C_Sigma(this_handle);
 
 }
@@ -65,11 +71,19 @@ void gemv_Handle_clear(spmv_Handle_t this_handle) {
     csr5HandleDestory(this_handle);
 
     numaHandleDestory(this_handle);
-
+    if(this_handle->Level_3_opt_used){
+        free(this_handle->Matrix_Val);
+        free(this_handle->index);
+        free(this_handle->RowPtr);
+        free(this_handle->ColIdx);
+        free(this_handle->Y_temp);
+    }
     gemv_Handle_init(this_handle);
 }
 
 void spmv_destory_handle(spmv_Handle_t this_handle){
+
+
     gemv_Handle_clear(this_handle);
     free(this_handle);
 }
@@ -109,13 +123,36 @@ const spmv_function spmv_functions[] = {
         spmv_csr5Spmv_Selected,
         spmv_numa_Selected
 };
-
+#define Aligen_malloc_cpy(dst,src,size) \
+dst = aligned_alloc(ALIGENED_SIZE,size);                     \
+memcpy(dst,src,size)
+double cal_rmse_i(const int *a,const int *b,int len){
+    double ret = 0;
+    for(int i = 0 ; i < len ; ++i){
+        ret +=(1.0*a[i]-b[i])*(a[i]-b[i]);
+    }
+    return sqrt(ret/len);
+}
+double cal_rmse_d(const double *a,const double *b,int len){
+    double ret = 0;
+    for(int i = 0 ; i < len ; ++i){
+        ret +=(a[i]-b[i])*(a[i]-b[i]);
+    }
+    return sqrt(ret/len);
+}
+double cal_rmse_s(const double *a,const double *b,int len){
+    double ret = 0;
+    for(int i = 0 ; i < len ; ++i){
+        ret +=(a[i]-b[i])*(a[i]-b[i]);
+    }
+    return sqrt(ret/len);
+}
 void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
                                    BASIC_INT_TYPE m,
                                    BASIC_INT_TYPE n,
-                                   const BASIC_INT_TYPE*RowPtr,
-                                   const BASIC_INT_TYPE *ColIdx,
-                                   const void *Matrix_Val,
+                                   BASIC_INT_TYPE*RowPtr_O,
+                                   BASIC_INT_TYPE *ColIdx_O,
+                                   void *Matrix_Val_O,
                                    BASIC_SIZE_TYPE nthreads,
                                    SPMV_METHODS Function,
                                    BASIC_SIZE_TYPE size,
@@ -125,10 +162,31 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
     if(Function < Method_Serial || Function >= Method_Total_Size)Function = Method_Serial;
 
     handle_init_common_parameters(*Handle,nthreads,Function,size,vectorizedWay);
-    const int Sigma = 7744;
     int C = (sizeof(double )/size)<<(vectorizedWay+1);
-    const int Turn = 8;
     const int Times = m/nthreads/C;
+    BASIC_INT_TYPE * RowPtr = RowPtr_O;
+    BASIC_INT_TYPE * ColIdx = ColIdx_O;
+    BASIC_INT_TYPE * Matrix_Val = Matrix_Val_O;
+#if (OPT_LEVEL==3)
+    if (m==n) {
+        (*Handle)->Level_3_opt_used = 1;
+        Aligen_malloc_cpy(RowPtr, RowPtr_O, (m + 1) *sizeof(int ));
+        Aligen_malloc_cpy(ColIdx, ColIdx_O, (RowPtr[m]-RowPtr[0]) *sizeof(int ));
+        Aligen_malloc_cpy(Matrix_Val, Matrix_Val_O, (RowPtr[m]-RowPtr[0]) *size);
+        (*Handle)->Y_temp = aligned_alloc(ALIGENED_SIZE,(m)*size);
+        (*Handle)->index = aligned_alloc(ALIGENED_SIZE,(m+1)*sizeof(int ));
+        metis_partitioning(m,RowPtr[m]-RowPtr[0],(int )nthreads,RowPtr,ColIdx,(*Handle)->index,Matrix_Val,size);
+    }
+#endif
+    (*Handle)->RowPtr = RowPtr;
+    (*Handle)->ColIdx = ColIdx;
+    (*Handle)->Matrix_Val = Matrix_Val;
+    /*
+    printf("%d,%f,%f,%f,",RowPtr_O[m]-RowPtr_O[0],
+           cal_rmse_i(RowPtr,RowPtr_O,m+1),
+           cal_rmse_i(ColIdx,ColIdx_O,RowPtr_O[m]-RowPtr_O[0]),
+           cal_rmse_d(Matrix_Val,Matrix_Val_O,RowPtr_O[m]-RowPtr_O[0])
+           );*/
     switch (Function) {
         case Method_Balanced:{
             parallel_balanced_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
@@ -259,13 +317,30 @@ void inner_matrix_transposition_s(const int           m,
 
 void spmv(const spmv_Handle_t handle,
           BASIC_INT_TYPE m,
-          const BASIC_INT_TYPE* RowPtr,
-          const BASIC_INT_TYPE* ColIdx,
-          const void* Matrix_Val,
+          const BASIC_INT_TYPE* RowPtr_O,
+          const BASIC_INT_TYPE* ColIdx_O,
+          const void* Matrix_Val_O,
           const void* Vector_Val_X,
-          void*       Vector_Val_Y){
+          void*       Vector_Val_Y_O){
     if(handle==NULL)return;
+    const BASIC_INT_TYPE* RowPtr = RowPtr_O;
+    const BASIC_INT_TYPE* ColIdx = ColIdx_O;
+    const void* Matrix_Val = Matrix_Val_O;
+    void *Vector_Val_Y = Vector_Val_Y_O;
+#if (OPT_LEVEL==3)
+    if(handle->Level_3_opt_used){
+        RowPtr = handle->RowPtr;
+        ColIdx = handle->ColIdx;
+        Matrix_Val = handle->Matrix_Val;
+        Vector_Val_Y = handle->Y_temp;
+    }
+#endif
     spmv_functions[handle->spmvMethod](handle, m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
+#if (OPT_LEVEL==3)
+    if(handle->Level_3_opt_used){
+        ReGather(Vector_Val_Y_O,Vector_Val_Y,handle->index,handle->data_size,m);
+    }
+#endif
 }
 #define SINGLE(arg) #arg
 #define STR(args1,args2) #args1 #args2
