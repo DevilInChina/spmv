@@ -49,23 +49,25 @@ void spmv_Sigma_Blocks_init(Sigma_Block_t SigmaBeginner, int C, int Sigma,
     for (int k = 0; k < times; ++k) {/// ini C
         for(int i = 0 ; i < C; ++i){
             int j = 0;
+            int last = 0;
             for (; j < RowPtr[rowBlock[i + k * C ]->rowNumber + 1] - RowPtr[rowBlock[i + k * C]->rowNumber]; ++j) {
                 size==sizeof(double )?
                 (*(CONVERT_DOUBLE_T(SigmaBeginner->ValT)+i + (j + SigmaBeginner->ld[k]) * C)
                          = *(CONVERT_DOUBLE_T(rowBlock[i + k * C]->valBegin)+j)):
                 (*(CONVERT_FLOAT_T(SigmaBeginner->ValT)+i + (j + SigmaBeginner->ld[k]) * C)
                          = *(CONVERT_FLOAT_T(rowBlock[i + k * C]->valBegin)+j));
-
-                SigmaBeginner->ColIndex[i + (j + SigmaBeginner->ld[k]) * C] = rowBlock[i + k * C]->indxBegin[j];
+                last = rowBlock[i + k * C]->indxBegin[j];
+                SigmaBeginner->ColIndex[i + (j + SigmaBeginner->ld[k]) * C] = last;
             }
             *zero+=SigmaBeginner->ld[k+1]-SigmaBeginner->ld[k] - j;
+
         }
     }
 }
 
 int cmp(const void *A, const void *B) {
     int p = (*((Row_Block_t *) B))->length - (*((Row_Block_t *) A))->length;
-    if (p)return p;
+    if (p)return -p;
     else {
         return (*((Row_Block_t *) A))->rowNumber - (*((Row_Block_t *) B))->rowNumber;
     }
@@ -143,7 +145,7 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
         */
 
         for (int i = 0, I_of_Sigma = 0; i < len; ++i, I_of_Sigma += Sigma) {
-            //qsort(rowBlock_ts + I_of_Sigma, Sigma, sizeof(Row_Block_t), cmp);
+            qsort(rowBlock_ts + I_of_Sigma, Sigma, sizeof(Row_Block_t), cmp);
         }
         (handle)->sigmaBlock = (Sigma_Block_t) malloc(sizeof(Sigma_Block) * len);
         for (int i = 0, SBlock = 0; i < len; ++i, SBlock += Sigma) {
@@ -200,7 +202,7 @@ void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
         Sigma_Block_t SigmaBlocks = handle->sigmaBlock;
         int length = m / Sigma;
         int C_times = Sigma / C;
-        memset(Vector_Val_Y, 0, size * m);
+        //memset(Vector_Val_Y, 0, size * m);
 
 #pragma omp parallel for
         for (int i = 0; i < length; ++i) {/// sigma
