@@ -143,9 +143,9 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
         srand(len);
 
         */
-
-        for (int i = 0, I_of_Sigma = 0; i < len; ++i, I_of_Sigma += Sigma) {
-            qsort(rowBlock_ts + I_of_Sigma, Sigma, sizeof(Row_Block_t), cmp);
+        const int Catch = Sigma;
+        for (int i = 0, I_of_Sigma = 0; i < len; ++i, I_of_Sigma += Catch) {
+            qsort(rowBlock_ts + I_of_Sigma, Catch, sizeof(Row_Block_t), cmp);
         }
         (handle)->sigmaBlock = (Sigma_Block_t) malloc(sizeof(Sigma_Block) * len);
         for (int i = 0, SBlock = 0; i < len; ++i, SBlock += Sigma) {
