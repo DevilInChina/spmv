@@ -13,7 +13,7 @@
  */
 
 
-void init_sell_C_Sigma(spmv_Handle_t this_handle){
+void init_sell_C_Sigma(spmv_Handle_t this_handle) {
     this_handle->Sigma = 0;
     this_handle->C = 0;
     this_handle->banner = 0;
@@ -27,7 +27,7 @@ void init_sell_C_Sigma(spmv_Handle_t this_handle){
  */
 
 
-void C_Block_destory(Sigma_Block_t this_block){
+void C_Block_destory(Sigma_Block_t this_block) {
     free(this_block->RowIndex);
     free(this_block->ColIndex);
     free(this_block->ValT);
@@ -36,7 +36,7 @@ void C_Block_destory(Sigma_Block_t this_block){
 }
 
 void clear_Sell_C_Sigma(spmv_Handle_t this_handle) {
-    if(this_handle && this_handle->spmvMethod==Method_SellCSigma) {
+    if (this_handle && this_handle->spmvMethod == Method_SellCSigma) {
         if (this_handle->Sigma) {
             int siz = this_handle->banner / this_handle->Sigma;
             for (int i = 0; i < siz; ++i) {
@@ -47,7 +47,7 @@ void clear_Sell_C_Sigma(spmv_Handle_t this_handle) {
     }
 }
 
-void gemv_Handle_init(spmv_Handle_t this_handle){
+void gemv_Handle_init(spmv_Handle_t this_handle) {
     this_handle->spmvMethod = Method_Serial;
     this_handle->nthreads = 0;
     this_handle->extraHandle = NULL;
@@ -71,7 +71,7 @@ void gemv_Handle_clear(spmv_Handle_t this_handle) {
     csr5HandleDestory(this_handle);
 
     numaHandleDestory(this_handle);
-    if(this_handle->Level_3_opt_used){
+    if (this_handle->Level_3_opt_used) {
         free(this_handle->Matrix_Val);
         free(this_handle->index);
         free(this_handle->RowPtr);
@@ -81,33 +81,29 @@ void gemv_Handle_clear(spmv_Handle_t this_handle) {
     gemv_Handle_init(this_handle);
 }
 
-void spmv_destory_handle(spmv_Handle_t this_handle){
+void spmv_destory_handle(spmv_Handle_t this_handle) {
 
 
     gemv_Handle_clear(this_handle);
     free(this_handle);
 }
 
-spmv_Handle_t gemv_create_handle(){
+spmv_Handle_t gemv_create_handle() {
     spmv_Handle_t ret = malloc(sizeof(spmv_Handle));
     gemv_Handle_init(ret);
     return ret;
 }
 
-void spmv_clear_handle(spmv_Handle_t this_handle){
+void spmv_clear_handle(spmv_Handle_t this_handle) {
     gemv_Handle_clear(this_handle);
 }
-
-
-
-
 
 
 void handle_init_common_parameters(spmv_Handle_t this_handle,
                                    BASIC_SIZE_TYPE nthreads,
                                    SPMV_METHODS function,
                                    BASIC_SIZE_TYPE size,
-                                   VECTORIZED_WAY vectorizedWay){
+                                   VECTORIZED_WAY vectorizedWay) {
     this_handle->nthreads = nthreads;
     this_handle->vectorizedWay = vectorizedWay;
     this_handle->data_size = size;
@@ -123,59 +119,65 @@ const spmv_function spmv_functions[] = {
         spmv_csr5Spmv_Selected,
         spmv_numa_Selected
 };
-#define Aligen_malloc_cpy(dst,src,size) \
+#define Aligen_malloc_cpy(dst, src, size) \
 dst = aligned_alloc(ALIGENED_SIZE,size);                     \
 memcpy(dst,src,size)
-double cal_rmse_i(const int *a,const int *b,int len){
+
+double cal_rmse_i(const int *a, const int *b, int len) {
     double ret = 0;
-    for(int i = 0 ; i < len ; ++i){
-        ret +=(1.0*a[i]-b[i])*(a[i]-b[i]);
+    for (int i = 0; i < len; ++i) {
+        ret += (1.0 * a[i] - b[i]) * (a[i] - b[i]);
     }
-    return sqrt(ret/len);
+    return sqrt(ret / len);
 }
-double cal_rmse_d(const double *a,const double *b,int len){
+
+double cal_rmse_d(const double *a, const double *b, int len) {
     double ret = 0;
-    for(int i = 0 ; i < len ; ++i){
-        ret +=(a[i]-b[i])*(a[i]-b[i]);
+    for (int i = 0; i < len; ++i) {
+        ret += (a[i] - b[i]) * (a[i] - b[i]);
     }
-    return sqrt(ret/len);
+    return sqrt(ret / len);
 }
-double cal_rmse_s(const double *a,const double *b,int len){
+
+double cal_rmse_s(const double *a, const double *b, int len) {
     double ret = 0;
-    for(int i = 0 ; i < len ; ++i){
-        ret +=(a[i]-b[i])*(a[i]-b[i]);
+    for (int i = 0; i < len; ++i) {
+        ret += (a[i] - b[i]) * (a[i] - b[i]);
     }
-    return sqrt(ret/len);
+    return sqrt(ret / len);
 }
+
 void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
                                    BASIC_INT_TYPE m,
                                    BASIC_INT_TYPE n,
-                                   BASIC_INT_TYPE*RowPtr_O,
+                                   BASIC_INT_TYPE *RowPtr_O,
                                    BASIC_INT_TYPE *ColIdx_O,
                                    void *Matrix_Val_O,
                                    BASIC_SIZE_TYPE nthreads,
                                    SPMV_METHODS Function,
                                    BASIC_SIZE_TYPE size,
                                    VECTORIZED_WAY vectorizedWay
-){
+) {
     *Handle = gemv_create_handle();
-    if(Function < Method_Serial || Function >= Method_Total_Size)Function = Method_Serial;
+    if (Function < Method_Serial || Function >= Method_Total_Size)Function = Method_Serial;
 
-    handle_init_common_parameters(*Handle,nthreads,Function,size,vectorizedWay);
-    int C = (sizeof(double )/size)<<(vectorizedWay+1);
-    const int Times = m/nthreads/C;
-    BASIC_INT_TYPE * RowPtr = RowPtr_O;
-    BASIC_INT_TYPE * ColIdx = ColIdx_O;
-    BASIC_INT_TYPE * Matrix_Val = Matrix_Val_O;
-#if (OPT_LEVEL==3)
-    if (m==n) {
+    handle_init_common_parameters(*Handle, nthreads, Function, size, vectorizedWay);
+    int C = (sizeof(double) / size) << (vectorizedWay + 1);
+    const int Times = m / nthreads / C;
+    BASIC_INT_TYPE *RowPtr = RowPtr_O;
+    BASIC_INT_TYPE *ColIdx = ColIdx_O;
+    BASIC_INT_TYPE *Matrix_Val = Matrix_Val_O;
+#if (OPT_LEVEL == 3)
+    if (m == n && m > 1024 && nthreads != 1) {
         (*Handle)->Level_3_opt_used = 1;
-        Aligen_malloc_cpy(RowPtr, RowPtr_O, (m + 1) *sizeof(int ));
-        Aligen_malloc_cpy(ColIdx, ColIdx_O, (RowPtr[m]-RowPtr[0]) *sizeof(int ));
-        Aligen_malloc_cpy(Matrix_Val, Matrix_Val_O, (RowPtr[m]-RowPtr[0]) *size);
-        (*Handle)->Y_temp = aligned_alloc(ALIGENED_SIZE,(m)*size);
-        (*Handle)->index = aligned_alloc(ALIGENED_SIZE,(m+1)*sizeof(int ));
-        metis_partitioning(m,RowPtr[m]-RowPtr[0],(int )nthreads,RowPtr,ColIdx,(*Handle)->index,Matrix_Val,size);
+        Aligen_malloc_cpy(RowPtr, RowPtr_O, (m + 1) * sizeof(int));
+        Aligen_malloc_cpy(ColIdx, ColIdx_O, (RowPtr[m] - RowPtr[0]) * sizeof(int));
+        Aligen_malloc_cpy(Matrix_Val, Matrix_Val_O, (RowPtr[m] - RowPtr[0]) * size);
+        (*Handle)->Y_temp = aligned_alloc(ALIGENED_SIZE, (m) * size);
+        (*Handle)->index = aligned_alloc(ALIGENED_SIZE, (m + 1) * sizeof(int));
+        metis_partitioning(m, RowPtr[m] - RowPtr[0], (int) nthreads,
+                           RowPtr, ColIdx, (*Handle)->index, Matrix_Val,
+                           size);
     }
 #endif
     (*Handle)->RowPtr = RowPtr;
@@ -188,32 +190,35 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
            cal_rmse_d(Matrix_Val,Matrix_Val_O,RowPtr_O[m]-RowPtr_O[0])
            );*/
     switch (Function) {
-        case Method_Balanced:{
-            parallel_balanced_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
-        }break;
-        case Method_Balanced2:{
-            parallel_balanced2_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
-        }break;
-        case Method_SellCSigma:{
-            sell_C_Sigma_get_handle_Selected(*Handle,Times,C,m,RowPtr,ColIdx,Matrix_Val);
-        }break;
+        case Method_Balanced: {
+            parallel_balanced_get_handle(*Handle, m, RowPtr, RowPtr[m] - RowPtr[0]);
+        }
+            break;
+        case Method_Balanced2: {
+            parallel_balanced2_get_handle(*Handle, m, RowPtr, RowPtr[m] - RowPtr[0]);
+        }
+            break;
+        case Method_SellCSigma: {
+            sell_C_Sigma_get_handle_Selected(*Handle, Times, C, m, RowPtr, ColIdx, Matrix_Val);
+        }
+            break;
         case Method_CSR5SPMV: {
             if (size == sizeof(double)) {
                 csr5Spmv_get_handle_Selected(*Handle, m, n, (int *) RowPtr, (int *) ColIdx, Matrix_Val);
-            }else{
+            } else {
                 (*Handle)->spmvMethod = Method_SellCSigma;
-                sell_C_Sigma_get_handle_Selected(*Handle,Times
-                                                 ,C,m,RowPtr,ColIdx,Matrix_Val);
-            }
-        }break;
-        case Method_Numa:{
-            int k = numa_spmv_get_handle_Selected(*Handle,m,n,(int *) RowPtr, (int *) ColIdx, Matrix_Val);
-            if(k==0){
-                (*Handle)->spmvMethod = Method_Balanced2;
-                parallel_balanced2_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
+                sell_C_Sigma_get_handle_Selected(*Handle, Times, C, m, RowPtr, ColIdx, Matrix_Val);
             }
         }
-        default:{
+            break;
+        case Method_Numa: {
+            int k = numa_spmv_get_handle_Selected(*Handle, m, n, (int *) RowPtr, (int *) ColIdx, Matrix_Val);
+            if (k == 0) {
+                (*Handle)->spmvMethod = Method_Balanced2;
+                parallel_balanced2_get_handle(*Handle, m, RowPtr, RowPtr[m] - RowPtr[0]);
+            }
+        }
+        default: {
 
             return;
         }
@@ -236,34 +241,30 @@ void inner_exclusive_scan(BASIC_INT_TYPE *input, int length) {
     }
 }
 
-void inner_matrix_transposition_d(const int           m,
-                          const int           n,
-                          const BASIC_INT_TYPE     nnz,
-                          const BASIC_INT_TYPE    *csrRowPtr,
-                          const int          *csrColIdx,
-                          const double *csrVal,
-                          int          *cscRowIdx,
-                                BASIC_INT_TYPE    *cscColPtr,
-                          double *cscVal)
-{
+void inner_matrix_transposition_d(const int m,
+                                  const int n,
+                                  const BASIC_INT_TYPE nnz,
+                                  const BASIC_INT_TYPE *csrRowPtr,
+                                  const int *csrColIdx,
+                                  const double *csrVal,
+                                  int *cscRowIdx,
+                                  BASIC_INT_TYPE *cscColPtr,
+                                  double *cscVal) {
     // histogram in column pointer
-    memset (cscColPtr, 0, sizeof(BASIC_INT_TYPE) * (n+1));
-    for (BASIC_INT_TYPE i = 0; i < nnz; i++)
-    {
+    memset(cscColPtr, 0, sizeof(BASIC_INT_TYPE) * (n + 1));
+    for (BASIC_INT_TYPE i = 0; i < nnz; i++) {
         cscColPtr[csrColIdx[i]]++;
     }
 
     // prefix-sum scan to get the column pointer
     inner_exclusive_scan(cscColPtr, n + 1);
 
-    BASIC_INT_TYPE *cscColIncr = (BASIC_INT_TYPE *)malloc(sizeof(BASIC_INT_TYPE) * (n+1));
-    memcpy (cscColIncr, cscColPtr, sizeof(BASIC_INT_TYPE) * (n+1));
+    BASIC_INT_TYPE *cscColIncr = (BASIC_INT_TYPE *) malloc(sizeof(BASIC_INT_TYPE) * (n + 1));
+    memcpy(cscColIncr, cscColPtr, sizeof(BASIC_INT_TYPE) * (n + 1));
 
     // insert nnz to csc
-    for (int row = 0; row < m; row++)
-    {
-        for (BASIC_INT_TYPE j = csrRowPtr[row]; j < csrRowPtr[row+1]; j++)
-        {
+    for (int row = 0; row < m; row++) {
+        for (BASIC_INT_TYPE j = csrRowPtr[row]; j < csrRowPtr[row + 1]; j++) {
             int col = csrColIdx[j];
 
             cscRowIdx[cscColIncr[col]] = row;
@@ -272,38 +273,34 @@ void inner_matrix_transposition_d(const int           m,
         }
     }
 
-    free (cscColIncr);
+    free(cscColIncr);
 }
 
 
-void inner_matrix_transposition_s(const int           m,
-                                  const int           n,
-                                  const BASIC_INT_TYPE     nnz,
-                                  const BASIC_INT_TYPE    *csrRowPtr,
-                                  const int          *csrColIdx,
+void inner_matrix_transposition_s(const int m,
+                                  const int n,
+                                  const BASIC_INT_TYPE nnz,
+                                  const BASIC_INT_TYPE *csrRowPtr,
+                                  const int *csrColIdx,
                                   const float *csrVal,
-                                  int          *cscRowIdx,
-                                  BASIC_INT_TYPE    *cscColPtr,
-                                  float *cscVal)
-{
+                                  int *cscRowIdx,
+                                  BASIC_INT_TYPE *cscColPtr,
+                                  float *cscVal) {
     // histogram in column pointer
-    memset (cscColPtr, 0, sizeof(BASIC_INT_TYPE) * (n+1));
-    for (BASIC_INT_TYPE i = 0; i < nnz; i++)
-    {
+    memset(cscColPtr, 0, sizeof(BASIC_INT_TYPE) * (n + 1));
+    for (BASIC_INT_TYPE i = 0; i < nnz; i++) {
         cscColPtr[csrColIdx[i]]++;
     }
 
     // prefix-sum scan to get the column pointer
     inner_exclusive_scan(cscColPtr, n + 1);
 
-    BASIC_INT_TYPE *cscColIncr = (BASIC_INT_TYPE *)malloc(sizeof(BASIC_INT_TYPE) * (n+1));
-    memcpy (cscColIncr, cscColPtr, sizeof(BASIC_INT_TYPE) * (n+1));
+    BASIC_INT_TYPE *cscColIncr = (BASIC_INT_TYPE *) malloc(sizeof(BASIC_INT_TYPE) * (n + 1));
+    memcpy(cscColIncr, cscColPtr, sizeof(BASIC_INT_TYPE) * (n + 1));
 
     // insert nnz to csc
-    for (int row = 0; row < m; row++)
-    {
-        for (BASIC_INT_TYPE j = csrRowPtr[row]; j < csrRowPtr[row+1]; j++)
-        {
+    for (int row = 0; row < m; row++) {
+        for (BASIC_INT_TYPE j = csrRowPtr[row]; j < csrRowPtr[row + 1]; j++) {
             int col = csrColIdx[j];
 
             cscRowIdx[cscColIncr[col]] = row;
@@ -312,23 +309,23 @@ void inner_matrix_transposition_s(const int           m,
         }
     }
 
-    free (cscColIncr);
+    free(cscColIncr);
 }
 
 void spmv(const spmv_Handle_t handle,
           BASIC_INT_TYPE m,
-          const BASIC_INT_TYPE* RowPtr_O,
-          const BASIC_INT_TYPE* ColIdx_O,
-          const void* Matrix_Val_O,
-          const void* Vector_Val_X,
-          void*       Vector_Val_Y_O){
-    if(handle==NULL)return;
-    const BASIC_INT_TYPE* RowPtr = RowPtr_O;
-    const BASIC_INT_TYPE* ColIdx = ColIdx_O;
-    const void* Matrix_Val = Matrix_Val_O;
+          const BASIC_INT_TYPE *RowPtr_O,
+          const BASIC_INT_TYPE *ColIdx_O,
+          const void *Matrix_Val_O,
+          const void *Vector_Val_X,
+          void *Vector_Val_Y_O) {
+    if (handle == NULL)return;
+    const BASIC_INT_TYPE *RowPtr = RowPtr_O;
+    const BASIC_INT_TYPE *ColIdx = ColIdx_O;
+    const void *Matrix_Val = Matrix_Val_O;
     void *Vector_Val_Y = Vector_Val_Y_O;
-#if (OPT_LEVEL==3)
-    if(handle->Level_3_opt_used){
+#if (OPT_LEVEL == 3)
+    if (handle->Level_3_opt_used) {
         RowPtr = handle->RowPtr;
         ColIdx = handle->ColIdx;
         Matrix_Val = handle->Matrix_Val;
@@ -336,14 +333,15 @@ void spmv(const spmv_Handle_t handle,
     }
 #endif
     spmv_functions[handle->spmvMethod](handle, m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
-#if (OPT_LEVEL==3)
-    if(handle->Level_3_opt_used){
-        ReGather(Vector_Val_Y_O,Vector_Val_Y,handle->index,handle->data_size,m);
+#if (OPT_LEVEL == 3)
+    if (handle->Level_3_opt_used) {
+        ReGather(Vector_Val_Y_O, Vector_Val_Y, handle->index, handle->data_size, m);
     }
 #endif
 }
+
 #define SINGLE(arg) #arg
-#define STR(args1,args2) #args1 #args2
+#define STR(args1, args2) #args1 #args2
 #define VEC_STRING(NAME)\
 STR(NAME,_VECTOR_NONE),\
 STR(NAME,_VECTOR_AVX2),\
@@ -358,10 +356,10 @@ VEC_STRING(Method_SellCSigma),\
 VEC_STRING(Method_Csr5Spmv)//,\
 //VEC_STRING(Method_NumaSpmv)
 
-const char * funcNames[]= {
-    ALL_FUNC_SRTING
+const char *funcNames[] = {
+        ALL_FUNC_SRTING
 };
-const char*Methods_names[]={
+const char *Methods_names[] = {
         SINGLE(Method_Serial),
         SINGLE(Method_Parallel),
         SINGLE(Method_Balanced),
@@ -370,7 +368,7 @@ const char*Methods_names[]={
         SINGLE(Method_Csr5Spmv)
         //,SINGLE(Method_NumaSpmv)
 };
-const char*Vectorized_names[]={
+const char *Vectorized_names[] = {
         SINGLE(VECTOR_NONE),
         SINGLE(VECTOR_AVX2),
         SINGLE(VECTOR_AVX512),

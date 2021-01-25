@@ -14,7 +14,8 @@ float hsum_s_avx(__m256 in256) {
     return sum;
 }
 
-double hsum_d_avx(__m256d in256d){/*
+double hsum_d_avx(__m256d in256d){
+    /*
     double sum = 0;
     double * s = (double *)&in256;
     for(int i = 0 ; i < 4 ; ++i)sum+=s[i];*/
