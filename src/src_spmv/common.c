@@ -162,7 +162,7 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
     if (Function < Method_Serial || Function >= Method_Total_Size)Function = Method_Serial;
 
     handle_init_common_parameters(*Handle, nthreads, Function, size, vectorizedWay);
-    int C = 8;
+    int C = 4;
     const int Times = m / nthreads / C;
     BASIC_INT_TYPE *RowPtr = RowPtr_O;
     BASIC_INT_TYPE *ColIdx = ColIdx_O;
