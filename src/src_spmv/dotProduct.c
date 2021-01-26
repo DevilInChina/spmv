@@ -43,28 +43,32 @@ float basic_s_dotProduct(
 float basic_s_dotProduct_avx2(
         BASIC_INT_TYPE len, const BASIC_INT_TYPE* indx, const float *Val, const float *X) {
 #ifdef DOT_AVX2_CAN
-    float sum = 0;
-    __m256 res = _mm256_setzero_ps();
-    const int DEPTH = 8;
-    int dif = len;
-    int nloop = dif / DEPTH;
-    int remainder = dif % DEPTH;
-    for (int li = 0,j = 0; li < nloop; li++,j+=DEPTH) {
+    if(len >> 5) {
+        float sum = 0;
+        __m256 res = _mm256_setzero_ps();
+        const int DEPTH = 8;
+        int dif = len;
+        int nloop = dif / DEPTH;
+        int remainder = dif % DEPTH;
+        for (int li = 0, j = 0; li < nloop; li++, j += DEPTH) {
 
-        //__m256 vecv = _mm256_loadu_ps(&Val[j]);
-        //__m256i veci = _mm256_loadu_si256((__m256i *) (&indx[j]));
-        //__m256 vecx = _mm256_i32gather_ps(X, *(__m256i_u*)(indx+j), sizeof(X[0]));
-        res = _mm256_fmadd_ps(*(__m256_u*)(Val+j),
-                              _mm256_i32gather_ps(X, *(__m256i_u*)(indx+j), sizeof(X[0])),
-                              res);
-    }
-    //Y[u] += _mm256_reduce_add_ps(res);
-    sum += hsum_s_avx(res);
+            //__m256 vecv = _mm256_loadu_ps(&Val[j]);
+            //__m256i veci = _mm256_loadu_si256((__m256i *) (&indx[j]));
+            //__m256 vecx = _mm256_i32gather_ps(X, *(__m256i_u*)(indx+j), sizeof(X[0]));
+            res = _mm256_fmadd_ps(*(__m256_u *) (Val + j),
+                                  _mm256_i32gather_ps(X, *(__m256i_u *) (indx + j), sizeof(X[0])),
+                                  res);
+        }
+        //Y[u] += _mm256_reduce_add_ps(res);
+        sum += hsum_s_avx(res);
 
-    for (int j = nloop * DEPTH; j < len; ++j) {
-        sum += Val[j] * X[indx[j]];
+        for (int j = len - remainder; j < len; ++j) {
+            sum += Val[j] * X[indx[j]];
+        }
+        return sum;
+    }else{
+        return basic_s_dotProduct(len, indx, Val, X);
     }
-    return sum;
 #else
     return basic_s_dotProduct(len, indx, Val, X);
 #endif
@@ -114,27 +118,31 @@ double basic_d_dotProduct(
 double basic_d_dotProduct_avx2(
         BASIC_INT_TYPE len, const BASIC_INT_TYPE* indx, const double *Val, const double *X) {
 #ifdef DOT_AVX2_CAN
-    double sum = 0;
-    __m256d res = _mm256_setzero_pd();
-    const int DEPTH = 4;
-    int dif = len;
-    int nloop = dif / DEPTH;
-    int remainder = dif % DEPTH;
-    long long high[2]={0,0};
-    for (int li = 0,j = 0; li < nloop; li++,j+=DEPTH) {
-        //__m256d vecx = _mm256_i32gather_pd(X,_mm256_castsi256_si128(*(__m256i_u*)(indx+j)),sizeof(X[0]));
-        res = _mm256_fmadd_pd(
-                *((__m256d_u*) (Val+j)),
-                _mm256_i32gather_pd(X,_mm256_castsi256_si128(*(__m256i_u*)(indx+j)),sizeof(X[0]))
-                , res);
-    }
-    //Y[u] += _mm256_reduce_add_ps(res);
-    sum += hsum_d_avx(res);
+    if(len >> 4) {/// if len > 16
+        double sum = 0;
+        __m256d res = _mm256_setzero_pd();
+        const int DEPTH = 4;
+        int dif = len;
+        int nloop = dif / DEPTH;
+        int remainder = dif % DEPTH;
+        long long high[2] = {0, 0};
+        for (int li = 0, j = 0; li < nloop; li++, j += DEPTH) {
+            //__m256d vecx = _mm256_i32gather_pd(X,_mm256_castsi256_si128(*(__m256i_u*)(indx+j)),sizeof(X[0]));
+            res = _mm256_fmadd_pd(
+                    *((__m256d_u *) (Val + j)),
+                    _mm256_i32gather_pd(X, _mm256_castsi256_si128(*(__m256i_u *) (indx + j)), sizeof(X[0])),
+                    res);
+        }
+        //Y[u] += _mm256_reduce_add_ps(res);
+        sum += hsum_d_avx(res);
 
-    for (int j = nloop * DEPTH; j < len; ++j) {
-        sum += Val[j] * X[indx[j]];
+        for (int j = len - remainder; j < len; ++j) {
+            sum += Val[j] * X[indx[j]];
+        }
+        return sum;
+    }else{
+        return basic_d_dotProduct(len, indx, Val, X);
     }
-    return sum;
 #else
     return basic_d_dotProduct(len, indx, Val, X);
 #endif

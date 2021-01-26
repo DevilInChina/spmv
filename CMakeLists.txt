@@ -42,7 +42,7 @@ target_include_directories(mv PRIVATE src/csr5_avx2/avx2)
 
 target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
 #target_compile_definitions(mv PRIVATE DOT_AVX512_CAN )
-target_compile_definitions(mv PRIVATE OPT_LEVEL=3 )
+#target_compile_definitions(mv PRIVATE OPT_LEVEL=3 )
 
 add_executable(cg ${PROJECT_SOURCE_DIR}/src/samples/cg.c)
 
@@ -75,6 +75,8 @@ target_link_libraries(temp mv)
 add_executable(numaspmv ${PROJECT_SOURCE_DIR}/src/samples/numa.c)
 target_compile_definitions(numaspmv PRIVATE VALUE_TYPE=float)
 target_link_libraries(numaspmv mv)
+
+add_executable(sell ${PROJECT_SOURCE_DIR}/src/samples/sell.cpp)
 #[[
 add_executable(serial_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
 target_compile_options(serial_spmv PRIVATE -D TEST_METHOD=0)

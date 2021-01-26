@@ -2,6 +2,7 @@
 // Created by kouushou on 2021/1/15.
 //
 #include <spmv.h>
+#include <stdio.h>
 
 #define LINE_S_PRODUCTGather_PARAMETERS_IN const BASIC_INT_TYPE ld, const BASIC_INT_TYPE length, const float*Val,const BASIC_INT_TYPE* indx, const float *Vector_X,const BASIC_INT_TYPE*indy,float *Vector_Y
 #define LINE_D_PRODUCTGather_PARAMETERS_IN const BASIC_INT_TYPE ld, const BASIC_INT_TYPE length, const double*Val,const BASIC_INT_TYPE* indx, const double *Vector_X,const BASIC_INT_TYPE*indy,double *Vector_Y
@@ -20,11 +21,16 @@ void basic_s_lineProductGather_len(LINE_S_PRODUCTGather_PARAMETERS_IN) {
 
 
 void basic_d_lineProductGather_len(LINE_D_PRODUCTGather_PARAMETERS_IN) {
-    for (int i = 0; i < ld; ++i) {
-        for (int j = 0; j < length; ++j) {
-            if (i)
-                Vector_Y[indy[j]] += Val[i * length + j] * Vector_X[indx[i * length + j]];
-            else Vector_Y[indy[j]] = Val[i * length + j] * Vector_X[indx[i * length + j]];
+    const int block = 8;
+    for(int i = 0 ; i < length ; i+=block){
+        double vec[8] = {0.0};
+        for(int j = 0 ; j < ld ; ++j){
+            for(int k = 0 ; k < block ; ++k){
+                vec[k]+=Val[j*length+i+k]*Vector_X[indx[j*length+i+k]];
+            }
+        }
+        for(int k = 0 ; k < block ; ++k){
+            Vector_Y[indy[k+i]]= vec[k];
         }
     }
 }
@@ -37,7 +43,8 @@ void basic_s_lineProductGather_avx2(LINE_S_PRODUCTGather_PARAMETERS_IN) {
         for (int j = 0; j < ld; ++j) {
             vecy = _mm256_fmadd_ps(
                     *(__m256_u *) (Val + j * length + i),
-                    _mm256_i32gather_ps(Vector_X, *(__m256i_u *) (indx + j * length + i),
+                    _mm256_i32gather_ps(Vector_X,
+                                        *(__m256i_u *) (indx + j * length + i),
                                         sizeof(Vector_X[0])), vecy
             );
         }

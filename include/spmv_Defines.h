@@ -51,7 +51,7 @@ typedef struct Sigma_Block {
     BASIC_INT_TYPE *RowIndex;
     BASIC_INT_TYPE total;
     void *ValT;
-    void *Y;
+    //void *Y;
 } Sigma_Block, *Sigma_Block_t;
 
 

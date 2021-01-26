@@ -37,7 +37,7 @@ void spmv_Sigma_Blocks_init(Sigma_Block_t SigmaBeginner, int C, int Sigma,
         SigmaBeginner->ColIndex = NULL;
         SigmaBeginner->RowIndex = NULL;
         SigmaBeginner->ValT = NULL;
-        SigmaBeginner->Y = NULL;
+        //SigmaBeginner->Y = NULL;
         return;
     }
     SigmaBeginner->ColIndex = aligned_alloc(ALIGENED_SIZE, sizeof(BASIC_INT_TYPE) * C * SigmaBeginner->ld[times] );
@@ -45,7 +45,7 @@ void spmv_Sigma_Blocks_init(Sigma_Block_t SigmaBeginner, int C, int Sigma,
     SigmaBeginner->ValT = aligned_alloc(ALIGENED_SIZE, size * C * SigmaBeginner->ld[times] );
     memset(SigmaBeginner->ValT,0,size * C * SigmaBeginner->ld[times]);
     memset(SigmaBeginner->ColIndex,0,sizeof(BASIC_INT_TYPE) * C * SigmaBeginner->ld[times]);
-    SigmaBeginner->Y = aligned_alloc(ALIGENED_SIZE, size * C * times);
+    //SigmaBeginner->Y = aligned_alloc(ALIGENED_SIZE, size * C * times);
     for(int i = 0 ; i < Sigma ; ++i){
         SigmaBeginner->RowIndex[i] = rowBlock[i]->rowNumber;
     }
