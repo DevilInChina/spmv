@@ -6,8 +6,6 @@
 #include <math.h>
 #include <sys/time.h>
 #include <spmv.h>
-#include <zconf.h>
-#include <wait.h>
 
 int cmp_s(const void *a, const void *b) {
     double *s = a;
