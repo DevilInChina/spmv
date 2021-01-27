@@ -110,12 +110,7 @@ void spmv_parallel_Selected(const spmv_Handle_t handle,
                             void*       Vector_Val_Y
 );
 
-int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
-                                  BASIC_INT_TYPE m,BASIC_INT_TYPE n,
-                                  const BASIC_INT_TYPE *RowPtr,
-                                  const BASIC_INT_TYPE *ColIdx,
-                                  const void *Matrix_Val
-);
+
 
 void balancedHandleDestroy(spmv_Handle_t this_handle);
 
@@ -124,9 +119,24 @@ void balanced2HandleDestroy(spmv_Handle_t this_handle);
 
 
 void csr5HandleDestory(spmv_Handle_t handle);
-
+#ifdef NUMA
 void numaHandleDestory(spmv_Handle_t handle);
-
+int numa_spmv_get_handle_Selected(spmv_Handle_t handle,
+                                  BASIC_INT_TYPE m,BASIC_INT_TYPE n,
+                                  const BASIC_INT_TYPE *RowPtr,
+                                  const BASIC_INT_TYPE *ColIdx,
+                                  const void *Matrix_Val
+);
+void spmv_numa_Selected(
+        const spmv_Handle_t handle,
+        BASIC_INT_TYPE m,
+        const BASIC_INT_TYPE* RowPtr,
+        const BASIC_INT_TYPE* ColIdx,
+        const void* Matrix_Val,
+        const void* Vector_Val_X,
+        void*       Vector_Val_Y
+);
+#endif
 void csr5Spmv_get_handle_Selected(spmv_Handle_t handle,
                                   BASIC_INT_TYPE m,
                                   BASIC_INT_TYPE n,
@@ -144,15 +154,7 @@ void spmv_csr5Spmv_Selected(const spmv_Handle_t handle,
                             void*       Vector_Val_Y
 );
 
-void spmv_numa_Selected(
-        const spmv_Handle_t handle,
-        BASIC_INT_TYPE m,
-        const BASIC_INT_TYPE* RowPtr,
-        const BASIC_INT_TYPE* ColIdx,
-        const void* Matrix_Val,
-        const void* Vector_Val_X,
-        void*       Vector_Val_Y
-);
+
 
 
 

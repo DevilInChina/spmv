@@ -1,6 +1,7 @@
 //
 // Created by kouushou on 2021/1/9.
 //
+#ifdef NUMA
 #include "inner_spmv.h"
 #include <numa.h>
 #include <math.h>
@@ -320,3 +321,4 @@ void spmv_numa_Selected(
     free(threads);
     pthread_attr_destroy(&pthread_custom_attr);
 }
+#endif
