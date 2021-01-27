@@ -52,13 +52,13 @@ void testForFunctions(const char *matrixName,
 
 
         gettimeofday(&t1, NULL);
-        for (currentiter = 0; currentiter < 100; currentiter++) {
+        for (currentiter = 0; currentiter < 10; currentiter++) {
             spmv(handle, m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
         }
 
         gettimeofday(&t2, NULL);
         int iter = 100 +
-                   10000 / (((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0));
+                   1000 / (((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0));
         gettimeofday(&t1, NULL);
 
         for (currentiter = 0; currentiter < iter; currentiter++) {
