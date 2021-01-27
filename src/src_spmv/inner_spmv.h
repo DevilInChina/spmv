@@ -1,10 +1,12 @@
 //
 // Created by kouushou on 2020/12/10.
 //
-
+#include <spmv.h>
+#if defined(__cplusplus)
+extern "C" {
+#endif
 #ifndef GEMV_INNER_SPMV_H
 #define GEMV_INNER_SPMV_H
-#include <spmv.h>
 
 /**
  * @brief create a empty handle with initialize
@@ -119,9 +121,7 @@ void balancedHandleDestroy(spmv_Handle_t this_handle);
 
 void balanced2HandleDestroy(spmv_Handle_t this_handle);
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
+
 
 void csr5HandleDestory(spmv_Handle_t handle);
 
@@ -153,10 +153,6 @@ void spmv_numa_Selected(
         const void* Vector_Val_X,
         void*       Vector_Val_Y
 );
-
-#if defined(__cplusplus)
-}
-#endif
 
 
 
@@ -211,3 +207,7 @@ void metis_partitioning(
 void ReGather(void *true_val,const void*val ,int *index,BASIC_SIZE_TYPE size,int len);
 
 #endif //GEMV_INNER_SPMV_H
+
+#if defined(__cplusplus)
+}
+#endif

@@ -1,7 +1,9 @@
 //
 // Created by kouushou on 2020/12/6.
 //
-
+#if defined(__cplusplus)
+extern "C" {
+#endif
 #ifndef GEMV_SPMV_DEFINES_H
 #define GEMV_SPMV_DEFINES_H
 
@@ -108,3 +110,7 @@ extern double (*const Dot_d_Products[])
         indx, const double *Val, const double *X);
 
 #endif //GEMV_SPMV_DEFINES_H
+
+#if defined(__cplusplus)
+}
+#endif

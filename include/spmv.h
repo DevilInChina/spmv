@@ -1,9 +1,13 @@
-#ifndef GEMV_GEMV_H_
-#define GEMV_GEMV_H_
-#include <omp.h>
+
 #include "lineProduct.h"
 #include "dotProduct.h"
 #include "lineProductGather.h"
+#if defined(__cplusplus)
+extern "C" {
+#endif
+#ifndef GEMV_GEMV_H_
+#define GEMV_GEMV_H_
+#include <omp.h>
 #include <immintrin.h>
 
 #define ALIGENED_SIZE 64
@@ -66,4 +70,8 @@ void spmv(const spmv_Handle_t handle,
           const void* Vector_Val_X,
           void*       Vector_Val_Y);
 
+#endif
+
+#if defined(__cplusplus)
+}
 #endif

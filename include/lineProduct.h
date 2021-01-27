@@ -1,10 +1,12 @@
 //
 // Created by kouushou on 2020/12/6.
 //
-
+#include "spmv_Defines.h"
+#if defined(__cplusplus)
+extern "C" {
+#endif
 #ifndef GEMV_LINEPRODUCT_H
 #define GEMV_LINEPRODUCT_H
-#include "spmv_Defines.h"
 
 
 
@@ -41,3 +43,6 @@ gather_function inner_basic_GetGather(BASIC_SIZE_TYPE types);
 line_product_function inner_basic_GetLineProduct(BASIC_SIZE_TYPE types,VECTORIZED_WAY vec);
 
 #endif //GEMV_LINEPRODUCT_H
+#if defined(__cplusplus)
+}
+#endif

@@ -2,9 +2,12 @@
 // Created by kouushou on 2020/12/8.
 //
 
+#include "spmv_Defines.h"
+#if defined(__cplusplus)
+extern "C" {
+#endif
 #ifndef GEMV_DOTPRODUCT_H
 #define GEMV_DOTPRODUCT_H
-#include "spmv_Defines.h"
 float basic_s_dotProduct(
         BASIC_INT_TYPE len, const BASIC_INT_TYPE* indx, const float *Val, const float *X);
 
@@ -47,3 +50,6 @@ dot_product_function inner_basic_GetDotProduct(BASIC_SIZE_TYPE types);
 
 
 #endif //GEMV_DOTPRODUCT_H
+#if defined(__cplusplus)
+}
+#endif

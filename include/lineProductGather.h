@@ -1,7 +1,9 @@
 //
 // Created by kouushou on 2021/1/15.
 //
-
+#if defined(__cplusplus)
+extern "C" {
+#endif
 #ifndef SPMV_LINEPRODUCTGATHER_H
 #define SPMV_LINEPRODUCTGATHER_H
 
@@ -24,3 +26,7 @@ void basic_d_lineProductGather_avx2(const BASIC_INT_TYPE ld,const BASIC_INT_TYPE
 
 
 line_product_gather_function inner_basic_GetLineProductGather(BASIC_SIZE_TYPE types,VECTORIZED_WAY vec);
+
+#if defined(__cplusplus)
+}
+#endif
