@@ -72,10 +72,6 @@ add_executable(temp ${PROJECT_SOURCE_DIR}/src/samples/temp.c)
 target_compile_definitions(temp PRIVATE VALUE_TYPE=float)
 target_link_libraries(temp mv)
 
-add_executable(numaspmv ${PROJECT_SOURCE_DIR}/src/samples/numa.c)
-target_compile_definitions(numaspmv PRIVATE VALUE_TYPE=float)
-target_link_libraries(numaspmv mv)
-
 
 #[[
 add_executable(serial_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
