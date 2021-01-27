@@ -10,8 +10,6 @@
 #include <math.h>
 #include <sys/time.h>
 #include <spmv.h>
-#include <zconf.h>
-#include <wait.h>
 
 // sum up 8 single-precision numbers
 void testForFunctions(const char *matrixName,

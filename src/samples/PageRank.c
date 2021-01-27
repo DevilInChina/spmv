@@ -3,8 +3,6 @@
 //
 #include <stdio.h>
 #include <math.h>
-#include <stdio.h>
-#include <sys/time.h>
 #include <stdlib.h>
 #include <spmv.h>
 #include "mmio_highlevel.h"
