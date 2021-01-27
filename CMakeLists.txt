@@ -20,7 +20,6 @@ if (OPENMP_FOUND)
 endif ()
 link_libraries(m)
 link_libraries(pthread)
-link_libraries(numa)
 link_libraries(metis)
 file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)       #设置可执行文件的输出目录
