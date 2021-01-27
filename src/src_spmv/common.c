@@ -70,7 +70,7 @@ void gemv_Handle_clear(spmv_Handle_t this_handle) {
 
     csr5HandleDestory(this_handle);
 
-    numaHandleDestory(this_handle);
+    //numaHandleDestory(this_handle);
     if (this_handle->Level_3_opt_used) {
         free(this_handle->Matrix_Val);
         free(this_handle->index);
@@ -117,7 +117,7 @@ const spmv_function spmv_functions[] = {
         spmv_parallel_balanced2_Selected,
         spmv_sell_C_Sigma_Selected,
         spmv_csr5Spmv_Selected,
-        spmv_numa_Selected
+       // spmv_numa_Selected
 };
 #define Aligen_malloc_cpy(dst, src, size) \
 dst = aligned_alloc(ALIGENED_SIZE,size);                     \
@@ -212,11 +212,12 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
         }
             break;
         case Method_Numa: {
+            /*
             int k = numa_spmv_get_handle_Selected(*Handle, m, n, (int *) RowPtr, (int *) ColIdx, Matrix_Val);
             if (k == 0) {
                 (*Handle)->spmvMethod = Method_Balanced2;
                 parallel_balanced2_get_handle(*Handle, m, RowPtr, RowPtr[m] - RowPtr[0]);
-            }
+            }*/
         }
         default: {
 
