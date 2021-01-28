@@ -49,13 +49,15 @@ void metis_partitioning(
 
     memcpy(cpyColIdx, ColIdx, sizeof(int) * nnz);
 
-
+/*
     int ret = METIS_PartGraphKway(&m, &nWeights, cpyRowPtr, cpyColIdx,
                                   NULL, NULL, NULL, &nParts, NULL,
                                   NULL, NULL, &objval, part);
+    */
     Pair_t *order = malloc(sizeof(Pair_t) * m);
     for (int i = 0; i < m; ++i) {
         order[i] = malloc(sizeof(struct Pair));
+        part[i] = m%nParts;
         order[i]->first = part[i];
         order[i]->second = i;
     }

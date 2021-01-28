@@ -41,7 +41,7 @@ target_include_directories(mv PRIVATE src/csr5_avx2/avx2)
 
 target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
 #target_compile_definitions(mv PRIVATE DOT_AVX512_CAN )
-#target_compile_definitions(mv PRIVATE OPT_LEVEL=3 )
+target_compile_definitions(mv PRIVATE OPT_LEVEL=3 )
 
 add_executable(cg ${PROJECT_SOURCE_DIR}/src/samples/cg.c)
 
