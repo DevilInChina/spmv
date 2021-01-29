@@ -206,7 +206,7 @@ void metis_partitioning(
         int *part,
         void *val,BASIC_SIZE_TYPE size);
 
-void ReGather(void *true_val,const void*val ,int *index,BASIC_SIZE_TYPE size,int len);
+void ReGather(void *true_val,const void*val ,const int *index,BASIC_SIZE_TYPE size,int len);
 
 #endif //GEMV_INNER_SPMV_H
 
