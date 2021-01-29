@@ -55,6 +55,7 @@ void gemv_Handle_init(spmv_Handle_t this_handle) {
     this_handle->ColIdx = NULL;
     this_handle->Matrix_Val = NULL;
     this_handle->Y_temp = NULL;
+    this_handle->index = NULL;
     this_handle->Level_3_opt_used = 0;
     init_sell_C_Sigma(this_handle);
 
@@ -85,6 +86,9 @@ void spmv_destory_handle(spmv_Handle_t this_handle) {
 
 
     gemv_Handle_clear(this_handle);
+
+
+
     free(this_handle);
 }
 

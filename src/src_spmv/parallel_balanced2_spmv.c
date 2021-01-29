@@ -7,20 +7,20 @@
 #include <stdio.h>
 
 typedef struct balancedEnv {
-    BASIC_INT_TYPE* csrSplitter;
-    BASIC_INT_TYPE* Yid;
-    BASIC_INT_TYPE* Apinter;
-    BASIC_INT_TYPE* Start1;
-    BASIC_INT_TYPE* End1;
-    BASIC_INT_TYPE* Start2;
-    BASIC_INT_TYPE* End2;
-    BASIC_INT_TYPE* Bpinter;
-    BASIC_INT_TYPE* label;
-}balancedEnv,*balancedEnv_t;
+    BASIC_INT_TYPE *csrSplitter;
+    BASIC_INT_TYPE *Yid;
+    BASIC_INT_TYPE *Apinter;
+    BASIC_INT_TYPE *Start1;
+    BASIC_INT_TYPE *End1;
+    BASIC_INT_TYPE *Start2;
+    BASIC_INT_TYPE *End2;
+    BASIC_INT_TYPE *Bpinter;
+    BASIC_INT_TYPE *label;
+} balancedEnv, *balancedEnv_t;
 
-void balanced2HandleDestroy(spmv_Handle_t this_handle){
-    if(this_handle){
-        if(this_handle->extraHandle && this_handle->spmvMethod==Method_Balanced2){
+void balanced2HandleDestroy(spmv_Handle_t this_handle) {
+    if (this_handle) {
+        if (this_handle->extraHandle && this_handle->spmvMethod == Method_Balanced2) {
             balancedEnv_t exh = this_handle->extraHandle;
             free(exh->csrSplitter);
             free(exh->Yid);
@@ -31,12 +31,16 @@ void balanced2HandleDestroy(spmv_Handle_t this_handle){
             free(exh->End2);
             free(exh->Bpinter);
             free(exh->label);
+            free(exh);
+
+            this_handle->extraHandle = NULL;
         }
     }
 }
-void init_csrSplitter_balanced2(int nthreads,int nnzR,
-                                int m,const BASIC_INT_TYPE*RowPtr,BASIC_INT_TYPE *csrSplitter){
-    int stridennz = (nnzR+nthreads-1) /  nthreads;
+
+void init_csrSplitter_balanced2(int nthreads, int nnzR,
+                                int m, const BASIC_INT_TYPE *RowPtr, BASIC_INT_TYPE *csrSplitter) {
+    int stridennz = (nnzR + nthreads - 1) / nthreads;
 
     for (int tid = 0; tid <= nthreads; tid++) {
         // compute partition boundaries by partition of size stride
@@ -55,7 +59,7 @@ void parallel_balanced2_get_handle(
         BASIC_INT_TYPE nnzR
 ) {
     handle->extraHandle = malloc(sizeof(balancedEnv));
-    balancedEnv_t Env=handle->extraHandle;
+    balancedEnv_t Env = handle->extraHandle;
     (Env)->csrSplitter = malloc(sizeof(int) * (handle->nthreads + 1));
     init_csrSplitter_balanced2((int) (handle->nthreads), nnzR, m, RowPtr, Env->csrSplitter);
 
@@ -88,15 +92,16 @@ void parallel_balanced2_get_handle(
     int flag;
     for (int tid = 0; tid < nthreads; tid++) {
         //printf("tid = %i, csrSplitter: %i -> %i\n", tid, csrSplitter[tid], csrSplitter[tid+1]);
-        if (csrSplitter[tid + 1] - csrSplitter[tid] == 0) {
+        if (csrSplitter[tid + 1] - csrSplitter[tid] == 0 && csrSplitter[tid] != m) {
+
             Yid[tid] = csrSplitter[tid];
             flag = 1;
         }
-        if (csrSplitter[tid + 1] - csrSplitter[tid] != 0) {
+        else  {
+
             Yid[tid] = -1;
         }
-        if (csrSplitter[tid + 1] - csrSplitter[tid] != 0 && flag == 1) {
-            Yid[tid] = csrSplitter[tid];
+        if (flag) {
             flag = 0;
         }
         //printf("Yid[%d] is %d\n", tid, Yid[tid]);
@@ -120,7 +125,7 @@ void parallel_balanced2_get_handle(
             }
         }
         if (search1 == 1 && Apinter[tid] != 0) {
-            int nntz = floor((double ) Apinter[tid] / (double) (tid - start1 + 1));
+            int nntz = floor((double) Apinter[tid] / (double) (tid - start1 + 1));
             if (nntz != 0) {
                 for (int i = start1; i <= tid; i++) {
                     label[i] = i;
@@ -163,7 +168,7 @@ void parallel_balanced2_get_handle(
             }
         }
         if (search2 == 1 && Bpinter[tid] != 0) {
-            int nntz2 = floor((double ) Bpinter[tid] / (double) (tid - start2 + 1));
+            int nntz2 = floor((double) Bpinter[tid] / (double) (tid - start2 + 1));
             int mntz2 = Bpinter[tid] - (nntz2 * (tid - start2));
             //start and end
             int n = start2;
@@ -193,7 +198,6 @@ void parallel_balanced2_get_handle(
     (Env)->Yid = Yid;
     (Env)->Start1 = Start1;
     (Env)->Start2 = Start2;
-    (Env)->Yid = Yid;
     (Env)->End1 = End1;
     (Env)->End2 = End2;
     (Env)->label = label;
@@ -224,12 +228,14 @@ void spmv_parallel_balanced2_Selected(
     dot_product_function dotProductFunction = inner_basic_GetDotProduct(size);
 
 
-
     void *Ysum = malloc(size * nthreads);
-    memset(Ysum,0,size*nthreads);
+    memset(Ysum, 0, size * nthreads);
+    int cnt = 0;
     for (int tid = 0; tid < nthreads; tid++) {
-        if(Yid[tid]!=-1) {
-            CONVERT_EQU(Vector_Val_Y+Yid[tid]*size,size,0);
+        if (Yid[tid] != -1) {
+            CONVERT_EQU(Vector_Val_Y + Yid[tid] * size, size, 0);
+        } else {
+            ++cnt;
         }
     }
 #pragma omp parallel for
@@ -238,31 +244,31 @@ void spmv_parallel_balanced2_Selected(
             for (int u = csrSplitter[tid]; u < csrSplitter[tid + 1]; u++) {
                 dotProductFunction(RowPtr[u + 1] - RowPtr[u],
                                    ColIdx + RowPtr[u],
-                                   Matrix_Val + RowPtr[u]*size, Vector_Val_X,Vector_Val_Y+u*size,way);
+                                   Matrix_Val + RowPtr[u] * size, Vector_Val_X, Vector_Val_Y + u * size, way);
             }
-        }
-        else if (label[tid] != 0)  {
+        } else if (label[tid] != 0) {
+
             for (int u = Start1[tid]; u < End1[tid]; u++) {
                 dotProductFunction(
                         RowPtr[u + 1] - RowPtr[u],
                         ColIdx + RowPtr[u],
-                        Matrix_Val + RowPtr[u]*size, Vector_Val_X,Vector_Val_Y+u*size,way);
+                        Matrix_Val + RowPtr[u] * size, Vector_Val_X, Vector_Val_Y + u * size, way);
             }
-        }
-        else{
+
+        } else if (Yid[tid] != -1 && label[tid] == 0) {
 
             dotProductFunction(
                     End2[tid] - Start2[tid],
-                    ColIdx + Start2[tid], Matrix_Val + Start2[tid]*size, Vector_Val_X,
-                    Ysum+tid*size,way
+                    ColIdx + Start2[tid], Matrix_Val + Start2[tid] * size, Vector_Val_X,
+                    Ysum + tid * size, way
             );
             //((double *)Ysum)[tid] += ((double *)Ypartialsum)[tid];
             //CONVERT_ADDEQU(Vector_Val_Y+Yid[tid]*size,size,Ysum+tid*size);
         }
     }
-    for(int tid = 0 ; tid < nthreads ; ++tid){
-        if(Yid[tid]!=-1) {
-            CONVERT_ADDEQU(Vector_Val_Y+Yid[tid]*size,size,Ysum+tid*size);
+    for (int tid = 0; tid < nthreads; ++tid) {
+        if (Yid[tid] != -1) {
+            CONVERT_ADDEQU(Vector_Val_Y + Yid[tid] * size, size, Ysum + tid * size);
         }
     }
 

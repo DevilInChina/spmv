@@ -193,7 +193,7 @@ int main(int argc, char **argv) {
             }
         }
         if (search2 == 1 && Bpinter[tid] != 0) {
-            int nntz2 = ceil((double ) Bpinter[tid] / (double ) (tid - start2 + 1));
+            int nntz2 = ceil((double) Bpinter[tid] / (double) (tid - start2 + 1));
             int mntz2 = Bpinter[tid] - (nntz2 * (tid - start2));
             //start and end
             int n = start2;
@@ -224,10 +224,13 @@ int main(int argc, char **argv) {
     gettimeofday(&t1, NULL);
     const int way = VECTOR_NONE;
     for (currentiter = 0; currentiter < iter; currentiter++) {
-
+        int cnt = 0;
         for (int tid = 0; tid < nthreads; tid++) {
             if (Yid[tid] != -1)
                 Y[Yid[tid]] = 0;
+            else {
+                ++cnt;
+            }
             Ysum[tid] = 0;
         }
 #pragma omp parallel for
@@ -235,38 +238,36 @@ int main(int argc, char **argv) {
             if (Yid[tid] == -1) {
                 for (int u = csrSplitter[tid]; u < csrSplitter[tid + 1]; u++) {
                     dotProductFunction(
-                            RowPtr[u + 1]- RowPtr[u],
-                            ColIdx+ RowPtr[u],
-                            Val+RowPtr[u],
-                            X,Y+u,way
+                            RowPtr[u + 1] - RowPtr[u],
+                            ColIdx + RowPtr[u],
+                            Val + RowPtr[u],
+                            X, Y + u, way
                     );
                 }
-            }
-            else if (label[tid] != 0) {
+            } else if (label[tid] != 0) {
                 for (int u = Start1[tid]; u < End1[tid]; u++) {
 
                     dotProductFunction(
-                            RowPtr[u + 1]- RowPtr[u],
-                            ColIdx+ RowPtr[u],
-                            Val+RowPtr[u],
-                            X,Y+u,way
+                            RowPtr[u + 1] - RowPtr[u],
+                            ColIdx + RowPtr[u],
+                            Val + RowPtr[u],
+                            X, Y + u, way
                     );
                 }
-            }
-            else if (Yid[tid] != -1 && label[tid] == 0) {
+            } else if (Yid[tid] != -1 && label[tid] == 0) {
                 //Ysum[tid] = 0;
                 dotProductFunction(
                         End2[tid] - Start2[tid],
                         ColIdx + Start2[tid], Val + Start2[tid], X,
-                        Ypartialsum+tid,way
+                        Ypartialsum + tid, way
                 );
                 //((double *)Ysum)[tid] += ((double *)Ypartialsum)[tid];
-                Ysum[tid]+=Ypartialsum[tid];
+                Ysum[tid] += Ypartialsum[tid];
             }
         }
-        for(int tid = 0 ; tid < nthreads ; ++tid){
-            if(Yid[tid]!=-1) {
-                Y[Yid[tid]]+=Ysum[tid];
+        for (int tid = 0; tid < nthreads; ++tid) {
+            if (Yid[tid] != -1) {
+                Y[Yid[tid]] += Ysum[tid];
             }
         }
     }
@@ -281,11 +282,23 @@ int main(int argc, char **argv) {
             printf("Y_golden[%d] = %f\n", i, Y_golden[i]);
             errorcount_parallel_omp_balanced_Yid++;
         }
-
     //printf("-=-=-=-=-=-=-=-=-=-=-=-=-parallel_omp-=-=-=--=-=-=-=-=-=-=-=-\n");
     //printf("time_overall_parallel = %f\n", time_overall_parallel);
     printf("errorcount_parallel_omp_balanced_Yid = %i\n", errorcount_parallel_omp_balanced_Yid);
     printf("GFlops_parallel_omp_balanced_Yid = %f\n", GFlops_parallel_omp_balanced_Yid);
     //printf("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n\n");
     //free(Y);//加一
+    free(Y);
+    free(X);
+    free(Y_golden);
+    free(RowPtr);
+    free(ColIdx);
+    free(csrSplitter);
+    free(Yid);
+    free(Apinter);
+    free(Start1);
+    free(End1);
+    free(Start2);
+    free(End2);
+    free(Bpinter);
 }
