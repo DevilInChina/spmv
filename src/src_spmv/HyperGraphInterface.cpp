@@ -40,13 +40,14 @@ void metis_partitioning_inner(
 
     memcpy(cpyColIdx, ColIdx, sizeof(int) * nnz);
 
-
+/*
     int ret = METIS_PartGraphKway(&m, &nWeights, cpyRowPtr, cpyColIdx,
                                   NULL, NULL, NULL, &nParts, NULL,
                                   NULL, NULL, &objval, part);
+                                  */
     auto order = (metis_pd*)malloc(sizeof(metis_pd) * max(m,nnz));
     for (int i = 0; i < m; ++i) {
-        order[i] = make_pair(part[i],i);
+        order[i] = make_pair(i%nParts,i);
     }
     sort(order,order+m);
     for (int i = 0; i < m; ++i) {
