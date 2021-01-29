@@ -168,7 +168,7 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
     BASIC_INT_TYPE *ColIdx = ColIdx_O;
     BASIC_INT_TYPE *Matrix_Val = Matrix_Val_O;
 #if (OPT_LEVEL == 3)
-    if (m == n && m > 1024 && nthreads != 1) {
+    if (m == n && m > 8096 && RowPtr[m] - RowPtr[0] > 100000 && nthreads != 1) {
         (*Handle)->Level_3_opt_used = 1;
         Aligen_malloc_cpy(RowPtr, RowPtr_O, (m + 1) * sizeof(int));
         Aligen_malloc_cpy(ColIdx, ColIdx_O, (RowPtr[m] - RowPtr[0]) * sizeof(int));
