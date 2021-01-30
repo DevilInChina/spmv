@@ -204,7 +204,7 @@ void metis_partitioning(
         int *RowPtr,
         int *ColIdx,
         int *part,
-        void *val,BASIC_SIZE_TYPE size);
+        void *val,BASIC_SIZE_TYPE size,const char *MtxToken);
 
 void ReGather(void *true_val,const void*val ,const int *index,BASIC_SIZE_TYPE size,int len);
 

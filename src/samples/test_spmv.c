@@ -44,7 +44,7 @@ void testForFunctions(const char *matrixName,
         omp_set_num_threads(thread);
         gettimeofday(&t1, NULL);
         spmv_create_handle_all_in_one(&handle, m, n, RowPtr, ColIdx, Matrix_Val,
-                                      thread, FUNC_WAY, sizeof(VALUE_TYPE), PRODUCT_WAY);
+                                      thread, FUNC_WAY, sizeof(VALUE_TYPE), PRODUCT_WAY,matrixName);
         gettimeofday(&t2, NULL);
         double time = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0);
 
@@ -96,7 +96,8 @@ void LoadMtx_And_GetGolden(char *filePath,
 ) {
 
 
-    mmio_info(m, n, nnzR, isSymmetric, filePath);
+    int ret = mmio_info(m, n, nnzR, isSymmetric, filePath);
+    if(ret)exit(1);
     *RowPtr = (int *) aligned_alloc(ALIGENED_SIZE, (*m + 1) * sizeof(int));
     *ColIdx = (int *) aligned_alloc(ALIGENED_SIZE, *nnzR * sizeof(int));
     *Val = (VALUE_TYPE *) aligned_alloc(ALIGENED_SIZE, *nnzR * sizeof(VALUE_TYPE));
@@ -127,7 +128,7 @@ void LoadMtx_And_GetGolden(char *filePath,
 #endif
 
 int main(int argc, char **argv) {
-
+    if(argc!=4)return 1;
     char *file = argv[1];
     int threads_bregin = atoi(argv[2]);
     int threads_end = atoi(argv[3]);

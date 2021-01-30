@@ -48,7 +48,8 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
                                    BASIC_SIZE_TYPE nthreads,
                                    SPMV_METHODS Function,
                                    BASIC_SIZE_TYPE size,
-                                   VECTORIZED_WAY vectorizedWay
+                                   VECTORIZED_WAY vectorizedWay,
+                                   const char *MtxToken
                         );
 
 

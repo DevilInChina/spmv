@@ -6,14 +6,54 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
-#include <cstdio>
+#include <iostream>
+#include <string>
+#include <fstream>
 using namespace std;
+
 
 
 int cmp_int(const void *a, const void *b) {
     return *((int *) a) - *((int *) b);
 }
 
+
+bool findToken(int m,int nnz,const char *MtxToken,int *part){
+    string fileName(MtxToken);
+    for(auto &it:fileName){
+        if(it==' ' || it == '/' || it == '\\')it='_';
+    }
+    fileName = "cache/" + fileName;
+    fileName+=".bin";
+    ifstream inFile(fileName, ios::in | ios::binary);
+    if(!inFile.is_open())return false;
+    int m_R,nnz_R;
+    inFile.read((char*)(&m_R),sizeof(int ));
+
+    if(m_R!=m || inFile.eof())return false;
+
+    inFile.read((char*)(&nnz_R),sizeof(int ));
+    if(nnz_R!=nnz || inFile.eof())return false;
+
+    inFile.read((char*)(part),sizeof(int )*m);
+    inFile.close();
+    return false;
+}
+void loadToken(int m,int nnz,const char *MtxToken,const int *part){
+    string fileName(MtxToken);
+    for(auto &it:fileName){
+        if(it==' ' || it == '/' || it == '\\')it='_';
+    }
+    fileName = "cache/" + fileName;
+    fileName+=".bin";
+    ofstream outFile(fileName, ios::out | ios::binary);
+    if(!outFile.is_open())return;
+    outFile.write((char*)(&m),sizeof(int ));
+    outFile.write((char*)(&nnz),sizeof(int ));
+    outFile.write((char*)(part),sizeof(int )*m);
+    outFile.close();
+    if(MtxToken== nullptr)return;
+}
 typedef pair<int,int> metis_pd;
 template<typename V>
 void metis_partitioning_inner(
@@ -22,7 +62,7 @@ void metis_partitioning_inner(
         int *RowPtr,
         int *ColIdx,
         int *part,
-        V *val) {
+        V *val,const char *MtxToken) {
     int nWeights = 1;
     int objval;
     int *cpyRowPtr = (int *) malloc(sizeof(int) * (m + 1));
@@ -39,15 +79,18 @@ void metis_partitioning_inner(
     memcpy(cpyRowPtr, RowPtr, sizeof(int) * (m + 1));
 
     memcpy(cpyColIdx, ColIdx, sizeof(int) * nnz);
+    if(MtxToken== nullptr
+    || !findToken(m,nnz,MtxToken,part)
+    ) {
+        int ret = METIS_PartGraphKway(&m, &nWeights, cpyRowPtr, cpyColIdx,
+                                      NULL, NULL, NULL, &nParts, NULL,
+                                      NULL, NULL, &objval, part);
+        loadToken(m,nnz,MtxToken,part);
+    }
 
-/*
-    int ret = METIS_PartGraphKway(&m, &nWeights, cpyRowPtr, cpyColIdx,
-                                  NULL, NULL, NULL, &nParts, NULL,
-                                  NULL, NULL, &objval, part);
-                                  */
     auto order = (metis_pd*)malloc(sizeof(metis_pd) * max(m,nnz));
     for (int i = 0; i < m; ++i) {
-        order[i] = make_pair(i%nParts,i);
+        order[i] = make_pair(part[i],i);
     }
     sort(order,order+m);
     for (int i = 0; i < m; ++i) {
@@ -103,11 +146,11 @@ void metis_partitioning(
         int *RowPtr,
         int *ColIdx,
         int *part,
-        void *val, BASIC_SIZE_TYPE size) {
+        void *val, BASIC_SIZE_TYPE size,const char *MtxToken) {
     if(size==sizeof(double )){
-        metis_partitioning_inner(m,nnz,nParts,RowPtr,ColIdx,part,(double*)val);
+        metis_partitioning_inner(m,nnz,nParts,RowPtr,ColIdx,part,(double*)val,MtxToken);
     }else{
-        metis_partitioning_inner(m,nnz,nParts,RowPtr,ColIdx,part,(float*)val);
+        metis_partitioning_inner(m,nnz,nParts,RowPtr,ColIdx,part,(float*)val,MtxToken);
     }
 }
 

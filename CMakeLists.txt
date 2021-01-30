@@ -35,35 +35,34 @@ file(MAKE_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src/src_spmv SPMVS)
 
-add_library(mv SHARED ${SPMVS} )
-target_include_directories(mv PRIVATE src/csr5_avx2)
-target_include_directories(mv PRIVATE src/csr5_avx2/avx2)
+add_library(mv_l2 SHARED ${SPMVS} )
+target_include_directories(mv_l2 PRIVATE src/csr5_avx2)
+target_include_directories(mv_l2 PRIVATE src/csr5_avx2/avx2)
 
-target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
+target_compile_definitions(mv_l2 PRIVATE DOT_AVX2_CAN )
 #target_compile_definitions(mv PRIVATE DOT_AVX512_CAN )
 #target_compile_definitions(mv PRIVATE OPT_LEVEL=3 )
+
+
+add_executable(spmv_l2 ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
+target_link_libraries(spmv_l2 mv_l2)
+
+add_library(mv_l3 SHARED ${SPMVS} )
+target_include_directories(mv_l3 PRIVATE src/csr5_avx2)
+target_include_directories(mv_l3 PRIVATE src/csr5_avx2/avx2)
+
+target_compile_definitions(mv_l3 PRIVATE DOT_AVX2_CAN )
+#target_compile_definitions(mv PRIVATE DOT_AVX512_CAN )
+target_compile_definitions(mv_l3 PRIVATE OPT_LEVEL=3 )
+
+
+add_executable(spmv_l3 ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
+target_link_libraries(spmv_l3 mv_l3)
+
+
+
+
 #[[
-add_executable(cg ${PROJECT_SOURCE_DIR}/src/samples/cg.c)
-
-target_link_libraries(cg mv)
-
-add_executable(bicg ${PROJECT_SOURCE_DIR}/src/samples/bicg.c)
-
-target_link_libraries(bicg mv)
-
-
-
-#add_executable(line ${PROJECT_SOURCE_DIR}/src/samples/test_lineProduct.c)
-#target_link_libraries(line mv)
-
-add_executable(pagerank ${PROJECT_SOURCE_DIR}/src/samples/PageRank.c)
-
-target_link_libraries(pagerank mv)
-#]]
-add_executable(spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
-target_link_libraries(spmv mv)
-
-
 add_executable(compare ${PROJECT_SOURCE_DIR}/src/samples/compare.c)
 target_link_libraries(compare mv)
 
@@ -71,8 +70,6 @@ add_executable(temp ${PROJECT_SOURCE_DIR}/src/samples/temp.c)
 target_compile_definitions(temp PRIVATE VALUE_TYPE=float)
 target_link_libraries(temp mv)
 
-
-#[[
 add_executable(serial_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
 target_compile_options(serial_spmv PRIVATE -D TEST_METHOD=0)
 target_link_libraries(serial_spmv mv)

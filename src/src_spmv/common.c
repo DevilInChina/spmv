@@ -160,7 +160,8 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
                                    BASIC_SIZE_TYPE nthreads,
                                    SPMV_METHODS Function,
                                    BASIC_SIZE_TYPE size,
-                                   VECTORIZED_WAY vectorizedWay
+                                   VECTORIZED_WAY vectorizedWay,
+                                   const char*MtxToken
 ) {
     *Handle = gemv_create_handle();
     if (Function < Method_Serial || Function >= Method_Total_Size)Function = Method_Serial;
@@ -181,7 +182,7 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
         (*Handle)->index = aligned_alloc(ALIGENED_SIZE, (m + 1) * sizeof(int));
         metis_partitioning(m, RowPtr[m] - RowPtr[0], (int) nthreads,
                            RowPtr, ColIdx, (*Handle)->index, Matrix_Val,
-                           size);
+                           size,MtxToken);
     }
 #endif
     (*Handle)->RowPtr = RowPtr;
