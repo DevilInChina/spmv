@@ -9,7 +9,6 @@
 #include <iostream>
 #include <string>
 #include <fstream>
-#include <time.h>
 using namespace std;
 
 
@@ -81,7 +80,6 @@ void metis_partitioning_inner(
 
     memcpy(cpyColIdx, ColIdx, sizeof(int) * nnz);
     timeval t1,t2;
-
     if(MtxToken== nullptr
     || !findToken(m,nnz,MtxToken,part)
     ) {

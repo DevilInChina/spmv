@@ -38,7 +38,6 @@ add_library(mv_l2 SHARED ${SPMVS} )
 target_include_directories(mv_l2 PRIVATE src/csr5_avx2)
 target_include_directories(mv_l2 PRIVATE src/csr5_avx2/avx2)
 
-target_compile_definitions(mv_l2 PRIVATE IDXTYPEWIDTH=32)
 target_compile_definitions(mv_l2 PRIVATE DOT_AVX2_CAN )
 #target_compile_definitions(mv PRIVATE DOT_AVX512_CAN )
 #target_compile_definitions(mv PRIVATE OPT_LEVEL=3 )
@@ -46,12 +45,11 @@ target_compile_definitions(mv_l2 PRIVATE DOT_AVX2_CAN )
 
 add_executable(spmv_l2 ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
 target_link_libraries(spmv_l2 mv_l2)
-
+#[[
 add_library(mv_l3 SHARED ${SPMVS} )
 target_include_directories(mv_l3 PRIVATE src/csr5_avx2)
 target_include_directories(mv_l3 PRIVATE src/csr5_avx2/avx2)
 
-target_compile_definitions(mv_l3 PRIVATE IDXTYPEWIDTH=32)
 target_compile_definitions(mv_l3 PRIVATE DOT_AVX2_CAN )
 #target_compile_definitions(mv PRIVATE DOT_AVX512_CAN )
 target_compile_definitions(mv_l3 PRIVATE OPT_LEVEL=3 )
@@ -60,7 +58,7 @@ target_compile_definitions(mv_l3 PRIVATE OPT_LEVEL=3 )
 add_executable(spmv_l3 ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
 target_link_libraries(spmv_l3 mv_l3)
 
-
+#]]
 
 
 #[[
