@@ -118,7 +118,7 @@ double basic_d_dotProduct(
 double basic_d_dotProduct_avx2(
         BASIC_INT_TYPE len, const BASIC_INT_TYPE* indx, const double *Val, const double *X) {
 #ifdef DOT_AVX2_CAN
-    if(len >> 4) {/// if len > 16
+    if(len > 10) {/// if len > 16
         double sum = 0;
         __m256d res = _mm256_setzero_pd();
         const int DEPTH = 4;

@@ -6,13 +6,52 @@
 #include <math.h>
 #include <sys/time.h>
 #include <spmv.h>
-
 int cmp_s(const void *a, const void *b) {
     double *s = a;
     double *ss = b;
     if (*s > *ss)return 1;
     else if (*ss > *s)return -1;
     else return 0;
+}
+void mem_flush(const void *p, unsigned int allocation_size){
+    const size_t cache_line = 64;
+    const char *cp = (const char *)p;
+    size_t i = 0;
+
+    if (p == NULL || allocation_size <= 0)
+        return;
+
+    for (i = 0; i < allocation_size; i += cache_line) {
+        asm volatile("clflush (%0)\n\t"
+        :
+        : "r"(&cp[i])
+        : "memory");
+    }
+
+    asm volatile("sfence\n\t"
+    :
+    :
+    : "memory");
+}
+static const size_t LLC_CAPACITY = 32*1024*1024;
+static const double *bufToFlushLlc = NULL;
+void flushLlc()
+{
+    double sum = 0;
+#pragma omp parallel for reduction(+:sum)
+    for (size_t i = 0; i < LLC_CAPACITY/sizeof(bufToFlushLlc[0]); ++i) {
+        sum += bufToFlushLlc[i];
+    }
+    FILE *fp = fopen("/dev/null", "w");
+    fprintf(fp, "%f\n", sum);
+    fclose(fp);
+}
+void clearFlush() {
+    if(bufToFlushLlc==NULL)
+    bufToFlushLlc = (double *) _mm_malloc(LLC_CAPACITY, 64);
+    for (int i = 0; i < 128; ++i) {
+        for (int j = 0; j < 16; ++j) flushLlc();
+    }
 }
 
 // sum up 8 single-precision numbers
@@ -57,19 +96,23 @@ void testForFunctions(const char *matrixName,
         gettimeofday(&t2, NULL);
         int iter = 100 +
                    1000 / (((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0));
-        gettimeofday(&t1, NULL);
-
+        iter = 200;
+        double time_overall_serial = 0;
+        clearFlush();
         for (currentiter = 0; currentiter < iter; currentiter++) {
+
+            gettimeofday(&t1, NULL);
             spmv(handle, m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
+            gettimeofday(&t2, NULL);
+
+            time_overall_serial +=
+                    ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) ;
         }
-
-        gettimeofday(&t2, NULL);
-
-        double time_overall_serial =
-                ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) / iter;
+        time_overall_serial/=iter;
         double GFlops_serial = 2 * nnzR / time_overall_serial / pow(10, 6);
         double s = 0;
         //qsort(Vector_Val_Y,m,sizeof(VALUE_TYPE),cmp_s);
+
         for (int ind = 0; ind < m; ++ind) {
             s += (Vector_Val_Y[ind] - Y_golden[ind]) / m *
                  (Vector_Val_Y[ind] - Y_golden[ind]);
