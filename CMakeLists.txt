@@ -41,8 +41,8 @@ target_include_directories(mv PRIVATE src/csr5_avx2/avx2)
 
 target_compile_definitions(mv PRIVATE DOT_AVX2_CAN )
 #target_compile_definitions(mv PRIVATE DOT_AVX512_CAN )
-target_compile_definitions(mv PRIVATE OPT_LEVEL=3 )
-
+#target_compile_definitions(mv PRIVATE OPT_LEVEL=3 )
+#[[
 add_executable(cg ${PROJECT_SOURCE_DIR}/src/samples/cg.c)
 
 target_link_libraries(cg mv)
@@ -59,7 +59,7 @@ target_link_libraries(bicg mv)
 add_executable(pagerank ${PROJECT_SOURCE_DIR}/src/samples/PageRank.c)
 
 target_link_libraries(pagerank mv)
-
+#]]
 add_executable(spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
 target_link_libraries(spmv mv)
 
