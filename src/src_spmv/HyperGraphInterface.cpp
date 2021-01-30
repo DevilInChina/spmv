@@ -9,6 +9,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <time.h>
 using namespace std;
 
 
@@ -37,7 +38,7 @@ bool findToken(int m,int nnz,const char *MtxToken,int *part){
 
     inFile.read((char*)(part),sizeof(int )*m);
     inFile.close();
-    return false;
+    return true;
 }
 void loadToken(int m,int nnz,const char *MtxToken,const int *part){
     string fileName(MtxToken);
@@ -79,6 +80,8 @@ void metis_partitioning_inner(
     memcpy(cpyRowPtr, RowPtr, sizeof(int) * (m + 1));
 
     memcpy(cpyColIdx, ColIdx, sizeof(int) * nnz);
+    timeval t1,t2;
+
     if(MtxToken== nullptr
     || !findToken(m,nnz,MtxToken,part)
     ) {
