@@ -1,6 +1,7 @@
 //
 // Created by kouushou on 2021/1/21.
 //
+#if (OPT_LEVEL==3)
 #include "inner_spmv.h"
 #include <metis.h>
 #include <algorithm>
@@ -170,3 +171,4 @@ void ReGather(void *true_val, const void *val, const int *index, BASIC_SIZE_TYPE
         ReGather_inner((float *)true_val,(float *)val,index,len);
     }
 }
+#endif
