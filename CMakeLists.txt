@@ -10,7 +10,7 @@ SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -g")
 include_directories(include)
 
 add_compile_options(-mavx -mavx2 -march=native -O3)
-
+add_compile_definitions(IDXTYPEWIDTH=32)
 find_package(OpenMP REQUIRED)
 if (OPENMP_FOUND)
     MESSAGE("openmp found")
