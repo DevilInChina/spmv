@@ -125,7 +125,6 @@ double basic_d_dotProduct_avx2(
         int dif = len;
         int nloop = dif / DEPTH;
         int remainder = dif % DEPTH;
-        long long high[2] = {0, 0};
         for (int li = 0, j = 0; li < nloop; li++, j += DEPTH) {
             //__m256d vecx = _mm256_i32gather_pd(X,_mm256_castsi256_si128(*(__m256i_u*)(indx+j)),sizeof(X[0]));
             res = _mm256_fmadd_pd(
