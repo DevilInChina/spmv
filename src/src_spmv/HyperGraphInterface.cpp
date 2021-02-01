@@ -65,6 +65,9 @@ void metis_partitioning_inner(
         int *part,
         V *val,const char *MtxToken) {
     int nWeights = 1;
+    if(nParts > 64) nParts = 64;
+    if(nParts <=4 ) nParts = 4;
+
     int objval;
     int *cpyRowPtr = (int *) malloc(sizeof(int) * (m + 1));
 
