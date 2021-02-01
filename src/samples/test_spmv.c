@@ -194,7 +194,7 @@ int main(int argc, char **argv) {
 
     testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                      VECTOR_AVX2, Method_Parallel);
-/*
+
     testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                      VECTOR_AVX2, Method_Balanced);
 
@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
 
     testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                      VECTOR_AVX2, Method_CSR5SPMV);
-*/
+
     free(Val);
     free(RowPtr);
     free(ColIdx);
