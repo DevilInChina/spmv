@@ -98,18 +98,22 @@ void testForFunctions(const char *matrixName,
                    1000 / (((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0));
         iter = 200;
         double time_overall_serial = 0;
-        clearFlush();
+        double time_min = 1e9;
+        double time_cur;
+        //clearFlush();
         for (currentiter = 0; currentiter < iter; currentiter++) {
 
             gettimeofday(&t1, NULL);
             spmv(handle, m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
             gettimeofday(&t2, NULL);
-
-            time_overall_serial +=
-                    ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0) ;
+            time_cur=
+                    ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0);
+            time_overall_serial +=time_cur;
+            time_min = time_min>time_cur?time_cur:time_min;
         }
         time_overall_serial/=iter;
         double GFlops_serial = 2 * nnzR / time_overall_serial / pow(10, 6);
+        double GFlops_Fastest = 2 * nnzR / time_min / pow(10, 6);
         double s = 0;
         //qsort(Vector_Val_Y,m,sizeof(VALUE_TYPE),cmp_s);
 
@@ -122,9 +126,9 @@ void testForFunctions(const char *matrixName,
         }
         s = sqrt(s);
         // printf("Matrix,Methods,Vectorized,threads,error,predeal-time,time,Gflops\n");
-        printf("%s,%s,%s,%lu,%d,%f,%f,%f,%f\n", matrixName,
+        printf("%s,%s,%s,%lu,%d,%f,%f,%f,%f,%f\n", matrixName,
                Methods_names[FUNC_WAY], Vectorized_names[PRODUCT_WAY], thread, nnzR, s,
-               time, time_overall_serial, GFlops_serial);
+               time, time_overall_serial, GFlops_serial,GFlops_Fastest);
 
         if (handle)
             spmv_destory_handle(handle);
@@ -190,7 +194,7 @@ int main(int argc, char **argv) {
 
     testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                      VECTOR_AVX2, Method_Parallel);
-
+/*
     testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                      VECTOR_AVX2, Method_Balanced);
 
@@ -202,7 +206,7 @@ int main(int argc, char **argv) {
 
     testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                      VECTOR_AVX2, Method_CSR5SPMV);
-
+*/
     free(Val);
     free(RowPtr);
     free(ColIdx);
