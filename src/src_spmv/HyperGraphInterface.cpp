@@ -159,6 +159,8 @@ void metis_partitioning(
 template<typename V>
 void ReGather_inner(V *true_val, const V *val, const int *index, int len) {
     //memcpy(true_val, val, size * len);
+
+#pragma omp parallel for
     for (int i = 0; i < len; ++i) {
         true_val[index[i]] = val[i];
     }
