@@ -335,13 +335,13 @@ void spmv(const spmv_Handle_t handle,
         RowPtr = handle->RowPtr;
         ColIdx = handle->ColIdx;
         Matrix_Val = handle->Matrix_Val;
-        Vector_Val_Y = handle->Y_temp;
+        //Vector_Val_Y = handle->Y_temp;
     }
 #endif
     spmv_functions[handle->spmvMethod](handle, m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
 #if (OPT_LEVEL == 3)
     if (handle->Level_3_opt_used) {
-        ReGather(Vector_Val_Y_O, Vector_Val_Y, handle->index, handle->data_size, m);
+        //ReGather(Vector_Val_Y_O, Vector_Val_Y, handle->index, handle->data_size, m);
     }
 #endif
 }

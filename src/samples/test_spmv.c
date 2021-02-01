@@ -76,7 +76,8 @@ void testForFunctions(const char *matrixName,
     struct timeval t1, t2;
     int currentiter = 0;
     spmv_Handle_t handle = NULL;
-
+    VALUE_TYPE *YY = aligned_alloc(ALIGENED_SIZE,sizeof(VALUE_TYPE)*m);
+    VALUE_TYPE *XX = aligned_alloc(ALIGENED_SIZE,sizeof(VALUE_TYPE)*n);
 
     //qsort(Y_golden,m,sizeof(VALUE_TYPE),cmp_s);
     for (BASIC_SIZE_TYPE thread = threads_begin; thread <= threads_end; thread <<= 1u) {
@@ -87,10 +88,14 @@ void testForFunctions(const char *matrixName,
         gettimeofday(&t2, NULL);
         double time = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0);
 
-
+        if(handle->index){
+            for(int i = 0 ; i < m ;++i){
+                XX[handle->index[i]] = Vector_Val_X[i];
+            }
+        }
         gettimeofday(&t1, NULL);
         for (currentiter = 0; currentiter < 10; currentiter++) {
-            spmv(handle, m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
+            spmv(handle, m, RowPtr, ColIdx, Matrix_Val, XX, YY);
         }
 
         gettimeofday(&t2, NULL);
@@ -104,7 +109,7 @@ void testForFunctions(const char *matrixName,
         for (currentiter = 0; currentiter < iter; currentiter++) {
 
             gettimeofday(&t1, NULL);
-            spmv(handle, m, RowPtr, ColIdx, Matrix_Val, Vector_Val_X, Vector_Val_Y);
+            spmv(handle, m, RowPtr, ColIdx, Matrix_Val, XX, YY);
             gettimeofday(&t2, NULL);
             time_cur=
                     ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0);
@@ -116,7 +121,11 @@ void testForFunctions(const char *matrixName,
         double GFlops_Fastest = 2 * nnzR / time_min / pow(10, 6);
         double s = 0;
         //qsort(Vector_Val_Y,m,sizeof(VALUE_TYPE),cmp_s);
-
+        if(handle->index){
+            for(int i = 0 ; i < m ;++i){
+                Vector_Val_Y[handle->index[i]] = YY[i];
+            }
+        }
         for (int ind = 0; ind < m; ++ind) {
             s += (Vector_Val_Y[ind] - Y_golden[ind]) / m *
                  (Vector_Val_Y[ind] - Y_golden[ind]);
@@ -133,6 +142,8 @@ void testForFunctions(const char *matrixName,
         if (handle)
             spmv_destory_handle(handle);
     }
+    free(XX);
+    free(YY);
 }
 
 void LoadMtx_And_GetGolden(char *filePath,

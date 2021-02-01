@@ -122,7 +122,7 @@ void metis_partitioning_inner(
         sort(order+RowPtr[part[i]],order+RowPtr[part[i] + 1]);
         for (int j = 0; j < len; ++j) {
 
-            cpyColIdx[j + cpyRowPtr[i]] = ColIdx[order[j + RowPtr[part[i]]].second];
+            cpyColIdx[ j + cpyRowPtr[i]] = part[ColIdx[order[j + RowPtr[part[i]]].second]];
             cpyVal[j + cpyRowPtr[i]] = val[order[j + RowPtr[part[i]]].second];
         }
     }
