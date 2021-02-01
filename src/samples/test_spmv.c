@@ -92,6 +92,8 @@ void testForFunctions(const char *matrixName,
             for(int i = 0 ; i < m ;++i){
                 XX[handle->index[i]] = Vector_Val_X[i];
             }
+        }else{
+            memcpy(XX,Vector_Val_X,sizeof(VALUE_TYPE)*n);
         }
         gettimeofday(&t1, NULL);
         for (currentiter = 0; currentiter < 10; currentiter++) {
@@ -125,6 +127,8 @@ void testForFunctions(const char *matrixName,
             for(int i = 0 ; i < m ;++i){
                 Vector_Val_Y[handle->index[i]] = YY[i];
             }
+        }else{
+            memcpy(Vector_Val_Y,YY,sizeof(VALUE_TYPE)*m);
         }
         for (int ind = 0; ind < m; ++ind) {
             s += (Vector_Val_Y[ind] - Y_golden[ind]) / m *
