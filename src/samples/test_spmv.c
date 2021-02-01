@@ -90,7 +90,7 @@ void testForFunctions(const char *matrixName,
 
         if(handle->index){
             for(int i = 0 ; i < m ;++i){
-                XX[handle->index[i]] = Vector_Val_X[i];
+                XX[i] = Vector_Val_X[handle->index[i]];
             }
         }else{
             memcpy(XX,Vector_Val_X,sizeof(VALUE_TYPE)*n);
