@@ -370,15 +370,23 @@ inline void basic_s_lineProductGather_avx2(LINE_S_PRODUCTGather_PARAMETERS_IN) {
     const int block = 8;
     for (int i = 0; i < length; i += block) {
         __m256_u vecy = _mm256_setzero_ps();
+        const float *ValLine = Val + i;
+        const int *indxLine = indx + i;
 
         for (int j = 0; j < ld; ++j) {
             vecy = _mm256_fmadd_ps(
-                    *(__m256_u *) (Val + j * length + i),
-                    _mm256_i32gather_ps(Vector_X,
-                                        *(__m256i_u *) (indx + j * length + i),
-                                        sizeof(Vector_X[0])), vecy
+                    *(__m256_u *) (ValLine),
+                    _mm256_set_ps(Vector_X[*(indxLine + 7)],
+                                  Vector_X[*(indxLine + 6)],
+                                  Vector_X[*(indxLine + 5)],
+                                  Vector_X[*(indxLine + 4)],
+                                  Vector_X[*(indxLine + 3)],
+                                  Vector_X[*(indxLine + 2)],
+                                  Vector_X[*(indxLine + 1)],
+                                  Vector_X[*(indxLine)]), vecy
             );
-
+            ValLine+=length;
+            indxLine+=length;
         }
         float *cur = (float *) (&vecy);
 
