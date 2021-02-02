@@ -243,7 +243,7 @@ void Dot_Product_d_aocl(BASIC_INT_TYPE len, const BASIC_INT_TYPE*indx, const voi
 
         //Gather the x vector elements from the column indices
         //vec_x  =
-                ///*
+                /*
                  _mm256_set_pd(x[*(colIndPtr+3)],
                                x[*(colIndPtr+2)],
                                x[*(colIndPtr+1)],
