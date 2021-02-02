@@ -13,15 +13,15 @@ void spmv_parallel_Selected(const spmv_Handle_t handle,
     BASIC_SIZE_TYPE size = handle->data_size;
     VECTORIZED_WAY vectorizedWay = handle->vectorizedWay;
     dot_product_function dotProductFunction = inner_basic_GetDotProduct(size);
-    const double *Val = Matrix_Val;
-    double *Y = Vector_Val_Y;
-    const double * x = Vector_Val_X;
+    const double *Val = (double *)Matrix_Val;
+    double *Y = (double *)Vector_Val_Y;
+    const double * x = (double *)Vector_Val_X;
 #pragma omp parallel for
     for (int i = 0; i < m; i++) {
         Dot_Product_d_aocl(RowPtr[i + 1] - RowPtr[i],
                            ColIdx + RowPtr[i],
                            Val + RowPtr[i] ,
-                           Vector_Val_X,
+                           x,
                            Y + i ,
                            vectorizedWay);
     }
