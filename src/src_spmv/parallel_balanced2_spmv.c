@@ -202,7 +202,7 @@ void parallel_balanced2_get_handle(
     (Env)->label = label;
 }
 
-inline void spmv_parallel_balanced2_cpp(
+inline void spmv_parallel_balanced2_cpp_d(
         const spmv_Handle_t handle,
         BASIC_INT_TYPE m,
         const BASIC_INT_TYPE *RowPtr,
@@ -275,7 +275,7 @@ inline void spmv_parallel_balanced2_cpp(
     }
     free(Ysum);
 }
-inline void spmv_parallel_balanced2_cpp(
+inline void spmv_parallel_balanced2_cpp_s(
         const spmv_Handle_t handle,
         BASIC_INT_TYPE m,
         const BASIC_INT_TYPE *RowPtr,
@@ -359,10 +359,10 @@ void spmv_parallel_balanced2_Selected(
         void *Vector_Val_Y
 ) {
     if (handle->data_size == sizeof(double)) {
-        spmv_parallel_balanced2_cpp(handle, m, RowPtr, ColIdx, (double *) Matrix_Val, (double *) Vector_Val_X,
+        spmv_parallel_balanced2_cpp_d(handle, m, RowPtr, ColIdx, (double *) Matrix_Val, (double *) Vector_Val_X,
                         (double *) Vector_Val_Y);
     } else {
-        spmv_parallel_balanced2_cpp(handle, m, RowPtr, ColIdx, (float *) Matrix_Val, (float *) Vector_Val_X,
+        spmv_parallel_balanced2_cpp_s(handle, m, RowPtr, ColIdx, (float *) Matrix_Val, (float *) Vector_Val_X,
                         (float *) Vector_Val_Y);
     }
 }

@@ -6,7 +6,7 @@
 #include "inner_spmv.h"
 
 
-inline void spmv_serial_cpp(const spmv_Handle_t handle,
+inline void spmv_serial_cpp_d(const spmv_Handle_t handle,
                             BASIC_INT_TYPE m,
                             const BASIC_INT_TYPE *RowPtr,
                             const BASIC_INT_TYPE *ColIdx,
@@ -21,7 +21,7 @@ inline void spmv_serial_cpp(const spmv_Handle_t handle,
     }
 }
 
-inline void spmv_serial_cpp(const spmv_Handle_t handle,
+inline void spmv_serial_cpp_s(const spmv_Handle_t handle,
                             BASIC_INT_TYPE m,
                             const BASIC_INT_TYPE *RowPtr,
                             const BASIC_INT_TYPE *ColIdx,
@@ -46,10 +46,10 @@ void spmv_serial_Selected(
         void *Vector_Val_Y
 ) {
     if (handle->data_size == sizeof(double)) {
-        spmv_serial_cpp(handle, m, RowPtr, ColIdx, (double *) Matrix_Val, (double *) Vector_Val_X,
+        spmv_serial_cpp_d(handle, m, RowPtr, ColIdx, (double *) Matrix_Val, (double *) Vector_Val_X,
                         (double *) Vector_Val_Y);
     } else {
-        spmv_serial_cpp(handle, m, RowPtr, ColIdx, (float *) Matrix_Val, (float *) Vector_Val_X,
+        spmv_serial_cpp_s(handle, m, RowPtr, ColIdx, (float *) Matrix_Val, (float *) Vector_Val_X,
                         (float *) Vector_Val_Y);
     }
 }

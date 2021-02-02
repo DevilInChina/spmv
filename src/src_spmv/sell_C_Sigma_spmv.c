@@ -186,7 +186,7 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
     }
 }
 
-void spmv_sell_C_Sigma_cpp(const spmv_Handle_t handle,
+inline void spmv_sell_C_Sigma_cpp_d(const spmv_Handle_t handle,
                                 BASIC_INT_TYPE m,
                                 const BASIC_INT_TYPE *RowPtr,
                                 const BASIC_INT_TYPE *ColIdx,
@@ -236,7 +236,7 @@ void spmv_sell_C_Sigma_cpp(const spmv_Handle_t handle,
         }
     }
 }
-void spmv_sell_C_Sigma_cpp(const spmv_Handle_t handle,
+inline void spmv_sell_C_Sigma_cpp_s(const spmv_Handle_t handle,
                            BASIC_INT_TYPE m,
                            const BASIC_INT_TYPE *RowPtr,
                            const BASIC_INT_TYPE *ColIdx,
@@ -295,10 +295,10 @@ void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
                                 void *Vector_Val_Y
 ) {
     if (handle->data_size == sizeof(double)) {
-        spmv_sell_C_Sigma_cpp(handle, m, RowPtr, ColIdx, (double *) Matrix_Val, (double *) Vector_Val_X,
+        spmv_sell_C_Sigma_cpp_d(handle, m, RowPtr, ColIdx, (double *) Matrix_Val, (double *) Vector_Val_X,
                         (double *) Vector_Val_Y);
     } else {
-        spmv_sell_C_Sigma_cpp(handle, m, RowPtr, ColIdx, (float *) Matrix_Val, (float *) Vector_Val_X,
+        spmv_sell_C_Sigma_cpp_s(handle, m, RowPtr, ColIdx, (float *) Matrix_Val, (float *) Vector_Val_X,
                         (float *) Vector_Val_Y);
     }
 }
