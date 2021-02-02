@@ -370,6 +370,7 @@ inline void basic_s_lineProductGather_avx2(LINE_S_PRODUCTGather_PARAMETERS_IN) {
     const int block = 8;
     for (int i = 0; i < length; i += block) {
         __m256_u vecy = _mm256_setzero_ps();
+
         for (int j = 0; j < ld; ++j) {
             vecy = _mm256_fmadd_ps(
                     *(__m256_u *) (Val + j * length + i),
@@ -377,8 +378,10 @@ inline void basic_s_lineProductGather_avx2(LINE_S_PRODUCTGather_PARAMETERS_IN) {
                                         *(__m256i_u *) (indx + j * length + i),
                                         sizeof(Vector_X[0])), vecy
             );
+
         }
         float *cur = (float *) (&vecy);
+
         for (int j = 0; j < block; ++j) {
             Vector_Y[indy[i + j]] = cur[j];
         }
@@ -389,12 +392,19 @@ inline void basic_d_lineProductGather_avx2(LINE_D_PRODUCTGather_PARAMETERS_IN) {
     const int block = 4;
     for (int i = 0; i < length; i += block) {
         __m256d_u vecy = _mm256_setzero_pd();
+        const double *ValLine = Val + i;
+        const int *indxLine = indx + i;
         for (int j = 0; j < ld; ++j) {
+
             vecy = _mm256_fmadd_pd(
-                    *(__m256d_u *) (Val + j * length + i),
-                    _mm256_i32gather_pd(Vector_X, _mm256_castsi256_si128(*(__m256i_u *) (indx + i + j * length)),
+                    *(__m256d_u *) (ValLine),
+                    _mm256_i32gather_pd(Vector_X,
+                                        _mm256_castsi256_si128(
+                                                *(__m256i_u *) (indxLine)),
                                         sizeof(Vector_X[0])), vecy
             );
+            ValLine+=length;
+            indxLine+=length;
         }
         double *cur = (double *) (&vecy);
         for (int j = 0; j < block; ++j) {
