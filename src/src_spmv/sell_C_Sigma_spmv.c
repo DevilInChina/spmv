@@ -158,17 +158,17 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
 
         */
         const int Catch = Sigma;
-        for (int I_of_Sigma = 0; I_of_Sigma < banner; I_of_Sigma += Catch) {
-            //qsort(rowBlock_ts + I_of_Sigma, Catch, sizeof(Row_Block_t), cmp);
-        }
+
         (handle)->sigmaBlock = (Sigma_Block_t) malloc(sizeof(Sigma_Block) * len);
-        for (int i = 0, SBlock = 0; i < len; ++i, SBlock += Sigma) {
+#pragma omp parallel for
+        for (int i = 0; i < len; ++i) {
             spmv_Sigma_Blocks_init((handle)->sigmaBlock + i,
                                    C, Sigma, RowPtr,
-                                   rowBlock_ts + SBlock,
+                                   rowBlock_ts + i*Sigma,
                                    size, &total, &zero
             );
         }
+        /*
         double S = 0;
         double ave = 1.0 * total / len;
         for (int i = 0; i < len; ++i) {
@@ -176,7 +176,8 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
             S += (cur - ave) * (cur - ave);
         }
         S = sqrt(S / len) / ave;
-        //printf("Sigma,banner,m,C,zero,Average,s,res\n");
+        */
+         //printf("Sigma,banner,m,C,zero,Average,s,res\n");
         //printf("%d,%d,%d,%d,%f,%f,%f,%f\n", Sigma, banner, m, C, zero * 1.0 / total, ave, S, (m - banner) * 1.0 / m);
 
         free(rowBlock_ts);
