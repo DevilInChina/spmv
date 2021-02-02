@@ -242,11 +242,12 @@ void Dot_Product_d_aocl(BASIC_INT_TYPE len, const BASIC_INT_TYPE*indx, const voi
         vec_vals = _mm256_loadu_pd((double const *)matValPtr);
 
         //Gather the x vector elements from the column indices
-        vec_x  = _mm256_set_pd(x[*(colIndPtr+3)],
+        vec_x  = /*_mm256_set_pd(x[*(colIndPtr+3)],
                                x[*(colIndPtr+2)],
                                x[*(colIndPtr+1)],
-                               x[*(colIndPtr)]);
+                               x[*(colIndPtr)]);*/
 
+        _mm256_i32gather_pd(x, _mm256_castsi256_si128(*(__m256i_u *) (colIndPtr)), sizeof(x[0]));
         vec_y = _mm256_fmadd_pd(vec_vals, vec_x, vec_y);
 
         matValPtr+=4;
