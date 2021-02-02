@@ -1,7 +1,6 @@
 
-#include "lineProduct.h"
-#include "dotProduct.h"
-#include "lineProductGather.h"
+
+#include "spmv_Defines.h"
 #if defined(__cplusplus)
 extern "C" {
 #endif
