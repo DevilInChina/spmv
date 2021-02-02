@@ -239,10 +239,10 @@ void Dot_Product_d_aocl(BASIC_INT_TYPE len, const BASIC_INT_TYPE*indx, const voi
     for(j =  0 ; j < k_iter ; j++ )
     {
         //(csr_val[j] (csr_val[j+1] (csr_val[j+2] (csr_val[j+3]
-        vec_vals = _mm256_loadu_pd((double const *)matValPtr);
+        //vec_vals = _mm256_loadu_pd((double const *)matValPtr);
 
         //Gather the x vector elements from the column indices
-        vec_x  =
+        //vec_x  =
                 ///*
                  _mm256_set_pd(x[*(colIndPtr+3)],
                                x[*(colIndPtr+2)],
@@ -251,7 +251,13 @@ void Dot_Product_d_aocl(BASIC_INT_TYPE len, const BASIC_INT_TYPE*indx, const voi
         //*/
 
         //_mm256_i32gather_pd(x, _mm256_castsi256_si128(*(__m256i_u *) (colIndPtr)), sizeof(x[0]));
-        vec_y = _mm256_fmadd_pd(vec_vals, vec_x, vec_y);
+        vec_y = _mm256_fmadd_pd(
+                *((__m256d_u *) (matValPtr)),
+                _mm256_set_pd(x[*(colIndPtr+3)],
+                              x[*(colIndPtr+2)],
+                              x[*(colIndPtr+1)],
+                              x[*(colIndPtr)]),
+                vec_y);
 
         matValPtr+=4;
         colIndPtr+=4;
