@@ -210,6 +210,9 @@ void metis_partitioning(
 void ReGather(void *true_val,const void*val ,const int *index,BASIC_SIZE_TYPE size,int len);
 #endif
 
+inline void Dot_Product_d_aocl(BASIC_INT_TYPE len, const BASIC_INT_TYPE*indx, const void *Val, const void *X,
+                        void * res, VECTORIZED_WAY vectorizedWay);
+
 #endif //GEMV_INNER_SPMV_H
 
 #if defined(__cplusplus)
