@@ -75,7 +75,7 @@ void parallel_balanced_get_handle(
 }
 
 
-void spmv_parallel_balanced_cpp(
+inline void spmv_parallel_balanced_cpp_d(
         const spmv_Handle_t handle,
         BASIC_INT_TYPE m,
         const BASIC_INT_TYPE *RowPtr,
@@ -100,7 +100,7 @@ void spmv_parallel_balanced_cpp(
     }
 }
 
-void spmv_parallel_balanced_cpp(
+inline void spmv_parallel_balanced_cpp_s(
         const spmv_Handle_t handle,
         BASIC_INT_TYPE m,
         const BASIC_INT_TYPE *RowPtr,
@@ -135,13 +135,13 @@ void spmv_parallel_balanced_Selected(
         void *Vector_Val_Y
 ) {
     if (handle->data_size == sizeof(double)) {
-        spmv_parallel_balanced_cpp(handle, m,
+        spmv_parallel_balanced_cpp_d(handle, m,
                                    RowPtr, ColIdx,
                                    (double *) Matrix_Val,
                                    (double *) Vector_Val_X,
                                    (double *) Vector_Val_Y);
     } else {
-        spmv_parallel_balanced_cpp(handle, m, RowPtr, ColIdx,
+        spmv_parallel_balanced_cpp_s(handle, m, RowPtr, ColIdx,
                                    (float *) Matrix_Val,
                                    (float *) Vector_Val_X,
                                    (float *) Vector_Val_Y);
