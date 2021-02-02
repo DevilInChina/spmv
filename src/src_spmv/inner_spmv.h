@@ -398,10 +398,10 @@ inline void basic_d_lineProductGather_avx2(LINE_D_PRODUCTGather_PARAMETERS_IN) {
 
             vecy = _mm256_fmadd_pd(
                     *(__m256d_u *) (ValLine),
-                    _mm256_i32gather_pd(Vector_X,
-                                        _mm256_castsi256_si128(
-                                                *(__m256i_u *) (indxLine)),
-                                        sizeof(Vector_X[0])), vecy
+                    _mm256_set_pd(Vector_X[*(indxLine + 3)],
+                                  Vector_X[*(indxLine + 2)],
+                                  Vector_X[*(indxLine + 1)],
+                                  Vector_X[*(indxLine)]), vecy
             );
             ValLine+=length;
             indxLine+=length;
