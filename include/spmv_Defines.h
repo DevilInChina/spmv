@@ -37,24 +37,7 @@ extern const char *Methods_names[];
 
 extern const char *funcNames[];
 
-typedef struct Row_Block {
-    const BASIC_INT_TYPE *indxBegin;
-    const void *valBegin;
-    BASIC_INT_TYPE length;
-    BASIC_INT_TYPE rowNumber;
-} Row_Block, *Row_Block_t;
 
-
-typedef struct Sigma_Block {
-    BASIC_INT_TYPE C;
-    BASIC_INT_TYPE times;
-    BASIC_INT_TYPE *ld;
-    BASIC_INT_TYPE *ColIndex;
-    BASIC_INT_TYPE *RowIndex;
-    BASIC_INT_TYPE total;
-    void *ValT;
-    //void *Y;
-} Sigma_Block, *Sigma_Block_t;
 
 
 typedef struct spmv_Handle {
@@ -75,10 +58,7 @@ typedef struct spmv_Handle {
 
 
     ///---------sell C Sigma---------///
-    BASIC_INT_TYPE Sigma, C;
-    BASIC_INT_TYPE banner;
-    Sigma_Block_t sigmaBlock;
-    ///---------sell C Sigma---------///
+
 
     ///---------csr  5  spmv ---------///
 

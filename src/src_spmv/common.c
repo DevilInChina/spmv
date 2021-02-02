@@ -7,19 +7,6 @@
 #include <string.h>
 #include <stdio.h>
 
-/**
- * @brief init parameters used in balanced and balanced2
- * @param this_handle
- */
-
-
-void init_sell_C_Sigma(spmv_Handle_t this_handle) {
-    this_handle->Sigma = 0;
-    this_handle->C = 0;
-    this_handle->banner = 0;
-
-    this_handle->sigmaBlock = NULL;
-}
 
 /**
  * @brief free parameters used in balanced and balanced2
@@ -27,25 +14,6 @@ void init_sell_C_Sigma(spmv_Handle_t this_handle) {
  */
 
 
-void C_Block_destory(Sigma_Block_t this_block) {
-    free(this_block->RowIndex);
-    free(this_block->ColIndex);
-    free(this_block->ValT);
-    //free(this_block->Y);
-    free(this_block->ld);
-}
-
-void clear_Sell_C_Sigma(spmv_Handle_t this_handle) {
-    if (this_handle && this_handle->spmvMethod == Method_SellCSigma) {
-        if (this_handle->Sigma) {
-            int siz = this_handle->banner / this_handle->Sigma;
-            for (int i = 0; i < siz; ++i) {
-                C_Block_destory(this_handle->sigmaBlock + i);
-            }
-        }
-        free(this_handle->sigmaBlock);
-    }
-}
 
 void gemv_Handle_init(spmv_Handle_t this_handle) {
     this_handle->spmvMethod = Method_Serial;
@@ -57,7 +25,6 @@ void gemv_Handle_init(spmv_Handle_t this_handle) {
     this_handle->Y_temp = NULL;
     this_handle->index = NULL;
     this_handle->Level_3_opt_used = 0;
-    init_sell_C_Sigma(this_handle);
 
 }
 
@@ -67,7 +34,7 @@ void gemv_Handle_clear(spmv_Handle_t this_handle) {
 
     balanced2HandleDestroy(this_handle);
 
-    clear_Sell_C_Sigma(this_handle);
+    sellCSigmaHandleDestroy(this_handle);
 
     csr5HandleDestory(this_handle);
 
@@ -86,7 +53,6 @@ void spmv_destory_handle(spmv_Handle_t this_handle) {
 
 
     gemv_Handle_clear(this_handle);
-
 
 
     free(this_handle);
@@ -121,7 +87,7 @@ const spmv_function spmv_functions[] = {
         spmv_parallel_balanced2_Selected,
         spmv_sell_C_Sigma_Selected,
         spmv_csr5Spmv_Selected,
-       // spmv_numa_Selected
+        // spmv_numa_Selected
 };
 #define Aligen_malloc_cpy(dst, src, size) \
 dst = aligned_alloc(ALIGENED_SIZE,size);                     \
@@ -161,7 +127,7 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
                                    SPMV_METHODS Function,
                                    BASIC_SIZE_TYPE size,
                                    VECTORIZED_WAY vectorizedWay,
-                                   const char*MtxToken
+                                   const char *MtxToken
 ) {
     *Handle = gemv_create_handle();
     if (Function < Method_Serial || Function >= Method_Total_Size)Function = Method_Serial;
@@ -188,18 +154,10 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
     (*Handle)->RowPtr = RowPtr;
     (*Handle)->ColIdx = ColIdx;
     (*Handle)->Matrix_Val = Matrix_Val;
-    /*
-    printf("%d,%f,%f,%f,",RowPtr_O[m]-RowPtr_O[0],
-           cal_rmse_i(RowPtr,RowPtr_O,m+1),
-           cal_rmse_i(ColIdx,ColIdx_O,RowPtr_O[m]-RowPtr_O[0]),
-           cal_rmse_d(Matrix_Val,Matrix_Val_O,RowPtr_O[m]-RowPtr_O[0])
-           );*/
+
     switch (Function) {
-        case Method_Balanced: {
-            parallel_balanced_get_handle(*Handle, m, RowPtr, RowPtr[m] - RowPtr[0]);
-        }
-            break;
-        case Method_Balanced2: {
+        case Method_Balanced:
+        case Method_Balanced2: {/// if all Yid is -1 change to normal balance
             parallel_balanced2_get_handle(*Handle, m, RowPtr, RowPtr[m] - RowPtr[0]);
         }
             break;
@@ -216,14 +174,7 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
             }
         }
             break;
-        case Method_Numa: {
-            /*
-            int k = numa_spmv_get_handle_Selected(*Handle, m, n, (int *) RowPtr, (int *) ColIdx, Matrix_Val);
-            if (k == 0) {
-                (*Handle)->spmvMethod = Method_Balanced2;
-                parallel_balanced2_get_handle(*Handle, m, RowPtr, RowPtr[m] - RowPtr[0]);
-            }*/
-        }
+
         default: {
 
             return;

@@ -6,7 +6,7 @@
 #include "inner_spmv.h"
 
 
-inline void spmv_serial_cpp_d(const spmv_Handle_t handle,
+ void spmv_serial_cpp_d(const spmv_Handle_t handle,
                             BASIC_INT_TYPE m,
                             const BASIC_INT_TYPE *RowPtr,
                             const BASIC_INT_TYPE *ColIdx,
@@ -21,7 +21,7 @@ inline void spmv_serial_cpp_d(const spmv_Handle_t handle,
     }
 }
 
-inline void spmv_serial_cpp_s(const spmv_Handle_t handle,
+ void spmv_serial_cpp_s(const spmv_Handle_t handle,
                             BASIC_INT_TYPE m,
                             const BASIC_INT_TYPE *RowPtr,
                             const BASIC_INT_TYPE *ColIdx,

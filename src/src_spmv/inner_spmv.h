@@ -118,6 +118,7 @@ void balancedHandleDestroy(spmv_Handle_t this_handle);
 
 void balanced2HandleDestroy(spmv_Handle_t this_handle);
 
+void sellCSigmaHandleDestroy(spmv_Handle_t this_handle);
 
 void csr5HandleDestory(spmv_Handle_t handle);
 

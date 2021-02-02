@@ -3,7 +3,6 @@
 //
 
 #include "inner_spmv.h"
-#include <math.h>
 
 void balancedHandleDestroy(spmv_Handle_t this_handle) {
     if (this_handle) {
@@ -75,7 +74,7 @@ void parallel_balanced_get_handle(
 }
 
 
-inline void spmv_parallel_balanced_cpp_d(
+ void spmv_parallel_balanced_cpp_d(
         const spmv_Handle_t handle,
         BASIC_INT_TYPE m,
         const BASIC_INT_TYPE *RowPtr,
@@ -100,7 +99,7 @@ inline void spmv_parallel_balanced_cpp_d(
     }
 }
 
-inline void spmv_parallel_balanced_cpp_s(
+ void spmv_parallel_balanced_cpp_s(
         const spmv_Handle_t handle,
         BASIC_INT_TYPE m,
         const BASIC_INT_TYPE *RowPtr,
@@ -124,7 +123,7 @@ inline void spmv_parallel_balanced_cpp_s(
         }
     }
 }
-
+#include <stdio.h>
 void spmv_parallel_balanced_Selected(
         const spmv_Handle_t handle,
         BASIC_INT_TYPE m,

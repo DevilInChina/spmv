@@ -8,12 +8,57 @@
 #include <stdlib.h>
 
 #define MAX(a, b) ((a)>(b)?(a):(b))
+typedef struct Row_Block {
+    const BASIC_INT_TYPE *indxBegin;
+    const void *valBegin;
+    BASIC_INT_TYPE length;
+    BASIC_INT_TYPE rowNumber;
+} Row_Block, *Row_Block_t;
 
+
+typedef struct Sigma_Block {
+    BASIC_INT_TYPE C;
+    BASIC_INT_TYPE times;
+    BASIC_INT_TYPE *ld;
+    BASIC_INT_TYPE *ColIndex;
+    BASIC_INT_TYPE *RowIndex;
+    BASIC_INT_TYPE total;
+    void *ValT;
+    //void *Y;
+} Sigma_Block, *Sigma_Block_t;
+
+void C_Block_destory(Sigma_Block_t this_block) {
+    free(this_block->RowIndex);
+    free(this_block->ColIndex);
+    free(this_block->ValT);
+    //free(this_block->Y);
+    free(this_block->ld);
+}
+
+typedef struct sigmaEnv {
+    BASIC_INT_TYPE Sigma, C;
+    BASIC_INT_TYPE banner;
+    Sigma_Block_t sigmaBlock;
+} sigmaEnv, *sigmaEnv_t;
+
+void sellCSigmaHandleDestroy(spmv_Handle_t this_handle) {
+    if (this_handle && this_handle->spmvMethod == Method_SellCSigma) {
+
+        if (this_handle->extraHandle) {
+            sigmaEnv_t sigenv = (sigmaEnv_t) this_handle->extraHandle;
+            int siz = sigenv->banner / sigenv->Sigma;
+            for (int i = 0; i < siz; ++i) {
+                C_Block_destory(sigenv->sigmaBlock + i);
+            }
+            free(this_handle->extraHandle);
+        }
+    }
+}
 
 void spmv_Sigma_Blocks_init(Sigma_Block_t SigmaBeginner, int C, int Sigma,
                             const BASIC_INT_TYPE *RowPtr,
                             Row_Block_t *rowBlock,
-                            BASIC_SIZE_TYPE size, int *total, int *zero) {
+                            BASIC_SIZE_TYPE size) {
     int times = Sigma / C;
     SigmaBeginner->times = times;
     SigmaBeginner->C = C;
@@ -52,7 +97,7 @@ void spmv_Sigma_Blocks_init(Sigma_Block_t SigmaBeginner, int C, int Sigma,
         SigmaBeginner->RowIndex[i] = rowBlock[i]->rowNumber;
     }
     SigmaBeginner->total = SigmaBeginner->ld[times];
-    *total += C * SigmaBeginner->ld[times];
+    //*total += C * SigmaBeginner->ld[times];
     for (int k = 0; k < times; ++k) {/// ini C
         for (int i = 0; i < C; ++i) {
             int j = 0;
@@ -64,7 +109,7 @@ void spmv_Sigma_Blocks_init(Sigma_Block_t SigmaBeginner, int C, int Sigma,
                          = *(CONVERT_FLOAT_T(rowBlock[i + k * C]->valBegin) + j));
                 SigmaBeginner->ColIndex[i + (j + SigmaBeginner->ld[k]) * C] = rowBlock[i + k * C]->indxBegin[j];
             }
-            *zero += SigmaBeginner->ld[k + 1] - SigmaBeginner->ld[k] - j;
+            //*zero += SigmaBeginner->ld[k + 1] - SigmaBeginner->ld[k] - j;
             for (; j < SigmaBeginner->ld[k + 1] - SigmaBeginner->ld[k]; ++j) {
                 SigmaBeginner->ColIndex[i + (j + SigmaBeginner->ld[k]) * C] = rowBlock[loc[k] + k * C]->indxBegin[j];
             }
@@ -100,10 +145,10 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
     int banner = Sigma * len;
     Row_Block_t *rowBlock_ts = NULL;
     Row_Block_t rowBlocks = NULL;
-
-    (handle)->Sigma = Sigma;
-    (handle)->C = C;
-    (handle)->banner = banner;
+    sigmaEnv_t sigenv = (sigmaEnv_t) malloc(sizeof(Sigma_Block));
+    (sigenv)->Sigma = Sigma;
+    (sigenv)->C = C;
+    (sigenv)->banner = banner;
     BASIC_SIZE_TYPE size = handle->data_size;
     int total = 0;
     int zero = 0;
@@ -159,13 +204,13 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
         */
         const int Catch = Sigma;
 
-        (handle)->sigmaBlock = (Sigma_Block_t) malloc(sizeof(Sigma_Block) * len);
+        (sigenv)->sigmaBlock = (Sigma_Block_t) malloc(sizeof(Sigma_Block) * len);
 #pragma omp parallel for
         for (int i = 0; i < len; ++i) {
-            spmv_Sigma_Blocks_init((handle)->sigmaBlock + i,
+            spmv_Sigma_Blocks_init((sigenv)->sigmaBlock + i,
                                    C, Sigma, RowPtr,
-                                   rowBlock_ts + i*Sigma,
-                                   size, &total, &zero
+                                   rowBlock_ts + i * Sigma,
+                                   size//, &total, &zero
             );
         }
         /*
@@ -177,58 +222,60 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
         }
         S = sqrt(S / len) / ave;
         */
-         //printf("Sigma,banner,m,C,zero,Average,s,res\n");
+        //printf("Sigma,banner,m,C,zero,Average,s,res\n");
         //printf("%d,%d,%d,%d,%f,%f,%f,%f\n", Sigma, banner, m, C, zero * 1.0 / total, ave, S, (m - banner) * 1.0 / m);
 
         free(rowBlock_ts);
         free(rowBlocks);
     } else {
-        (handle)->banner = 0;
+        (sigenv)->banner = 0;
     }
+    handle->extraHandle = sigenv;
 }
 
-inline void spmv_sell_C_Sigma_cpp_d(const spmv_Handle_t handle,
-                                BASIC_INT_TYPE m,
-                                const BASIC_INT_TYPE *RowPtr,
-                                const BASIC_INT_TYPE *ColIdx,
-                                const double *Matrix_Val,
-                                const double *Vector_Val_X,
-                                double *Vector_Val_Y
+void spmv_sell_C_Sigma_cpp_d(const spmv_Handle_t handle,
+                             BASIC_INT_TYPE m,
+                             const BASIC_INT_TYPE *RowPtr,
+                             const BASIC_INT_TYPE *ColIdx,
+                             const double *Matrix_Val,
+                             const double *Vector_Val_X,
+                             double *Vector_Val_Y
 ) {
     if (handle->spmvMethod != Method_SellCSigma) {
         return;
     }
     BASIC_SIZE_TYPE size = handle->data_size;
     VECTORIZED_WAY way = handle->vectorizedWay;
-
-    if (handle->banner > 0) {
-        int C = handle->C;
-        int Sigma = handle->Sigma;
-        Sigma_Block_t SigmaBlocks = handle->sigmaBlock;
+    sigmaEnv_t sigenv = (sigmaEnv_t) handle->extraHandle;
+    if (sigenv->banner > 0) {
+        int C = sigenv->C;
+        int Sigma = sigenv->Sigma;
+        Sigma_Block_t SigmaBlocks = sigenv->sigmaBlock;
         int length = m / Sigma;
         int C_times = Sigma / C;
         //memset(Vector_Val_Y, 0, size * m);
 
 #pragma omp parallel for
         for (int i = 0; i < length; ++i) {/// sigma
-            for (int j = 0; j < C_times; ++j) {
+            if (SigmaBlocks[i].ld)
+                for (int j = 0; j < C_times; ++j) {
 
-                basic_d_lineProductGather_avx2(SigmaBlocks[i].ld[j + 1] - SigmaBlocks[i].ld[j],
-                                               C,
-                                               (double *) SigmaBlocks[i].ValT + SigmaBlocks[i].ld[j] * C,
-                                               SigmaBlocks[i].ColIndex + SigmaBlocks[i].ld[j] * C,
-                                               Vector_Val_X,
-                                               SigmaBlocks[i].RowIndex + j * C,
-                                               Vector_Val_Y
-                );
-            }
+                    basic_d_lineProductGather_avx2(SigmaBlocks[i].ld[j + 1] - SigmaBlocks[i].ld[j],
+                                                   C,
+                                                   (double *) SigmaBlocks[i].ValT + SigmaBlocks[i].ld[j] * C,
+                                                   SigmaBlocks[i].ColIndex + SigmaBlocks[i].ld[j] * C,
+                                                   Vector_Val_X,
+                                                   SigmaBlocks[i].RowIndex + j * C,
+                                                   Vector_Val_Y
+                    );
+                }
 
         }
     }
 
     {
 #pragma omp parallel for
-        for (int i = handle->banner; i < m; ++i) {
+        for (int i = sigenv->banner; i < m; ++i) {
             Dot_Product_Avx2_d(RowPtr[i + 1] - RowPtr[i],
                                ColIdx + RowPtr[i],
                                Matrix_Val + RowPtr[i],
@@ -237,48 +284,51 @@ inline void spmv_sell_C_Sigma_cpp_d(const spmv_Handle_t handle,
         }
     }
 }
-inline void spmv_sell_C_Sigma_cpp_s(const spmv_Handle_t handle,
-                           BASIC_INT_TYPE m,
-                           const BASIC_INT_TYPE *RowPtr,
-                           const BASIC_INT_TYPE *ColIdx,
-                           const float *Matrix_Val,
-                           const float *Vector_Val_X,
-                           float *Vector_Val_Y
+
+void spmv_sell_C_Sigma_cpp_s(const spmv_Handle_t handle,
+                             BASIC_INT_TYPE m,
+                             const BASIC_INT_TYPE *RowPtr,
+                             const BASIC_INT_TYPE *ColIdx,
+                             const float *Matrix_Val,
+                             const float *Vector_Val_X,
+                             float *Vector_Val_Y
 ) {
     if (handle->spmvMethod != Method_SellCSigma) {
         return;
     }
+    sigmaEnv_t sigenv = (sigmaEnv_t) handle->extraHandle;
     BASIC_SIZE_TYPE size = handle->data_size;
     VECTORIZED_WAY way = handle->vectorizedWay;
 
-    if (handle->banner > 0) {
-        int C = handle->C;
-        int Sigma = handle->Sigma;
-        Sigma_Block_t SigmaBlocks = handle->sigmaBlock;
+    if (sigenv->banner > 0) {
+        int C = sigenv->C;
+        int Sigma = sigenv->Sigma;
+        Sigma_Block_t SigmaBlocks = sigenv->sigmaBlock;
         int length = m / Sigma;
         int C_times = Sigma / C;
         //memset(Vector_Val_Y, 0, size * m);
 
 #pragma omp parallel for
         for (int i = 0; i < length; ++i) {/// sigma
-            for (int j = 0; j < C_times; ++j) {
+            if (SigmaBlocks[i].ld)
+                for (int j = 0; j < C_times; ++j) {
 
-                basic_s_lineProductGather_avx2(SigmaBlocks[i].ld[j + 1] - SigmaBlocks[i].ld[j],
-                                               C,
-                                               (float *) SigmaBlocks[i].ValT + SigmaBlocks[i].ld[j] * C,
-                                               SigmaBlocks[i].ColIndex + SigmaBlocks[i].ld[j] * C,
-                                               Vector_Val_X,
-                                               SigmaBlocks[i].RowIndex + j * C,
-                                               Vector_Val_Y
-                );
-            }
+                    basic_s_lineProductGather_avx2(SigmaBlocks[i].ld[j + 1] - SigmaBlocks[i].ld[j],
+                                                   C,
+                                                   (float *) SigmaBlocks[i].ValT + SigmaBlocks[i].ld[j] * C,
+                                                   SigmaBlocks[i].ColIndex + SigmaBlocks[i].ld[j] * C,
+                                                   Vector_Val_X,
+                                                   SigmaBlocks[i].RowIndex + j * C,
+                                                   Vector_Val_Y
+                    );
+                }
 
         }
     }
 
     {
 #pragma omp parallel for
-        for (int i = handle->banner; i < m; ++i) {
+        for (int i = sigenv->banner; i < m; ++i) {
             Dot_Product_Avx2_s(RowPtr[i + 1] - RowPtr[i],
                                ColIdx + RowPtr[i],
                                Matrix_Val + RowPtr[i],
@@ -287,6 +337,7 @@ inline void spmv_sell_C_Sigma_cpp_s(const spmv_Handle_t handle,
         }
     }
 }
+
 void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
                                 BASIC_INT_TYPE m,
                                 const BASIC_INT_TYPE *RowPtr,
@@ -297,9 +348,9 @@ void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
 ) {
     if (handle->data_size == sizeof(double)) {
         spmv_sell_C_Sigma_cpp_d(handle, m, RowPtr, ColIdx, (double *) Matrix_Val, (double *) Vector_Val_X,
-                        (double *) Vector_Val_Y);
+                                (double *) Vector_Val_Y);
     } else {
         spmv_sell_C_Sigma_cpp_s(handle, m, RowPtr, ColIdx, (float *) Matrix_Val, (float *) Vector_Val_X,
-                        (float *) Vector_Val_Y);
+                                (float *) Vector_Val_Y);
     }
 }

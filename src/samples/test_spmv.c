@@ -211,9 +211,6 @@ int main(int argc, char **argv) {
                          VECTOR_AVX2, Method_Parallel);
 
         testForFunctions(file, curThreads, curThreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
-                         VECTOR_AVX2, Method_Balanced);
-
-        testForFunctions(file, curThreads, curThreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                          VECTOR_AVX2, Method_Balanced2);
 
         testForFunctions(file, curThreads, curThreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,

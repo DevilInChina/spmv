@@ -2,7 +2,7 @@
 
 #include "inner_spmv.h"
 
-inline void spmv_parallel_cpp_d(const spmv_Handle_t handle,
+ void spmv_parallel_cpp_d(const spmv_Handle_t handle,
                               BASIC_INT_TYPE m,
                               const BASIC_INT_TYPE *RowPtr,
                               const BASIC_INT_TYPE *ColIdx,
@@ -17,7 +17,7 @@ inline void spmv_parallel_cpp_d(const spmv_Handle_t handle,
                            Vector_Val_X, Vector_Val_Y + i);
     }
 }
-inline void spmv_parallel_cpp_s(const spmv_Handle_t handle,
+ void spmv_parallel_cpp_s(const spmv_Handle_t handle,
                               BASIC_INT_TYPE m,
                               const BASIC_INT_TYPE *RowPtr,
                               const BASIC_INT_TYPE *ColIdx,
