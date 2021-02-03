@@ -528,5 +528,56 @@ void matrix_transposition(const int           m,
     free (cscColIncr);
 }
 
+int mmio_save_as_bin(int m,int n,int nnz,const int *rowptr,const int *colidx,const VALUE_TYPE* val,const char*file){
+    char buffer[1024];
+    char fileBuffer[1024];
+    strcpy(buffer,"mtx_cache/");
+    strcpy(fileBuffer,file);
+    for(char *s = fileBuffer ; *s ;++s){
+        if(*s=='/' || *s =='\\' || *s==' '){
+            *s='_';
+        }
+    }
+    strcat(buffer,fileBuffer);
+    strcat(buffer,".bin");
 
+    FILE *pFile = fopen(buffer, "wb");
+    if(pFile) {
+        fwrite(&m, sizeof(char), sizeof(int), pFile);
+        fwrite(&n, sizeof(char), sizeof(int), pFile);
+        fwrite(&nnz, sizeof(char), sizeof(int), pFile);
+        fwrite(rowptr, sizeof(char), sizeof(int) * (m + 1), pFile);
+        fwrite(colidx, sizeof(char), sizeof(int) * (nnz), pFile);
+        fwrite(val, sizeof(char), sizeof(VALUE_TYPE) * (nnz), pFile);
+        return 0;
+    }else return 1;
+}
+int mmio_read_from_bin(int *m,int *n,int *nnz,int **rowptr,int **colidx,VALUE_TYPE** val,const char *file){
+    char buffer[1024];
+    char fileBuffer[1024];
+    strcpy(buffer,"mtx_cache/");
+    strcpy(fileBuffer,file);
+    for(char *s = fileBuffer ; *s ;++s){
+        if(*s=='/' || *s =='\\' || *s==' '){
+            *s='_';
+        }
+    }
+    strcat(buffer,fileBuffer);
+    strcat(buffer,".bin");
+    FILE *pFile = fopen(buffer, "rb");
+    if(pFile) {
+        fread(m, sizeof(char), sizeof(int), pFile);
+        fread(n, sizeof(char), sizeof(int), pFile);
+        fread(nnz, sizeof(char), sizeof(int), pFile);
+        *rowptr = (int*)malloc(sizeof(int )*(*m+1));
+        *colidx = (int*)malloc(sizeof(int )*(*nnz));
+        *val = (VALUE_TYPE*)malloc(sizeof(VALUE_TYPE )*(*nnz));
+
+        fread(*rowptr, sizeof(char), sizeof(int) * (*m + 1), pFile);
+        fread(*colidx, sizeof(char), sizeof(int) * (*nnz), pFile);
+        fread(*val, sizeof(char), sizeof(VALUE_TYPE) * (*nnz), pFile);
+        return 0;
+    }else return 1;
+
+}
 #endif
