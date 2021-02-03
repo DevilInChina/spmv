@@ -46,9 +46,11 @@ void sellCSigmaHandleDestroy(spmv_Handle_t this_handle) {
 
         if (this_handle->extraHandle) {
             sigmaEnv_t sigenv = (sigmaEnv_t) this_handle->extraHandle;
-            int siz = sigenv->banner / sigenv->Sigma;
-            for (int i = 0; i < siz; ++i) {
-                C_Block_destory(sigenv->sigmaBlock + i);
+            if(sigenv->banner) {
+                int siz = sigenv->banner / sigenv->Sigma;
+                for (int i = 0; i < siz; ++i) {
+                    C_Block_destory(sigenv->sigmaBlock + i);
+                }
             }
             free(this_handle->extraHandle);
         }
