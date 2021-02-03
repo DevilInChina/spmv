@@ -160,28 +160,30 @@ void LoadMtx_And_GetGolden(char *filePath,
 
     struct timeval t1,t2;
     gettimeofday(&t1,NULL);
-    int*RowPtrCpy,*ColIdxCpy;
-    VALUE_TYPE*valTypeCpy;
-    if(mmio_read_from_bin(m,n,nnzR,&RowPtrCpy, &ColIdxCpy, &valTypeCpy, filePath )) {
+    if(mmio_read_from_bin(m,n,nnzR,RowPtr, ColIdx, Val, filePath,ALIGENED_SIZE )) {
+
+        int*RowPtrCpy,*ColIdxCpy;
+        VALUE_TYPE*valTypeCpy;
         int ret = mmio_allinone(m, n, nnzR, isSymmetric, &RowPtrCpy, &ColIdxCpy, &valTypeCpy, filePath);
         if(ret)exit(1);
         mmio_save_as_bin(*m,*n,*nnzR,RowPtrCpy,ColIdxCpy,valTypeCpy,filePath);
+
+        *RowPtr = (int *) aligned_alloc(ALIGENED_SIZE, (*m + 1) * sizeof(int));
+        *ColIdx = (int *) aligned_alloc(ALIGENED_SIZE, *nnzR * sizeof(int));
+        *Val = (VALUE_TYPE *) aligned_alloc(ALIGENED_SIZE, *nnzR * sizeof(VALUE_TYPE));
+        memcpy(*RowPtr,RowPtrCpy,(*m + 1) * sizeof(int));
+        memcpy(*ColIdx,ColIdxCpy,*nnzR * sizeof(int));
+        memcpy(*Val,valTypeCpy,*nnzR * sizeof(VALUE_TYPE));
+
+        //mmio_data(*RowPtr, *ColIdx, *Val, filePath);
+        free(RowPtrCpy);
+        free(ColIdxCpy);
+        free(valTypeCpy);
     }
     //int ret = mmio_info(m, n, nnzR, isSymmetric, filePath);
-    *RowPtr = (int *) aligned_alloc(ALIGENED_SIZE, (*m + 1) * sizeof(int));
-    *ColIdx = (int *) aligned_alloc(ALIGENED_SIZE, *nnzR * sizeof(int));
-    *Val = (VALUE_TYPE *) aligned_alloc(ALIGENED_SIZE, *nnzR * sizeof(VALUE_TYPE));
-    memcpy(*RowPtr,RowPtrCpy,(*m + 1) * sizeof(int));
-    memcpy(*ColIdx,ColIdxCpy,*nnzR * sizeof(int));
-    memcpy(*Val,valTypeCpy,*nnzR * sizeof(VALUE_TYPE));
-    //mmio_data(*RowPtr, *ColIdx, *Val, filePath);
-    free(RowPtrCpy);
-    free(ColIdxCpy);
-    free(valTypeCpy);
     gettimeofday(&t2,NULL);
 
     double t =  ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0);
-    exit(0);
     //create X, Y,Y_golden
     *X = (VALUE_TYPE *) aligned_alloc(ALIGENED_SIZE, sizeof(VALUE_TYPE) * (*n));
     *Y = (VALUE_TYPE *) aligned_alloc(ALIGENED_SIZE, sizeof(VALUE_TYPE) * (*m));

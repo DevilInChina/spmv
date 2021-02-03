@@ -552,7 +552,9 @@ int mmio_save_as_bin(int m,int n,int nnz,const int *rowptr,const int *colidx,con
         return 0;
     }else return 1;
 }
-int mmio_read_from_bin(int *m,int *n,int *nnz,int **rowptr,int **colidx,VALUE_TYPE** val,const char *file){
+int mmio_read_from_bin(int *m,int *n,int *nnz,int **rowptr,int **colidx,VALUE_TYPE** val,const char *file,
+        int aligenSize
+){
     char buffer[1024];
     char fileBuffer[1024];
     strcpy(buffer,"mtx_cache/");
@@ -569,9 +571,9 @@ int mmio_read_from_bin(int *m,int *n,int *nnz,int **rowptr,int **colidx,VALUE_TY
         fread(m, sizeof(char), sizeof(int), pFile);
         fread(n, sizeof(char), sizeof(int), pFile);
         fread(nnz, sizeof(char), sizeof(int), pFile);
-        *rowptr = (int*)malloc(sizeof(int )*(*m+1));
-        *colidx = (int*)malloc(sizeof(int )*(*nnz));
-        *val = (VALUE_TYPE*)malloc(sizeof(VALUE_TYPE )*(*nnz));
+        *rowptr = (int*)aligned_alloc(aligenSize,sizeof(int )*(*m+1));
+        *colidx = (int*)aligned_alloc(aligenSize,sizeof(int )*(*nnz));
+        *val = (VALUE_TYPE*)aligned_alloc(aligenSize,sizeof(VALUE_TYPE )*(*nnz));
 
         fread(*rowptr, sizeof(char), sizeof(int) * (*m + 1), pFile);
         fread(*colidx, sizeof(char), sizeof(int) * (*nnz), pFile);
