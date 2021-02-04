@@ -62,7 +62,7 @@ if (BUILD_MKL_BENCH)
     include_directories(/opt/intel/oneapi/mkl/latest/include)
     link_directories(/opt/intel/oneapi/mkl/latest/lib/intel64)
     add_executable(mkl_spmv ${PROJECT_SOURCE_DIR}/src/samples/mkl_spmv.c)
-    link_libraries(mkl_spmv mkl_rt)
+    target_link_libraries(mkl_spmv mkl_rt)
 
 endif ()
 #[[
