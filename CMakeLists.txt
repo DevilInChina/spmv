@@ -56,7 +56,7 @@ add_executable(spmv_l3 ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
 target_link_libraries(spmv_l3 mv_l3)
 #]]
 
-option(BUILD_MKL_BENCH "build mkl bench" OFF)
+option(BUILD_MKL_BENCH "build mkl bench" ON)
 
 if (BUILD_MKL_BENCH)
     include_directories(/opt/intel/oneapi/mkl/latest/include)
