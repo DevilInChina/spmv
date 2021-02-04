@@ -100,6 +100,8 @@ void testForFunctions(const char *matrixName,
 
         gettimeofday(&t1, NULL);
         for (currentiter = 0; currentiter < 10; currentiter++) {
+            mkl_set_num_threads(thread);
+            mkl_set_dynamic(0);
             mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE,1,mat,descr,XX,0,YY);
         }
 
@@ -112,7 +114,8 @@ void testForFunctions(const char *matrixName,
         double time_cur;
         //clearFlush();
         for (currentiter = 0; currentiter < iter; currentiter++) {
-
+            mkl_set_num_threads(thread);
+            mkl_set_dynamic(0);
             gettimeofday(&t1, NULL);
             mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE,1,mat,descr,XX,0,YY);
             gettimeofday(&t2, NULL);
