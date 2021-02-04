@@ -103,7 +103,7 @@ void testForFunctions(const char *matrixName,
         gettimeofday(&t2, NULL);
         int iter = 100 +
                    1000 / (((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0));
-        iter = 500 ;
+        iter = 200 ;
         double time_overall_serial = 0;
         double time_min = 1e9;
         double time_cur;
@@ -225,18 +225,18 @@ int main(int argc, char **argv) {
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
 
     for(unsigned curThreads = threads_bregin ; curThreads <= threads_end ; curThreads <<=1u) {
-        testForFunctions(file, curThreads, curThreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
-                         VECTOR_AVX2, Method_SellCSigma);
-        /*
+
         testForFunctions(file, curThreads, curThreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                          VECTOR_AVX2, Method_Parallel);
 
         testForFunctions(file, curThreads, curThreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
                          VECTOR_AVX2, Method_Balanced2);
 
+        testForFunctions(file, curThreads, curThreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
+                         VECTOR_AVX2, Method_SellCSigma);
 
         testForFunctions(file, curThreads, curThreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
-                         VECTOR_AVX2, Method_CSR5SPMV);*/
+                         VECTOR_AVX2, Method_CSR5SPMV);
     }
     free(Val);
     free(RowPtr);
