@@ -417,9 +417,7 @@ inline void basic_d_lineProductGather_avx2(LINE_D_PRODUCTGather_PARAMETERS_IN,co
         }
         for(int j = full ; j < ld ; ++j){
             for(int k = 0 ; k < block ; ++k){
-                if(~indxLine[k]){
-                    cur[k] += Vector_X[indxLine[k]]*ValLine[k];
-                }
+                cur[k]+=(~indxLine[k])?(Vector_X[indxLine[k]]*ValLine[k]):0;
             }
             ValLine+=length;
             indxLine+=length;
