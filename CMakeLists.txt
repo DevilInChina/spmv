@@ -61,7 +61,7 @@ option(BUILD_MKL_BENCH "build mkl bench" ON)
 if (BUILD_MKL_BENCH)
     message(${MKLROOT})
     add_executable(mkl_spmv ${PROJECT_SOURCE_DIR}/src/samples/mkl_spmv.c)
-    target_link_directories(mkl_spmv PRIVATE ${MKLROOT}/lib/intel64)
+    link_directories(mkl_spmv PRIVATE ${MKLROOT}/lib/intel64)
     target_include_directories(mkl_spmv PRIVATE ${MKLROOT}/include)
     target_link_libraries(mkl_spmv PRIVATE mkl_rt)
 
