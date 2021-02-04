@@ -216,7 +216,7 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
 
         const int Catch = Sigma;
         for(int i = 0 ; i < len ; ++i){
-            qsort(rowBlock_ts,Sigma,sizeof(Row_Block_t),cmp);
+            //qsort(rowBlock_ts,Sigma,sizeof(Row_Block_t),cmp);
         }
         (sigenv)->sigmaBlock = (Sigma_Block_t) malloc(sizeof(Sigma_Block) * len);
 #pragma omp parallel for
@@ -283,7 +283,7 @@ void spmv_sell_C_Sigma_cpp_d(const spmv_Handle_t handle,
                                                    Vector_Val_Y,SigmaBlocks[i].full[j]
                     );
                 }
-
+j
         }
     }
 
