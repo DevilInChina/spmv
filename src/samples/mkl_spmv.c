@@ -72,6 +72,7 @@ void testForFunctions(const char *matrixName,
     int nnzR = RowPtr[m] - RowPtr[0];
     struct timeval t1, t2;
     int currentiter = 0;
+    mkl_set_dynamic(0);
     int k = mkl_get_dynamic();
     printf("%d\n",k);
     VALUE_TYPE *YY = aligned_alloc(ALIGENED_SIZE, sizeof(VALUE_TYPE) * m);
@@ -87,7 +88,7 @@ void testForFunctions(const char *matrixName,
     for (BASIC_SIZE_TYPE thread = threads_begin; thread <= threads_end; thread <<= 1u) {
 
         omp_set_num_threads(thread);
-        mkl_set_num_threads_local(thread);
+        mkl_set_num_threads(thread);
         printf("%d\n",mkl_get_max_threads());
         gettimeofday(&t1, NULL);
         mkl_sparse_set_mv_hint(mat,
