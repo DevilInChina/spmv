@@ -9,7 +9,7 @@ SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -g")
 
 include_directories(include)
 
-add_compile_options(-mavx -mavx2 -march=native -O3)
+add_compile_options(-mavx -mavx2 -march=native -O3 -lpthread)
 find_package(OpenMP REQUIRED)
 if (OPENMP_FOUND)
     MESSAGE("openmp found")
@@ -59,14 +59,10 @@ target_link_libraries(spmv_l3 mv_l3)
 option(BUILD_MKL_BENCH "build mkl bench" OFF)
 
 if (BUILD_MKL_BENCH)
-    find_package(MKL REQUIRED)
-    if(MKL_FOUND)
-        include_directories(${MKL_INCLUDE_DIRS})
-        add_executable(mkl_spmv ${PROJECT_SOURCE_DIR}/src/samples/mkl_spmv.c)
-        target_link_libraries(mkl_spmv ${MKL_CORE_LIBRARY})
-    else()
-        message(WARNING "MKL NOT FPUND")
-    endif()
+    include_directories(/opt/intel/oneapi/mkl/latest/include)
+    link_directories(/opt/intel/oneapi/mkl/latest/lib/intel64)
+    add_executable(mkl_spmv ${PROJECT_SOURCE_DIR}/src/samples/mkl_spmv.c)
+    link_libraries(mkl_spmv mkl_rt)
 
 endif ()
 #[[

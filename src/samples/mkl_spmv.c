@@ -121,7 +121,7 @@ void testForFunctions(const char *matrixName,
         gettimeofday(&t2, NULL);
         int iter = 100 +
                    1000 / (((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0));
-        iter = 500;
+        iter = 200;
         double time_overall_serial = 0;
         double time_min = 1e9;
         double time_cur;
