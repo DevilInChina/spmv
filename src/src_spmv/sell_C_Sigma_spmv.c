@@ -204,8 +204,11 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
         srand(len);
 
         */
-        const int Catch = Sigma;
 
+        const int Catch = Sigma;
+        for(int i = 0 ; i < len ; ++i){
+            qsort(rowBlock_ts,Sigma,sizeof(Row_Block_t),cmp);
+        }
         (sigenv)->sigmaBlock = (Sigma_Block_t) malloc(sizeof(Sigma_Block) * len);
 #pragma omp parallel for
         for (int i = 0; i < len; ++i) {
