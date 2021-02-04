@@ -283,7 +283,7 @@ void spmv_sell_C_Sigma_cpp_d(const spmv_Handle_t handle,
                                                    Vector_Val_Y,SigmaBlocks[i].full[j]
                     );
                 }
-j
+
         }
     }
 
