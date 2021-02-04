@@ -72,7 +72,8 @@ void testForFunctions(const char *matrixName,
     int nnzR = RowPtr[m] - RowPtr[0];
     struct timeval t1, t2;
     int currentiter = 0;
-
+    int k = mkl_get_dynamic();
+    printf("%d\n",k);
     VALUE_TYPE *YY = aligned_alloc(ALIGENED_SIZE, sizeof(VALUE_TYPE) * m);
     VALUE_TYPE *XX = aligned_alloc(ALIGENED_SIZE, sizeof(VALUE_TYPE) * n);
 
