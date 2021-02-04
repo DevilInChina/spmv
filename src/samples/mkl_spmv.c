@@ -86,7 +86,7 @@ void testForFunctions(const char *matrixName,
     for (BASIC_SIZE_TYPE thread = threads_begin; thread <= threads_end; thread <<= 1u) {
 
         omp_set_num_threads(thread);
-        mkl_set_num_threads(thread);
+        mkl_set_num_threads_local(thread);
         printf("%d\n",mkl_get_max_threads());
         gettimeofday(&t1, NULL);
         mkl_sparse_set_mv_hint(mat,
