@@ -10,7 +10,6 @@
 #include <math.h>
 #include <sys/time.h>
 #include <mkl.h>
-#include <omp.h>
 int cmp_s(const void *a, const void *b) {
     double *s = a;
     double *ss = b;
@@ -85,7 +84,7 @@ void testForFunctions(const char *matrixName,
     //qsort(Y_golden,m,sizeof(VALUE_TYPE),cmp_s);
     for (BASIC_SIZE_TYPE thread = threads_begin; thread <= threads_end; thread <<= 1u) {
 
-        omp_set_num_threads(thread);
+        mkl_set_num_threads(thread);
         gettimeofday(&t1, NULL);
         mkl_sparse_set_mv_hint(mat,
                                SPARSE_OPERATION_NON_TRANSPOSE,descr,500
