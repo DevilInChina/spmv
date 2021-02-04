@@ -113,7 +113,7 @@ void spmv_Sigma_Blocks_init(Sigma_Block_t SigmaBeginner, int C, int Sigma,
             }
             //*zero += SigmaBeginner->ld[k + 1] - SigmaBeginner->ld[k] - j;
             for (; j < SigmaBeginner->ld[k + 1] - SigmaBeginner->ld[k]; ++j) {
-                SigmaBeginner->ColIndex[i + (j + SigmaBeginner->ld[k]) * C] = rowBlock[loc[k] + k * C]->indxBegin[j];
+                SigmaBeginner->ColIndex[i + (j + SigmaBeginner->ld[k]) * C] = -1;//rowBlock[loc[k] + k * C]->indxBegin[j];
             }
         }
     }
