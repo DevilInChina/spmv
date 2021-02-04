@@ -85,6 +85,7 @@ void testForFunctions(const char *matrixName,
     for (BASIC_SIZE_TYPE thread = threads_begin; thread <= threads_end; thread <<= 1u) {
 
         omp_set_num_threads(thread);
+        omp_set_dynamic(0);
         mkl_set_num_threads(thread);
         mkl_set_dynamic(0);
         gettimeofday(&t1, NULL);
