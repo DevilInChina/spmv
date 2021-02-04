@@ -20,6 +20,7 @@ typedef struct Sigma_Block {
     BASIC_INT_TYPE C;
     BASIC_INT_TYPE times;
     BASIC_INT_TYPE *ld;
+    BASIC_INT_TYPE *full;
     BASIC_INT_TYPE *ColIndex;
     BASIC_INT_TYPE *RowIndex;
     BASIC_INT_TYPE total;
@@ -31,7 +32,7 @@ void C_Block_destory(Sigma_Block_t this_block) {
     free(this_block->RowIndex);
     free(this_block->ColIndex);
     free(this_block->ValT);
-    //free(this_block->Y);
+    free(this_block->full);
     free(this_block->ld);
 }
 
@@ -85,11 +86,18 @@ void spmv_Sigma_Blocks_init(Sigma_Block_t SigmaBeginner, int C, int Sigma,
         SigmaBeginner->ColIndex = NULL;
         SigmaBeginner->RowIndex = NULL;
         SigmaBeginner->ValT = NULL;
+        SigmaBeginner->full = NULL;
         //SigmaBeginner->Y = NULL;
         return;
     }
     SigmaBeginner->ColIndex = (int *) aligned_alloc(ALIGENED_SIZE,
-                                                    sizeof(BASIC_INT_TYPE) * C * SigmaBeginner->ld[times]);
+                                                    sizeof(BASIC_INT_TYPE) *
+                                                    C * SigmaBeginner->ld[times]);
+    SigmaBeginner->full = (int*)aligned_alloc(ALIGENED_SIZE,
+                                              sizeof(BASIC_INT_TYPE)
+                                              *SigmaBeginner->ld[times]);
+    memset(SigmaBeginner->full,-1,sizeof(BASIC_INT_TYPE)
+                               *SigmaBeginner->ld[times]);
     SigmaBeginner->RowIndex = (int *) aligned_alloc(ALIGENED_SIZE, sizeof(BASIC_INT_TYPE) * C * times);
     SigmaBeginner->ValT = aligned_alloc(ALIGENED_SIZE, size * C * SigmaBeginner->ld[times]);
     memset(SigmaBeginner->ValT, 0, size * C * SigmaBeginner->ld[times]);
@@ -114,6 +122,7 @@ void spmv_Sigma_Blocks_init(Sigma_Block_t SigmaBeginner, int C, int Sigma,
             //*zero += SigmaBeginner->ld[k + 1] - SigmaBeginner->ld[k] - j;
             for (; j < SigmaBeginner->ld[k + 1] - SigmaBeginner->ld[k]; ++j) {
                 SigmaBeginner->ColIndex[i + (j + SigmaBeginner->ld[k]) * C] = -1;//rowBlock[loc[k] + k * C]->indxBegin[j];
+                SigmaBeginner -> full[j+SigmaBeginner->ld[k]] = 0;
             }
         }
     }
@@ -271,7 +280,7 @@ void spmv_sell_C_Sigma_cpp_d(const spmv_Handle_t handle,
                                                    SigmaBlocks[i].ColIndex + SigmaBlocks[i].ld[j] * C,
                                                    Vector_Val_X,
                                                    SigmaBlocks[i].RowIndex + j * C,
-                                                   Vector_Val_Y
+                                                   Vector_Val_Y,SigmaBlocks[i].full+SigmaBlocks[i].ld[j]
                     );
                 }
 
