@@ -9,9 +9,8 @@
 #include <string.h>
 #include <math.h>
 #include <sys/time.h>
-#include <spmv.h>
 #include <mkl.h>
-
+#include <omp.h>
 int cmp_s(const void *a, const void *b) {
     double *s = a;
     double *ss = b;
@@ -55,14 +54,9 @@ void flushLlc() {
     fclose(fp);
 }
 
-void clearFlush() {
-    if (bufToFlushLlc == NULL)
-        bufToFlushLlc = (double *) _mm_malloc(LLC_CAPACITY, 64);
-    for (int i = 0; i < 128; ++i) {
-        for (int j = 0; j < 16; ++j) flushLlc();
-    }
-}
-
+#define BASIC_INT_TYPE int
+#define ALIGENED_SIZE 64
+#define BASIC_SIZE_TYPE unsigned int
 // sum up 8 single-precision numbers
 void testForFunctions(const char *matrixName,
                       int threads_begin, int threads_end,
@@ -73,18 +67,12 @@ void testForFunctions(const char *matrixName,
                       BASIC_INT_TYPE *ColIdx,
                       VALUE_TYPE *Matrix_Val,
                       VALUE_TYPE *Vector_Val_X,
-                      VALUE_TYPE *Vector_Val_Y,
-                      VECTORIZED_WAY PRODUCT_WAY,
-                      SPMV_METHODS FUNC_WAY
+                      VALUE_TYPE *Vector_Val_Y
 ) {
-    if (FUNC_WAY == Method_Serial) {
-        threads_begin = 1;
-        threads_end = 1;
-    }
     int nnzR = RowPtr[m] - RowPtr[0];
     struct timeval t1, t2;
     int currentiter = 0;
-    spmv_Handle_t handle = NULL;
+
     VALUE_TYPE *YY = aligned_alloc(ALIGENED_SIZE, sizeof(VALUE_TYPE) * m);
     VALUE_TYPE *XX = aligned_alloc(ALIGENED_SIZE, sizeof(VALUE_TYPE) * n);
 
@@ -106,13 +94,9 @@ void testForFunctions(const char *matrixName,
         gettimeofday(&t2, NULL);
         double time = ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0);
 
-        if (handle && handle->index) {
-            for (int i = 0; i < m; ++i) {
-                XX[i] = Vector_Val_X[handle->index[i]];
-            }
-        } else {
-            memcpy(XX, Vector_Val_X, sizeof(VALUE_TYPE) * n);
-        }
+
+        memcpy(XX, Vector_Val_X, sizeof(VALUE_TYPE) * n);
+
         gettimeofday(&t1, NULL);
         for (currentiter = 0; currentiter < 10; currentiter++) {
             mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE,1,mat,descr,XX,0,YY);
@@ -141,14 +125,10 @@ void testForFunctions(const char *matrixName,
         double GFlops_Fastest = 2 * nnzR / time_min / pow(10, 6);
         double s = 0;
         //qsort(Vector_Val_Y,m,sizeof(VALUE_TYPE),cmp_s);
-        if (handle && handle->index) {
-            for (int i = 0; i < m; ++i) {
-                Vector_Val_Y[handle->index[i]] = YY[i];
-            }
-        } else {
+
 
             memcpy(Vector_Val_Y, YY, sizeof(VALUE_TYPE) * m);
-        }
+
         for (int ind = 0; ind < m; ++ind) {
             s += (Vector_Val_Y[ind] - Y_golden[ind]) / m *
                  (Vector_Val_Y[ind] - Y_golden[ind]);
@@ -162,8 +142,6 @@ void testForFunctions(const char *matrixName,
                "MKL", "MKL", thread, nnzR, s,
                time, time_overall_serial, GFlops_serial, GFlops_Fastest);
 
-        if (handle)
-            spmv_destory_handle(handle);
     }
     free(XX);
     free(YY);
@@ -239,11 +217,7 @@ int main(int argc, char **argv) {
     //printf("#iter is %i \n", iter);
     LoadMtx_And_GetGolden(file, &m, &n, &nnzR, &isS, &RowPtr, &ColIdx, &Val, &X, &Y_golden, &Y);
     struct timeval t1, t2;
-    SPMV_METHODS d = Method_Total_Size;
-    VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
-
-    testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
-                     VECTOR_TOTAL_SIZE, Method_Total_Size);
+    testForFunctions(file, threads_bregin, threads_end, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y);
 
     free(Val);
     free(RowPtr);
