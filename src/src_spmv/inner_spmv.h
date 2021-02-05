@@ -367,14 +367,15 @@ inline void basic_d_lineProductGather_len(LINE_D_PRODUCTGather_PARAMETERS_IN) {
     }
 }
 
-inline void basic_s_lineProductGather_avx2(LINE_S_PRODUCTGather_PARAMETERS_IN) {
+inline void basic_s_lineProductGather_avx2(LINE_S_PRODUCTGather_PARAMETERS_IN,const int full) {
     const int block = 8;
     for (int i = 0; i < length; i += block) {
         __m256_u vecy = _mm256_setzero_ps();
         const float *ValLine = Val + i;
         const int *indxLine = indx + i;
 
-        for (int j = 0; j < ld; ++j) {
+        float *cur = (float *) (&vecy);
+        for (int j = 0; j < full; ++j) {
             vecy = _mm256_fmadd_ps(
                     *(__m256_u *) (ValLine),
                     _mm256_set_ps(Vector_X[*(indxLine + 7)],
@@ -389,14 +390,20 @@ inline void basic_s_lineProductGather_avx2(LINE_S_PRODUCTGather_PARAMETERS_IN) {
             ValLine+=length;
             indxLine+=length;
         }
-        float *cur = (float *) (&vecy);
 
+        for(int j = full ; j < ld ; ++j){
+            for(int k = 0 ; k < block ; ++k){
+                cur[k]+=(~indxLine[k])?(Vector_X[indxLine[k]]*ValLine[k]):0;
+            }
+            ValLine+=length;
+            indxLine+=length;
+        }
         for (int j = 0; j < block; ++j) {
             Vector_Y[indy[i + j]] = cur[j];
         }
     }
 }
-#include <stdio.h>
+
 inline void basic_d_lineProductGather_avx2(LINE_D_PRODUCTGather_PARAMETERS_IN,const int full) {
     const int block = 4;
     for (int i = 0; i < length; i += block) {

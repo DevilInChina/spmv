@@ -215,12 +215,11 @@ void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
         */
 
         const int Catch = Sigma;
-        for(int i = 0 ; i < len ; ++i){
-            //qsort(rowBlock_ts,Sigma,sizeof(Row_Block_t),cmp);
-        }
+
         (sigenv)->sigmaBlock = (Sigma_Block_t) malloc(sizeof(Sigma_Block) * len);
 #pragma omp parallel for
         for (int i = 0; i < len; ++i) {
+            qsort(rowBlock_ts+i*Sigma,Sigma,sizeof(Row_Block_t),cmp);
             spmv_Sigma_Blocks_init((sigenv)->sigmaBlock + i,
                                    C, Sigma, RowPtr,
                                    rowBlock_ts + i * Sigma,
@@ -333,7 +332,7 @@ void spmv_sell_C_Sigma_cpp_s(const spmv_Handle_t handle,
                                                    SigmaBlocks[i].ColIndex + SigmaBlocks[i].ld[j] * C,
                                                    Vector_Val_X,
                                                    SigmaBlocks[i].RowIndex + j * C,
-                                                   Vector_Val_Y
+                                                   Vector_Val_Y,SigmaBlocks[i].full[j]
                     );
                 }
 
