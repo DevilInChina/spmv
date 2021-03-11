@@ -88,7 +88,9 @@ void testForFunctions(const char *matrixName,
         omp_set_dynamic(0);
         mkl_set_num_threads(thread);
         mkl_set_dynamic(0);
+
         gettimeofday(&t1, NULL);
+
         mkl_sparse_set_mv_hint(mat,
                                SPARSE_OPERATION_NON_TRANSPOSE,descr,5000
         );
