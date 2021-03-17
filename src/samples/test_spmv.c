@@ -223,7 +223,7 @@ int main(int argc, char **argv) {
     struct timeval t1, t2;
     SPMV_METHODS d = Method_Total_Size;
     VECTORIZED_WAY way[3] = {VECTOR_NONE, VECTOR_AVX2, VECTOR_AVX512};
-    VECTORIZED_WAY way1 = VECTOR_NONE;
+    VECTORIZED_WAY way1 = VECTOR_AVX2;
     for(unsigned curThreads = threads_bregin ; curThreads <= threads_end ; curThreads <<=1u) {
 
         testForFunctions(file, curThreads, curThreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,

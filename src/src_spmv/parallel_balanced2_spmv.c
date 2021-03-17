@@ -244,7 +244,7 @@ void parallel_balanced2_get_handle(
         if (Yid[tid] == -1) {
             //printf("%d %d\n",tid,csrSplitter[tid]);
             for (int u = csrSplitter[tid]; u < csrSplitter[tid + 1]; u++) {
-                Dot_Product_Avx2_d(RowPtr[u + 1] - RowPtr[u],
+                Dot_Product_d(RowPtr[u + 1] - RowPtr[u],
                                    ColIdx + RowPtr[u],
                                    Matrix_Val + RowPtr[u],
                                    Vector_Val_X,
@@ -253,7 +253,7 @@ void parallel_balanced2_get_handle(
         } else if (label[tid] != 0) {
 
             for (int u = Start1[tid]; u < End1[tid]; u++) {
-                Dot_Product_Avx2_d(
+                Dot_Product_d(
                         RowPtr[u + 1] - RowPtr[u],
                         ColIdx + RowPtr[u],
                         Matrix_Val + RowPtr[u],
@@ -263,7 +263,7 @@ void parallel_balanced2_get_handle(
 
         } else  {//if (Yid[tid] != -1 && label[tid] == 0)
 
-            Dot_Product_Avx2_d(
+            Dot_Product_d(
                     End2[tid] - Start2[tid],
                     ColIdx + Start2[tid],
                     Matrix_Val + Start2[tid],
@@ -319,7 +319,7 @@ void spmv_parallel_balanced2_cpp_s(
         if (Yid[tid] == -1) {
             //printf("%d %d\n",tid,csrSplitter[tid]);
             for (int u = csrSplitter[tid]; u < csrSplitter[tid + 1]; u++) {
-                Dot_Product_Avx2_s(RowPtr[u + 1] - RowPtr[u],
+                Dot_Product_s(RowPtr[u + 1] - RowPtr[u],
                                    ColIdx + RowPtr[u],
                                    Matrix_Val + RowPtr[u],
                                    Vector_Val_X,
@@ -328,7 +328,7 @@ void spmv_parallel_balanced2_cpp_s(
         } else if (label[tid] != 0) {
 
             for (int u = Start1[tid]; u < End1[tid]; u++) {
-                Dot_Product_Avx2_s(
+                Dot_Product_s(
                         RowPtr[u + 1] - RowPtr[u],
                         ColIdx + RowPtr[u],
                         Matrix_Val + RowPtr[u],
@@ -338,7 +338,7 @@ void spmv_parallel_balanced2_cpp_s(
 
         } else  {//if (Yid[tid] != -1 && label[tid] == 0)
 
-            Dot_Product_Avx2_s(
+            Dot_Product_s(
                     End2[tid] - Start2[tid],
                     ColIdx + Start2[tid],
                     Matrix_Val + Start2[tid],
