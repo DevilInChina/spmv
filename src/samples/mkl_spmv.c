@@ -11,6 +11,7 @@
 #include <sys/time.h>
 #include <omp.h>
 #include <mkl.h>
+
 int cmp_s(const void *a, const void *b) {
     double *s = a;
     double *ss = b;
@@ -57,6 +58,7 @@ void flushLlc() {
 #define BASIC_INT_TYPE int
 #define ALIGENED_SIZE 64
 #define BASIC_SIZE_TYPE unsigned int
+
 // sum up 8 single-precision numbers
 void testForFunctions(const char *matrixName,
                       int threads_begin, int threads_end,
@@ -77,7 +79,7 @@ void testForFunctions(const char *matrixName,
 
     sparse_matrix_t mat;
     mkl_sparse_d_create_csr(&mat, 0, m, n, RowPtr, RowPtr + 1, ColIdx, Matrix_Val);
-    struct matrix_descr descr ;
+    struct matrix_descr descr;
     descr.type = SPARSE_MATRIX_TYPE_GENERAL;
     descr.diag = SPARSE_DIAG_NON_UNIT;
     descr.mode = SPARSE_FILL_MODE_FULL;
@@ -92,7 +94,7 @@ void testForFunctions(const char *matrixName,
         gettimeofday(&t1, NULL);
 
         mkl_sparse_set_mv_hint(mat,
-                               SPARSE_OPERATION_NON_TRANSPOSE,descr,5000
+                               SPARSE_OPERATION_NON_TRANSPOSE, descr, 5000
         );
 
         gettimeofday(&t2, NULL);
@@ -102,10 +104,8 @@ void testForFunctions(const char *matrixName,
         memcpy(XX, Vector_Val_X, sizeof(VALUE_TYPE) * n);
 
         gettimeofday(&t1, NULL);
-        for (currentiter = 0; currentiter < 10; currentiter++) {
-            mkl_set_num_threads(thread);
-            mkl_set_dynamic(0);
-            mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE,1,mat,descr,XX,0,YY);
+        for (currentiter = 0; currentiter < 1000; currentiter++) {
+            mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, 1, mat, descr, XX, 0, YY);
         }
 
         gettimeofday(&t2, NULL);
@@ -120,7 +120,7 @@ void testForFunctions(const char *matrixName,
             mkl_set_num_threads(thread);
             mkl_set_dynamic(0);
             gettimeofday(&t1, NULL);
-            mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE,1,mat,descr,XX,0,YY);
+            mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, 1, mat, descr, XX, 0, YY);
             gettimeofday(&t2, NULL);
             time_cur =
                     ((t2.tv_sec - t1.tv_sec) * 1000.0 + (t2.tv_usec - t1.tv_usec) / 1000.0);
@@ -134,7 +134,7 @@ void testForFunctions(const char *matrixName,
         //qsort(Vector_Val_Y,m,sizeof(VALUE_TYPE),cmp_s);
 
 
-            memcpy(Vector_Val_Y, YY, sizeof(VALUE_TYPE) * m);
+        memcpy(Vector_Val_Y, YY, sizeof(VALUE_TYPE) * m);
 
         for (int ind = 0; ind < m; ++ind) {
             s += (Vector_Val_Y[ind] - Y_golden[ind]) / m *

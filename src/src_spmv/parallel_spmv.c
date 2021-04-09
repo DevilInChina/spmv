@@ -11,7 +11,7 @@
                               double *Vector_Val_Y) {
 #pragma omp parallel for
     for (int i = 0; i < m; ++i) {
-        Dot_Product_d(RowPtr[i + 1] - RowPtr[i],
+        Dot_Product_Avx2_d(RowPtr[i + 1] - RowPtr[i],
                            ColIdx + RowPtr[i],
                            Matrix_Val + RowPtr[i],
                            Vector_Val_X, Vector_Val_Y + i);
@@ -26,7 +26,7 @@
                               float *Vector_Val_Y) {
 #pragma omp parallel for
     for (int i = 0; i < m; ++i) {
-        Dot_Product_s(RowPtr[i + 1] - RowPtr[i],
+        Dot_Product_Avx2_s(RowPtr[i + 1] - RowPtr[i],
                            ColIdx + RowPtr[i],
                            Matrix_Val + RowPtr[i],
                            Vector_Val_X, Vector_Val_Y + i);

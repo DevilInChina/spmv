@@ -89,7 +89,7 @@ void parallel_balanced_get_handle(
 #pragma omp parallel for
         for (int tid = 0; tid < nthreads; tid++) {
             for (int u = csrSplitter[tid]; u < csrSplitter[tid + 1]; u++) {
-                Dot_Product_d(RowPtr[u + 1] - RowPtr[u],
+                Dot_Product_Avx2_d(RowPtr[u + 1] - RowPtr[u],
                                    ColIdx + RowPtr[u],
                                    Matrix_Val + RowPtr[u],
                                    Vector_Val_X,
@@ -114,7 +114,7 @@ void parallel_balanced_get_handle(
 #pragma omp parallel for
         for (int tid = 0; tid < nthreads; tid++) {
             for (int u = csrSplitter[tid]; u < csrSplitter[tid + 1]; u++) {
-                Dot_Product_s(RowPtr[u + 1] - RowPtr[u],
+                Dot_Product_Avx2_s(RowPtr[u + 1] - RowPtr[u],
                                    ColIdx + RowPtr[u],
                                    Matrix_Val + RowPtr[u],
                                    Vector_Val_X,

@@ -273,7 +273,7 @@ void spmv_sell_C_Sigma_cpp_d(const spmv_Handle_t handle,
             if (SigmaBlocks[i].ld)
                 for (int j = 0; j < C_times; ++j) {
 
-                    basic_d_lineProductGather(SigmaBlocks[i].ld[j + 1] - SigmaBlocks[i].ld[j],
+                    basic_d_lineProductGather_avx2(SigmaBlocks[i].ld[j + 1] - SigmaBlocks[i].ld[j],
                                                    C,
                                                    (double *) SigmaBlocks[i].ValT + SigmaBlocks[i].ld[j] * C,
                                                    SigmaBlocks[i].ColIndex + SigmaBlocks[i].ld[j] * C,
@@ -289,7 +289,7 @@ void spmv_sell_C_Sigma_cpp_d(const spmv_Handle_t handle,
     {
 #pragma omp parallel for
         for (int i = sigenv->banner; i < m; ++i) {
-            Dot_Product_d(RowPtr[i + 1] - RowPtr[i],
+            Dot_Product_Avx2_d(RowPtr[i + 1] - RowPtr[i],
                                ColIdx + RowPtr[i],
                                Matrix_Val + RowPtr[i],
                                Vector_Val_X,
