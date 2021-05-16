@@ -57,8 +57,8 @@ target_link_libraries(spmv_l3 mv_l3)
 #]]
 add_executable(spmv_l2 ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
 target_link_libraries(spmv_l2 mv_l2)
-
-option(BUILD_MKL_BENCH "build mkl bench" ON)
+#[[
+option(BUILD_MKL_BENCH "build mkl bench" OFF)
 
 if (BUILD_MKL_BENCH)
     include_directories(/opt/intel/oneapi/mkl/latest/include)
@@ -67,6 +67,7 @@ if (BUILD_MKL_BENCH)
     target_link_libraries(mkl_spmv mkl_rt mkl_intel_lp64 mkl_core mkl_sequential)
 
 endif ()
+#]]
 
 
 add_executable(serial_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
@@ -84,11 +85,16 @@ target_compile_options(2balanced_spmv PRIVATE -D TEST_METHOD=3)
 target_link_libraries(2balanced_spmv mv_l2)
 
 
+add_executable(balancedYid_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
+target_compile_options(balancedYid_spmv PRIVATE -D TEST_METHOD=4)
+target_link_libraries(balancedYid_spmv mv_l2)
+
 add_executable(sellCSigma_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
-target_compile_options(sellCSigma_spmv PRIVATE -D TEST_METHOD=4)
+target_compile_options(sellCSigma_spmv PRIVATE -D TEST_METHOD=5)
 target_link_libraries(sellCSigma_spmv mv_l2)
 
 
 add_executable(csr5_spmv ${PROJECT_SOURCE_DIR}/src/samples/test_spmv.c)
-target_compile_options(csr5_spmv PRIVATE -D TEST_METHOD=5)
+target_compile_options(csr5_spmv PRIVATE -D TEST_METHOD=6)
 target_link_libraries(csr5_spmv mv_l2)
+

@@ -28,6 +28,7 @@ typedef enum SPMV_METHODS {
     Method_Parallel,
     Method_Balanced,
     Method_Balanced2,
+    Method_Balanced_Yid,
     Method_SellCSigma,
     Method_CSR5SPMV,
     Method_Total_Size,

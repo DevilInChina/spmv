@@ -43,6 +43,12 @@ void parallel_balanced2_get_handle(
         const BASIC_INT_TYPE *RowPtr,
         BASIC_INT_TYPE nnzR);
 
+void parallel_balanced_Yid_get_handle(
+        spmv_Handle_t handle,
+        BASIC_INT_TYPE m,
+        const BASIC_INT_TYPE *RowPtr,
+        BASIC_INT_TYPE nnzR);
+
 void sell_C_Sigma_get_handle_Selected(spmv_Handle_t handle,
                                       BASIC_INT_TYPE Times, BASIC_INT_TYPE C,
                                       BASIC_INT_TYPE m,
@@ -86,6 +92,15 @@ void spmv_parallel_balanced2_Selected(
         void *Vector_Val_Y
 );
 
+void spmv_parallel_balancedYid_Selected(
+        const spmv_Handle_t handle,
+        BASIC_INT_TYPE m,
+        const BASIC_INT_TYPE *RowPtr,
+        const BASIC_INT_TYPE *ColIdx,
+        const void *Matrix_Val,
+        const void *Vector_Val_X,
+        void *Vector_Val_Y
+);
 
 void spmv_sell_C_Sigma_Selected(const spmv_Handle_t handle,
                                 BASIC_INT_TYPE m,
@@ -117,6 +132,8 @@ void spmv_parallel_Selected(const spmv_Handle_t handle,
 void balancedHandleDestroy(spmv_Handle_t this_handle);
 
 void balanced2HandleDestroy(spmv_Handle_t this_handle);
+
+void balancedYidHandleDestroy(spmv_Handle_t this_handle);
 
 void sellCSigmaHandleDestroy(spmv_Handle_t this_handle);
 
@@ -213,10 +230,10 @@ void ReGather(void *true_val, const void *val, const int *index, BASIC_SIZE_TYPE
 #endif
 
 inline void Dot_Product_Avx2_d(BASIC_INT_TYPE len,
-                        const BASIC_INT_TYPE *indx,
-                        const double *Val,
-                        const double *X,
-                        double *res) {
+                               const BASIC_INT_TYPE *indx,
+                               const double *Val,
+                               const double *X,
+                               double *res) {
 
     const BASIC_INT_TYPE *colIndPtr = indx;
     const double *matValPtr = (double *) Val;
@@ -269,10 +286,10 @@ inline void Dot_Product_Avx2_d(BASIC_INT_TYPE len,
 }
 
 inline void Dot_Product_Avx2_s(BASIC_INT_TYPE len,
-                        const BASIC_INT_TYPE *indx,
-                        const float *Val,
-                        const float *X,
-                        float *res) {
+                               const BASIC_INT_TYPE *indx,
+                               const float *Val,
+                               const float *X,
+                               float *res) {
     BASIC_INT_TYPE j;
     float result = 0.0;
     __m256 vec_y = _mm256_setzero_ps();
@@ -335,29 +352,31 @@ inline void Dot_Product_Avx2_s(BASIC_INT_TYPE len,
 
     *res = result;
 }
+
 inline void Dot_Product_d(BASIC_INT_TYPE len,
-                               const BASIC_INT_TYPE *indx,
-                               const double *Val,
-                               const double *X,
-                               double *res) {
+                          const BASIC_INT_TYPE *indx,
+                          const double *Val,
+                          const double *X,
+                          double *res) {
     double result = 0.0;
-    for(int i = 0 ; i < len ; ++i){
-        result+=Val[i] * X[indx[i]];
+    for (int i = 0; i < len; ++i) {
+        result += Val[i] * X[indx[i]];
     }
     *(double *) res = result;
 }
 
 inline void Dot_Product_s(BASIC_INT_TYPE len,
-                               const BASIC_INT_TYPE *indx,
-                               const float *Val,
-                               const float *X,
-                               float *res) {
+                          const BASIC_INT_TYPE *indx,
+                          const float *Val,
+                          const float *X,
+                          float *res) {
     float result = 0.0f;
-    for(int i = 0 ; i < len ; ++i){
-        result+=Val[i] * X[indx[i]];
+    for (int i = 0; i < len; ++i) {
+        result += Val[i] * X[indx[i]];
     }
     *(float *) res = result;
 }
+
 #define LINE_S_PRODUCTGather_PARAMETERS_IN const BASIC_INT_TYPE ld, const BASIC_INT_TYPE length, const float*Val,const BASIC_INT_TYPE* indx, const float *Vector_X,const BASIC_INT_TYPE*indy,float *Vector_Y
 #define LINE_D_PRODUCTGather_PARAMETERS_IN const BASIC_INT_TYPE ld, const BASIC_INT_TYPE length, const double*Val,const BASIC_INT_TYPE* indx, const double *Vector_X,const BASIC_INT_TYPE*indy,double *Vector_Y
 #define LINE_PRODUCTGather_PARAMETERS_CALL(banner) Val+(banner),indx+(banner),Vector_X,indy+(banner),Vector_Y
@@ -376,20 +395,20 @@ inline void basic_s_lineProductGather_len(LINE_S_PRODUCTGather_PARAMETERS_IN) {
 
 inline void basic_d_lineProductGather_len(LINE_D_PRODUCTGather_PARAMETERS_IN) {
     const int block = 8;
-    for(int i = 0 ; i < length ; i+=block){
+    for (int i = 0; i < length; i += block) {
         double vec[8] = {0.0};
-        for(int j = 0 ; j < ld ; ++j){
-            for(int k = 0 ; k < block ; ++k){
-                vec[k]+=Val[j*length+i+k]*Vector_X[indx[j*length+i+k]];
+        for (int j = 0; j < ld; ++j) {
+            for (int k = 0; k < block; ++k) {
+                vec[k] += Val[j * length + i + k] * Vector_X[indx[j * length + i + k]];
             }
         }
-        for(int k = 0 ; k < block ; ++k){
-            Vector_Y[indy[k+i]]= vec[k];
+        for (int k = 0; k < block; ++k) {
+            Vector_Y[indy[k + i]] = vec[k];
         }
     }
 }
 
-inline void basic_s_lineProductGather_avx2(LINE_S_PRODUCTGather_PARAMETERS_IN,const int full) {
+inline void basic_s_lineProductGather_avx2(LINE_S_PRODUCTGather_PARAMETERS_IN, const int full) {
     const int block = 8;
     for (int i = 0; i < length; i += block) {
         __m256_u vecy = _mm256_setzero_ps();
@@ -409,16 +428,16 @@ inline void basic_s_lineProductGather_avx2(LINE_S_PRODUCTGather_PARAMETERS_IN,co
                                   Vector_X[*(indxLine + 1)],
                                   Vector_X[*(indxLine)]), vecy
             );
-            ValLine+=length;
-            indxLine+=length;
+            ValLine += length;
+            indxLine += length;
         }
 
-        for(int j = full ; j < ld ; ++j){
-            for(int k = 0 ; k < block ; ++k){
-                cur[k]+=(~indxLine[k])?(Vector_X[indxLine[k]]*ValLine[k]):0;
+        for (int j = full; j < ld; ++j) {
+            for (int k = 0; k < block; ++k) {
+                cur[k] += (~indxLine[k]) ? (Vector_X[indxLine[k]] * ValLine[k]) : 0;
             }
-            ValLine+=length;
-            indxLine+=length;
+            ValLine += length;
+            indxLine += length;
         }
         for (int j = 0; j < block; ++j) {
             Vector_Y[indy[i + j]] = cur[j];
@@ -426,7 +445,7 @@ inline void basic_s_lineProductGather_avx2(LINE_S_PRODUCTGather_PARAMETERS_IN,co
     }
 }
 
-inline void basic_d_lineProductGather_avx2(LINE_D_PRODUCTGather_PARAMETERS_IN,const int full) {
+inline void basic_d_lineProductGather_avx2(LINE_D_PRODUCTGather_PARAMETERS_IN, const int full) {
     const int block = 4;
     for (int i = 0; i < length; i += block) {
         __m256d_u vecy = _mm256_setzero_pd();
@@ -434,22 +453,22 @@ inline void basic_d_lineProductGather_avx2(LINE_D_PRODUCTGather_PARAMETERS_IN,co
         const int *indxLine = indx + i;
         double *cur = (double *) (&vecy);
         for (int j = 0; j < full; ++j) {
-                vecy = _mm256_fmadd_pd(
-                        *(__m256d_u *) (ValLine),
-                        _mm256_set_pd(Vector_X[*(indxLine + 3)],
-                                      Vector_X[*(indxLine + 2)],
-                                      Vector_X[*(indxLine + 1)],
-                                      Vector_X[*(indxLine)]), vecy
-                );
-            ValLine+=length;
-            indxLine+=length;
+            vecy = _mm256_fmadd_pd(
+                    *(__m256d_u *) (ValLine),
+                    _mm256_set_pd(Vector_X[*(indxLine + 3)],
+                                  Vector_X[*(indxLine + 2)],
+                                  Vector_X[*(indxLine + 1)],
+                                  Vector_X[*(indxLine)]), vecy
+            );
+            ValLine += length;
+            indxLine += length;
         }
-        for(int j = full ; j < ld ; ++j){
-            for(int k = 0 ; k < block ; ++k){
-                cur[k]+=(~indxLine[k])?(Vector_X[indxLine[k]]*ValLine[k]):0;
+        for (int j = full; j < ld; ++j) {
+            for (int k = 0; k < block; ++k) {
+                cur[k] += (~indxLine[k]) ? (Vector_X[indxLine[k]] * ValLine[k]) : 0;
             }
-            ValLine+=length;
-            indxLine+=length;
+            ValLine += length;
+            indxLine += length;
         }
         for (int j = 0; j < block; ++j) {
             Vector_Y[indy[i + j]] = cur[j];
@@ -458,56 +477,58 @@ inline void basic_d_lineProductGather_avx2(LINE_D_PRODUCTGather_PARAMETERS_IN,co
 }
 
 
-inline void basic_d_lineProductGather(LINE_D_PRODUCTGather_PARAMETERS_IN,const int full) {
+inline void basic_d_lineProductGather(LINE_D_PRODUCTGather_PARAMETERS_IN, const int full) {
     const int block = 4;
     for (int i = 0; i < length; i += block) {
         const double *ValLine = Val + i;
         const int *indxLine = indx + i;
-        double cur [4]={0};
+        double cur[4] = {0};
         for (int j = 0; j < full; ++j) {
-            for(int k = 0 ; k < block ; ++k){
-                cur[k]+=Vector_X[indxLine[k]]*ValLine[k];
+            for (int k = 0; k < block; ++k) {
+                cur[k] += Vector_X[indxLine[k]] * ValLine[k];
             }
-            ValLine+=length;
-            indxLine+=length;
+            ValLine += length;
+            indxLine += length;
         }
-        for(int j = full ; j < ld ; ++j){
-            for(int k = 0 ; k < block ; ++k){
-                cur[k]+=(~indxLine[k])?(Vector_X[indxLine[k]]*ValLine[k]):0;
+        for (int j = full; j < ld; ++j) {
+            for (int k = 0; k < block; ++k) {
+                cur[k] += (~indxLine[k]) ? (Vector_X[indxLine[k]] * ValLine[k]) : 0;
             }
-            ValLine+=length;
-            indxLine+=length;
+            ValLine += length;
+            indxLine += length;
         }
         for (int j = 0; j < block; ++j) {
             Vector_Y[indy[i + j]] = cur[j];
         }
     }
 }
-inline void basic_s_lineProductGather(LINE_S_PRODUCTGather_PARAMETERS_IN,const int full) {
+
+inline void basic_s_lineProductGather(LINE_S_PRODUCTGather_PARAMETERS_IN, const int full) {
     const int block = 8;
     for (int i = 0; i < length; i += block) {
         const float *ValLine = Val + i;
         const int *indxLine = indx + i;
-        float cur [8]={0};
+        float cur[8] = {0};
         for (int j = 0; j < full; ++j) {
-            for(int k = 0 ; k < block ; ++k){
-                cur[k]+=Vector_X[indxLine[k]]*ValLine[k];
+            for (int k = 0; k < block; ++k) {
+                cur[k] += Vector_X[indxLine[k]] * ValLine[k];
             }
-            ValLine+=length;
-            indxLine+=length;
+            ValLine += length;
+            indxLine += length;
         }
-        for(int j = full ; j < ld ; ++j){
-            for(int k = 0 ; k < block ; ++k){
-                cur[k]+=(~indxLine[k])?(Vector_X[indxLine[k]]*ValLine[k]):0;
+        for (int j = full; j < ld; ++j) {
+            for (int k = 0; k < block; ++k) {
+                cur[k] += (~indxLine[k]) ? (Vector_X[indxLine[k]] * ValLine[k]) : 0;
             }
-            ValLine+=length;
-            indxLine+=length;
+            ValLine += length;
+            indxLine += length;
         }
         for (int j = 0; j < block; ++j) {
             Vector_Y[indy[i + j]] = cur[j];
         }
     }
 }
+
 #endif //GEMV_INNER_SPMV_H
 
 #if defined(__cplusplus)

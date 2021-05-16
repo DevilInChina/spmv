@@ -34,6 +34,8 @@ void gemv_Handle_clear(spmv_Handle_t this_handle) {
 
     balanced2HandleDestroy(this_handle);
 
+    balancedYidHandleDestroy(this_handle);
+
     sellCSigmaHandleDestroy(this_handle);
 
     csr5HandleDestory(this_handle);
@@ -85,6 +87,7 @@ const spmv_function spmv_functions[] = {
         spmv_parallel_Selected,
         spmv_parallel_balanced_Selected,
         spmv_parallel_balanced2_Selected,
+        spmv_parallel_balancedYid_Selected,
         spmv_sell_C_Sigma_Selected,
         spmv_csr5Spmv_Selected,
         // spmv_numa_Selected
@@ -161,6 +164,9 @@ void spmv_create_handle_all_in_one(spmv_Handle_t *Handle,
             parallel_balanced2_get_handle(*Handle, m, RowPtr, RowPtr[m] - RowPtr[0]);
         }
             break;
+        case Method_Balanced_Yid:{
+            parallel_balanced_Yid_get_handle(*Handle,m,RowPtr,RowPtr[m]-RowPtr[0]);
+        }break;
         case Method_SellCSigma: {
             sell_C_Sigma_get_handle_Selected(*Handle, Times, C, m, RowPtr, ColIdx, Matrix_Val);
         }
@@ -321,6 +327,7 @@ const char *Methods_names[] = {
         SINGLE(Method_Parallel),
         SINGLE(Method_Balanced),
         SINGLE(Method_Balanced2),
+        SINGLE(Method_BalancedYid),
         SINGLE(Method_SellCSigma),
         SINGLE(Method_Csr5Spmv)
         //,SINGLE(Method_NumaSpmv)

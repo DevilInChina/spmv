@@ -123,7 +123,7 @@ void parallel_balanced_get_handle(
         }
     }
 }
-#include <stdio.h>
+
 void spmv_parallel_balanced_Selected(
         const spmv_Handle_t handle,
         BASIC_INT_TYPE m,
