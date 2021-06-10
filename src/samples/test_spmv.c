@@ -235,7 +235,7 @@ int main(int argc, char **argv) {
                              way1, TEST_METHOD);
         }
     }else{
-        for (int i = 0 ; i < TEST_METHOD ; ++i) {
+        for (int i = 1 ; i < TEST_METHOD ; ++i) {
             for (unsigned curThreads = threads_bregin; curThreads <= threads_end; curThreads <<= 1u) {
 
                 testForFunctions(file, curThreads, curThreads, Y_golden, m, n, RowPtr, ColIdx, Val, X, Y,
